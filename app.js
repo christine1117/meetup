@@ -26,8 +26,6 @@ const PEOPLE = [
   {
     id: 'p1', alias: 'Mochi', city: 'Taipei', country: 'Taiwan', field: 'Design',
     doing: 'An inventory tool for independent bookstores',
-    help: 'User interviews, pricing experiments',
-    want: 'How to find my first ten paying customers',
     topics: ['Bookstores', 'Pricing', 'Interviews'],
     proof: 'Live for three months, used by 6 bookstores',
     real: { name: 'Yen Shu-Wei', school: 'National Cheng Kung University, Industrial Design', company: 'Logistics startup, 12 people', title: 'Product designer', linkedin: 'linkedin.com/in/shuwei-yen' },
@@ -38,8 +36,6 @@ const PEOPLE = [
   {
     id: 'p2', alias: 'Kite', city: 'Berlin', country: 'Germany', field: 'Engineering',
     doing: 'An open-source tool that maps bike-lane gaps from GPS traces',
-    help: 'Geo data pipelines, Rust',
-    want: 'Someone who knows how city governments buy software',
     topics: ['Open data', 'Cities', 'Rust'],
     proof: 'Used by two cycling groups in Berlin',
     real: { name: 'Jonas Albrecht', school: 'TU Berlin, Computer Science', company: 'Mobility startup, 40 people', title: 'Backend engineer', linkedin: 'linkedin.com/in/jonas-albrecht' },
@@ -50,8 +46,6 @@ const PEOPLE = [
   {
     id: 'p3', alias: 'Sol', city: 'Lagos', country: 'Nigeria', field: 'Founder',
     doing: 'A savings app for market traders who get paid daily',
-    help: 'Distribution through agents, WhatsApp-first onboarding',
-    want: 'A designer who has built for low-end Android phones',
     topics: ['Fintech', 'Informal markets', 'Distribution'],
     proof: '1,300 traders saving every week',
     real: { name: 'Adaeze Okonkwo', school: 'University of Lagos, Economics', company: 'Her own startup', title: 'Co-founder', linkedin: 'linkedin.com/in/adaeze-okonkwo' },
@@ -62,8 +56,6 @@ const PEOPLE = [
   {
     id: 'p4', alias: 'Nori', city: 'Seoul', country: 'South Korea', field: 'Content',
     doing: 'A newsletter about small factories in Asia',
-    help: 'Storytelling, interviewing factory owners',
-    want: 'How to turn readers into a paid community',
     topics: ['Manufacturing', 'Writing', 'Community'],
     proof: '4,200 subscribers, written every week for a year',
     real: { name: 'Han Seo-yeon', school: 'Yonsei University, Sociology', company: 'Freelance', title: 'Writer', linkedin: 'linkedin.com/in/seoyeon-han' },
@@ -74,8 +66,6 @@ const PEOPLE = [
   {
     id: 'p5', alias: 'Pim', city: 'Taipei', country: 'Taiwan', field: 'Research',
     doing: 'Measuring indoor air in old apartments with cheap sensors',
-    help: 'Sensor calibration, statistics',
-    want: 'Someone to turn the data into an interface normal people can read',
     topics: ['Air quality', 'Sensors', 'Housing'],
     proof: '23 homes measured, data is public on GitHub',
     real: { name: 'Tsou Ting-An', school: 'National Tsing Hua University, MSc Environmental Engineering', company: 'University lab', title: 'Research assistant', linkedin: 'linkedin.com/in/tingan-tsou' },
@@ -86,8 +76,6 @@ const PEOPLE = [
   {
     id: 'p6', alias: 'Rue', city: 'São Paulo', country: 'Brazil', field: 'Design',
     doing: 'A booking tool for independent tattoo artists',
-    help: 'Brand identity, mobile UI',
-    want: 'A developer who has done payments in Latin America',
     topics: ['Branding', 'Creators', 'Mobile'],
     proof: '35 artists on the waitlist',
     real: { name: 'Beatriz Nogueira', school: 'Universidade de São Paulo, Design', company: 'Design studio, 8 people', title: 'Brand designer', linkedin: 'linkedin.com/in/beatriz-nogueira' },
@@ -98,8 +86,6 @@ const PEOPLE = [
   {
     id: 'p7', alias: 'Tavi', city: 'Bangalore', country: 'India', field: 'Engineering',
     doing: 'Turning voice notes into structured records for small clinics',
-    help: 'Speech models, on-device ML',
-    want: 'Clinicians willing to test for two weeks',
     topics: ['Health', 'Speech', 'ML'],
     proof: 'Pilot running in 3 clinics',
     real: { name: 'Karthik Venkataraman', school: 'IISc Bangalore, MTech', company: 'Health-tech company', title: 'ML engineer', linkedin: 'linkedin.com/in/karthik-venkataraman' },
@@ -110,8 +96,6 @@ const PEOPLE = [
   {
     id: 'p8', alias: 'Ode', city: 'Taichung', country: 'Taiwan', field: 'Business',
     doing: "Selling small farms' surplus produce to restaurants",
-    help: 'Negotiating with buyers, cold-chain logistics',
-    want: 'An engineer to build a simple ordering system',
     topics: ['Farming', 'Sales channels', 'Logistics'],
     proof: 'Supplying 9 restaurants every week',
     real: { name: 'Lai Po-Jui', school: 'Tunghai University, International Business', company: 'Family produce wholesaler', title: 'Second-generation successor', linkedin: 'linkedin.com/in/pojui-lai' },
@@ -198,8 +182,6 @@ const modeLabel = (t) => `${t.mode === 'offline' ? 'In person' : 'Online'}, ${t.
 const brief = (p) => `
   <dl class="brief">
     <div><dt>Working on</dt><dd>${esc(p.doing)}</dd></div>
-    <div><dt>Can help with</dt><dd>${esc(p.help)}</dd></div>
-    <div><dt>Wants help with</dt><dd>${esc(p.want)}</dd></div>
     ${p.proof ? `<div><dt>Proof of work</dt><dd>${esc(p.proof)}</dd></div>` : ''}
   </dl>`;
 
@@ -304,8 +286,6 @@ function profileForm(me, first) {
         ${select('field', 'Field', FIELDS, me.field || FIELDS[0])}
       </div>
       ${field('doing', "What I'm working on", me.doing, { area: true, req: true, ph: 'e.g. A sign-up system for a community college' })}
-      ${field('help', 'What I can help with', me.help, { area: true })}
-      ${field('want', 'What I want help with', me.want, { area: true })}
       ${field('topics', 'Topics I can talk deeply about', me.topics, { hint: 'Separate with commas.' })}
       ${field('proof', 'Proof of work', me.proof, { ph: 'Something you built or achieved' })}
     </fieldset>
@@ -990,7 +970,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing the Meetup app', help: 'Product feedback', want: 'People to try this with', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing the Meetup app', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');
