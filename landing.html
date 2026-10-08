@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meetup｜先聊天，再看履歷</title>
+  <meta name="description" content="Meetup 是一個互動先於履歷的交流與協作平台。先聊天、討論、合作，雙方都同意才解鎖身份。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要內容</a>
+
+  <header class="nav">
+    <div class="wrap nav__inner">
+      <a class="logo" href="#top" aria-label="Meetup 首頁">Meetup</a>
+      <nav class="nav__links" aria-label="主選單">
+        <a href="#modes">三種模式</a>
+        <a href="#reveal">怎麼運作</a>
+        <a href="#plans">方案</a>
+      </nav>
+      <a class="btn btn--primary btn--sm" href="#join">加入候補名單</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero wrap" id="top">
+      <div class="hero__copy">
+        <p class="eyebrow">Conversation before credentials</p>
+        <h1>Meet the <span class="accent">person</span> before the résumé.</h1>
+        <p class="hero__sub">先聊天，再看履歷。透過交流、討論與合作認識彼此，雙方都同意才解鎖身份。</p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="#join">加入候補名單</a>
+          <a class="btn btn--ghost" href="#modes">看三種模式</a>
+        </div>
+      </div>
+
+      <!-- 互動示範：Mutual Reveal。內容是示範資料 -->
+      <div class="hero__demo">
+        <article class="match" data-state="hidden" aria-labelledby="match-name">
+          <header class="match__head">
+            <div class="match__avatar" aria-hidden="true"><span>顏</span></div>
+            <div>
+              <h2 class="match__name" id="match-name" data-hidden="匿名對象" data-shown="顏書瑋">匿名對象</h2>
+              <p class="match__meta">剛聊了 12 分鐘</p>
+            </div>
+          </header>
+
+          <dl class="match__rows">
+            <div>
+              <dt>正在做</dt>
+              <dd>給獨立書店用的庫存小工具</dd>
+            </div>
+            <div>
+              <dt>可以幫忙</dt>
+              <dd>使用者訪談、定價實驗</dd>
+            </div>
+            <div>
+              <dt>想找人聊</dt>
+              <dd>怎麼找到前十個付費客戶</dd>
+            </div>
+            <div class="is-locked">
+              <dt><i class="ph ph-lock-simple" aria-hidden="true"></i>學校</dt>
+              <dd><span class="mask">成功大學 工業設計</span></dd>
+            </div>
+            <div class="is-locked">
+              <dt><i class="ph ph-lock-simple" aria-hidden="true"></i>公司</dt>
+              <dd><span class="mask">一間 12 人的物流新創</span></dd>
+            </div>
+            <div class="is-locked">
+              <dt><i class="ph ph-lock-simple" aria-hidden="true"></i>職稱</dt>
+              <dd><span class="mask">產品設計師</span></dd>
+            </div>
+          </dl>
+
+          <div class="match__action">
+            <button class="btn btn--dark match__btn" type="button">我想繼續聊</button>
+            <p class="match__status" role="status" aria-live="polite">雙方都同意，才會解鎖身份。</p>
+          </div>
+        </article>
+        <p class="hero__note">點按鈕試試看。以上是示範資料。</p>
+      </div>
+    </section>
+
+    <!-- Problem -->
+    <section class="problem">
+      <div class="wrap">
+        <h2 class="display reveal">現在的 networking，<br class="lg-only">先看你夠不夠厲害。</h2>
+        <ul class="problem__list">
+          <li class="reveal">
+            <i class="ph ph-mask-happy" aria-hidden="true"></i>
+            <h3>太像表演</h3>
+            <p>大家忙著包裝學校、公司與職稱，交流變成比較。</p>
+          </li>
+          <li class="reveal">
+            <i class="ph ph-globe-hemisphere-east" aria-hidden="true"></i>
+            <h3>圈子打不開</h3>
+            <p>不同產業、文化與背景的人，很難自然認識。</p>
+          </li>
+          <li class="reveal">
+            <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+            <h3>找人很累</h3>
+            <p>找隊友或討論想法，要自己搜尋、發陌生訊息、約時間。</p>
+          </li>
+          <li class="reveal">
+            <i class="ph ph-calendar-x" aria-hidden="true"></i>
+            <h3>配到了卻沒見面</h3>
+            <p>線上 match 很多，真正見面或合作的很少。</p>
+          </li>
+        </ul>
+
+        <div class="versus reveal">
+          <div class="versus__old">
+            <p class="versus__who">LinkedIn 問的是</p>
+            <p class="versus__q">Who are you on paper?</p>
+          </div>
+          <div class="versus__new">
+            <p class="versus__who">我們想知道</p>
+            <p class="versus__q">What happens when we actually talk?</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Three modes -->
+    <section class="modes" id="modes">
+      <div class="wrap">
+        <h2 class="display reveal">三種模式，<br class="sm-only">三種認識人的方式。</h2>
+
+        <!-- Explore -->
+        <article class="mode mode--explore">
+          <figure class="mode__media reveal">
+            <img src="images/cafe-table.jpg" alt="咖啡廳的長木桌上放著一杯咖啡，窗邊有人在聊天" width="1400" height="1100" loading="lazy">
+          </figure>
+          <div class="mode__body reveal">
+            <h3>Explore</h3>
+            <p class="mode__line">I want to meet someone.</p>
+            <p class="mode__desc">想拓展圈子、認識不同背景的人。丟出一個想法或問題，讓有共鳴的人來回應。</p>
+            <ul class="chips" aria-label="可以選擇">
+              <li>線上或線下</li>
+              <li>一對一或小組</li>
+              <li>城市</li>
+              <li>領域廣度</li>
+            </ul>
+            <ol class="flow" aria-label="Explore 流程">
+              <li>拋出想法</li>
+              <li>對方回應觀點</li>
+              <li>接受</li>
+              <li>慢慢聊</li>
+              <li>Mutual Reveal</li>
+            </ol>
+          </div>
+        </article>
+
+        <!-- Build -->
+        <article class="mode mode--build">
+          <div class="mode__body reveal">
+            <h3>Build</h3>
+            <p class="mode__line">I need someone for something.</p>
+            <p class="mode__desc">有明確目的時用。依照你正在做什麼、需要什麼、能提供什麼來配對，不看 prestige 排名。</p>
+            <ol class="flow" aria-label="Build 流程">
+              <li>貼出需求</li>
+              <li>匿名申請</li>
+              <li>短暫交流</li>
+              <li>雙方都說好</li>
+              <li>一起做</li>
+            </ol>
+          </div>
+
+          <!-- 示範用的 Build 貼文 -->
+          <div class="post reveal" data-applied="false">
+            <p class="post__label">Build 貼文範例</p>
+            <h4>想做一個二手相機檢測工具，找懂硬體供應鏈的人聊聊。</h4>
+            <dl class="post__rows">
+              <div>
+                <dt>我需要</dt>
+                <dd>零件來源、檢測流程的經驗</dd>
+              </div>
+              <div>
+                <dt>我能提供</dt>
+                <dd>前端開發、已經有 40 位賣家的名單</dd>
+              </div>
+              <div>
+                <dt>時間</dt>
+                <dd>六週的短期專案</dd>
+              </div>
+            </dl>
+            <button class="btn btn--dark post__btn" type="button">
+              <span class="post__btn-idle">匿名申請</span>
+              <span class="post__btn-done"><i class="ph ph-check" aria-hidden="true"></i>已送出，對方只看得到你的回應</span>
+            </button>
+          </div>
+        </article>
+
+        <!-- Drop -->
+        <article class="drop reveal">
+          <div class="drop__copy">
+            <h3>Drop</h3>
+            <p class="mode__line">I wonder who I’ll meet.</p>
+            <p class="mode__desc">每週一次，全球同時開啟。你不能挑人，也看不到履歷。系統把你和不同國家、不同領域的人配在一起，聊 8 到 15 分鐘。</p>
+            <ul class="drop__rules">
+              <li><i class="ph ph-broadcast" aria-hidden="true"></i>同時發生</li>
+              <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i>限時加入</li>
+              <li><i class="ph ph-shuffle" aria-hidden="true"></i>不可挑選</li>
+              <li><i class="ph ph-wind" aria-hidden="true"></i>錯過即消失</li>
+            </ul>
+          </div>
+          <div class="drop__clock">
+            <p class="drop__clock-label">距離下一場 Drop</p>
+            <div class="countdown" role="timer" aria-label="距離下一場 Drop 的倒數">
+              <div><span data-unit="d">0</span><small>天</small></div>
+              <div><span data-unit="h">00</span><small>時</small></div>
+              <div><span data-unit="m">00</span><small>分</small></div>
+              <div><span data-unit="s">00</span><small>秒</small></div>
+            </div>
+            <p class="drop__when">每週五 21:00（台北時間）</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Show / Hide -->
+    <section class="reveal-sec" id="reveal">
+      <div class="wrap">
+        <h2 class="display reveal">藏起頭銜，留下關聯。</h2>
+        <p class="lead reveal">這不是隨機聊天。你還是知道對方在做什麼、能聊什麼，只是先不知道他的名片。</p>
+
+        <div class="lists">
+          <div class="lists__col lists__col--show reveal">
+            <h3><i class="ph ph-eye" aria-hidden="true"></i>一開始就看得到</h3>
+            <ul>
+              <li>我正在做什麼</li>
+              <li>我可以幫上什麼忙</li>
+              <li>我想要什麼幫助</li>
+              <li>我能深聊的主題</li>
+              <li>做過的作品與成果</li>
+            </ul>
+          </div>
+          <div class="lists__col lists__col--hide reveal">
+            <h3><i class="ph ph-eye-slash" aria-hidden="true"></i>雙方同意後才解鎖</h3>
+            <ul>
+              <li>學校</li>
+              <li>公司</li>
+              <li>職稱</li>
+              <li>LinkedIn</li>
+              <li>其他 prestige 訊號</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Offline -->
+    <section class="offline">
+      <div class="wrap">
+        <figure class="offline__media reveal">
+          <img src="images/pour-over.jpg" alt="咖啡師正在吧台手沖咖啡" width="2000" height="900" loading="lazy">
+        </figure>
+        <div class="offline__body">
+          <h2 class="display reveal">配到人，<br>也約得成。</h2>
+          <div class="offline__text reveal">
+            <p>選線下模式，我們直接幫你們安排地點和時間。不用來回問「你哪天有空」。</p>
+            <ul class="offline__kinds">
+              <li><i class="ph ph-coffee" aria-hidden="true"></i>咖啡廳一對一</li>
+              <li><i class="ph ph-fork-knife" aria-hidden="true"></i>餐廳見面</li>
+              <li><i class="ph ph-users-three" aria-hidden="true"></i>小型 dinner table</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who it's for -->
+    <section class="who" aria-labelledby="who-title">
+      <div class="wrap">
+        <h2 class="who__title reveal" id="who-title">給正在做點什麼的人。專案、新創、研究、產品都算。</h2>
+      </div>
+      <div class="marquee">
+        <ul class="marquee__track">
+          <li>Founders</li>
+          <li>Designers</li>
+          <li>Engineers</li>
+          <li>Creators</li>
+          <li>Researchers</li>
+          <li>Student builders</li>
+          <li>Remote workers</li>
+          <li>Digital nomads</li>
+        </ul>
+        <ul class="marquee__track" aria-hidden="true">
+          <li>Founders</li>
+          <li>Designers</li>
+          <li>Engineers</li>
+          <li>Creators</li>
+          <li>Researchers</li>
+          <li>Student builders</li>
+          <li>Remote workers</li>
+          <li>Digital nomads</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Plans -->
+    <section class="plans" id="plans">
+      <div class="wrap">
+        <h2 class="display reveal">免費就能開始。</h2>
+        <div class="plans__grid">
+          <article class="plan plan--free reveal">
+            <h3>Free</h3>
+            <p class="plan__price">永久免費</p>
+            <ul>
+              <li><i class="ph ph-check" aria-hidden="true"></i>基本配對</li>
+              <li><i class="ph ph-check" aria-hidden="true"></i>每週 Drop</li>
+              <li><i class="ph ph-check" aria-hidden="true"></i>Mutual Reveal</li>
+              <li><i class="ph ph-check" aria-hidden="true"></i>視訊或語音通話</li>
+            </ul>
+          </article>
+          <article class="plan reveal">
+            <h3>Plus</h3>
+            <p class="plan__price">價格尚未公布</p>
+            <ul>
+              <li><i class="ph ph-check" aria-hidden="true"></i>進階篩選</li>
+              <li><i class="ph ph-check" aria-hidden="true"></i>更多 Explore 和 Build 次數</li>
+              <li><i class="ph ph-check" aria-hidden="true"></i>進階配對</li>
+            </ul>
+          </article>
+          <article class="plan reveal">
+            <h3>線下見面</h3>
+            <p class="plan__price">每次收訂位服務費</p>
+            <ul>
+              <li><i class="ph ph-check" aria-hidden="true"></i>幫你們訂咖啡廳或餐廳</li>
+              <li><i class="ph ph-check" aria-hidden="true"></i>小型 dinner table 安排</li>
+            </ul>
+          </article>
+        </div>
+        <p class="plans__b2b reveal">大學、conference、coworking space 或公司想辦配對活動？社群方案規劃中。</p>
+      </div>
+    </section>
+
+    <!-- Join -->
+    <section class="join" id="join">
+      <div class="wrap">
+        <div class="join__card reveal">
+          <h2 class="display">下一場 Drop，<br>算你一個？</h2>
+          <p class="lead">留下 email。開放的時候，第一個通知你。</p>
+
+          <!-- 注意：這個表單還沒接後端，按下去不會真的寄出資料。見 landing.js -->
+          <form class="form" novalidate>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="email-error" required>
+              <p class="field__error" id="email-error" hidden>請輸入正確的 email。</p>
+            </div>
+            <div class="field">
+              <label for="doing">你現在在做什麼（選填）</label>
+              <select id="doing" name="doing">
+                <option value="">請選擇</option>
+                <option>專案</option>
+                <option>新創</option>
+                <option>研究</option>
+                <option>產品</option>
+                <option>還在找方向</option>
+              </select>
+            </div>
+            <button class="btn btn--primary form__submit" type="submit">加入候補名單</button>
+          </form>
+
+          <div class="form__done" role="status" hidden>
+            <i class="ph ph-check-circle" aria-hidden="true"></i>
+            <p>收到了。下一場 Drop 開放時會通知你。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <div>
+        <a class="logo" href="#top">Meetup</a>
+        <p class="footer__tag">Meet. Think. Build.</p>
+      </div>
+      <nav class="footer__links" aria-label="頁尾選單">
+        <a href="#modes">三種模式</a>
+        <a href="#reveal">怎麼運作</a>
+        <a href="#plans">方案</a>
+        <a href="#join">候補名單</a>
+      </nav>
+      <p class="footer__copy">© 2026 Meetup</p>
+    </div>
+  </footer>
+
+  <script src="landing.js"></script>
+</body>
+</html>
