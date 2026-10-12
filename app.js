@@ -204,54 +204,43 @@ const SEED_POSTS = [
 ];
 
 /* ---------- Matching ----------
-   Matching starts from what kind of connection someone is looking for.
-   Explore gives each person a few cards a day; a new Brew is sent to
-   the people who fit it best. */
-
-const INTENTS = [
-  ['cofounder', 'A co-founder'],
-  ['team', 'Teammates for a project'],
-  ['ideas', 'Someone to swap ideas with'],
-  ['feedback', 'Honest feedback'],
-];
-const intentName = (k) => L((INTENTS.find(([v]) => v === k) || INTENTS[2])[1]);
-// Lower-case first letter so it reads well inside an English sentence
-const intentInline = (k) => { const n = intentName(k); return LANG === 'zh' ? n : n.charAt(0).toLowerCase() + n.slice(1); };
+   Matching is based on what people like to talk about: shared topics
+   first, then a different field for a fresh view. Explore and Brew show
+   top picks first; a new Brew is sent to the people who fit it best. */
 
 const TOP_PICKS = 3;
+const BREW_TOP_PICKS = 2;
 const BREW_SEND_TO = 4;
 
-const PEOPLE_LOOKING = {
-  p1: ['team', 'feedback'], p2: ['ideas', 'team'], p3: ['cofounder', 'feedback'], p4: ['ideas', 'feedback'],
-  p5: ['team', 'ideas'], p6: ['cofounder', 'team'], p7: ['feedback', 'team'], p8: ['cofounder', 'team'],
-};
 PEOPLE.forEach((p) => {
-  p.looking = PEOPLE_LOOKING[p.id];
   p.thought = (SEED_THOUGHTS.find((t) => t.by === p.id) || {}).text;
 });
-const POST_LOOKING = { b1: 'team', b2: 'team', b3: 'feedback', b4: 'cofounder' };
-SEED_POSTS.forEach((b) => { b.looking = POST_LOOKING[b.id]; });
 
 const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const hashNum = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-const myLooking = () => (S.me && Array.isArray(S.me.looking) ? S.me.looking : []);
+const myTopics = () => String((S.me && S.me.topics) || '').split(/[,，、]/).map((x) => x.trim().toLowerCase()).filter(Boolean);
 
-function pickScore(p, seed) {
-  const shared = p.looking.filter((k) => myLooking().includes(k)).length;
-  return shared * 3 + (p.field !== S.me.field ? 1 : 0) + (S.me.city && p.city === S.me.city ? 1 : 0) + (hashNum(seed + p.id) % 100) / 100;
+// Topics you and this person both like to talk about
+function sharedTopics(p) {
+  const mine = myTopics();
+  return p.topics.filter((t) => mine.some((m) => m.includes(t.toLowerCase()) || t.toLowerCase().includes(m)));
 }
 
-// Who a new Brew is sent to: the same kind of connection first, then matching words
+// A little daily luck (the seed) keeps the order from being the same every day
+function pickScore(p, seed) {
+  return sharedTopics(p).length * 3 + (p.field !== S.me.field ? 1 : 0) + (S.me.city && p.city === S.me.city ? 1 : 0) + (hashNum(seed + p.id) % 100) / 100;
+}
+
+// Who a new Brew is sent to: people whose field or topics show up in it
 function brewMatches(item) {
-  const words = `${item.title} ${item.need}`.toLowerCase();
-  const score = (p) => (p.looking.includes(item.looking) ? 3 : 0)
-    + [p.field, ...p.topics].filter((w) => words.includes(w.toLowerCase())).length
+  const text = `${item.title} ${item.need}`.toLowerCase();
+  const score = (p) => [p.field, ...p.topics].filter((w) => text.includes(w.toLowerCase())).length * 2
     + (hashNum(item.id + p.id) % 100) / 100;
   return [...PEOPLE].sort((a, b) => score(b) - score(a)).slice(0, BREW_SEND_TO).map((p) => p.id);
 }
 
 // How well someone else's Brew fits you
-const brewFit = (b) => (myLooking().includes(b.looking) ? 3 : 0) + (P[b.by].field !== S.me.field ? 1 : 0);
+const brewFit = (b) => pickScore(P[b.by], dayKey() + b.id);
 
 /* ---------- State ---------- */
 
@@ -323,8 +312,6 @@ const byline = (p) => `
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
     <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="${esc(L`Flavor = field. ${flavorName(p.field)} means ${fieldName(p.field)}.`)}">${esc(flavorName(p.field))}</span><br><small>${L`${esc(fieldName(p.field))}. ${esc(p.doing)}`}</small></span>
   </p>`;
-
-const langButton = () => `<button class="btn btn--ghost btn--sm lang" data-act="lang" type="button" aria-label="${esc(L('Switch language'))}"><i class="ph ph-translate" aria-hidden="true"></i>${LANG === 'zh' ? 'English' : '中文'}</button>`;
 
 function toast(msg) {
   toastEl.textContent = msg;
@@ -427,11 +414,6 @@ function profileForm(me, first) {
         ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0], L`Your flavor is your field. It sets the colour of your cup.`)}
       </div>
       ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
-      <div class="field" role="group" aria-labelledby="looking-label">
-        <p class="field__label" id="looking-label">${L`Looking for`}</p>
-        <div class="checks">${INTENTS.map(([v, l]) => `<label class="check"><input type="checkbox" name="looking" value="${v}" ${(me.looking || []).includes(v) ? 'checked' : ''}><span>${L(l)}</span></label>`).join('')}</div>
-        <p class="hint">${L`Pick any. This is what we match on.`}</p>
-      </div>
       ${field('topics', L`Topics I can talk deeply about`, me.topics, { hint: L`Separate with commas.` })}
       ${field('proof', L`Proof of work`, me.proof, { ph: L`Something you built or achieved` })}
     </fieldset>
@@ -459,7 +441,6 @@ function viewOnboard() {
     <div class="onboard__top">
       <p class="logo">${LOGO}</p>
       <div class="btnrow">
-        ${langButton()}
         <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
       </div>
     </div>
@@ -479,7 +460,6 @@ function viewMe() {
   return `
   <header class="head">
     <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p>${explain(L`Your order is your profile. It shows what you are working on, never your titles.` + ` <a href="#/about">${L`What is Half Sugar?`}</a>`)}</div>
-    ${langButton()}
   </header>
   <section class="receipt">
     ${cupFor(S.me, 'cup--lg')}
@@ -518,9 +498,6 @@ function responsesBlock(item, key) {
     </li>`).join('')}</ul>`;
 }
 
-// Shown until someone says what kind of connection they are looking for
-const lookingNudge = () => (myLooking().length ? '' : `<p class="nudge"><i class="ph ph-compass" aria-hidden="true"></i><span>${L`Tell us what kind of connection you are looking for, and your picks will get better.`} <a href="#/me">${L`Set it in My order`}</a></span></p>`);
-
 // One thought card. Reply to it to start a chat.
 function thoughtCard(t) {
   const p = P[t.by];
@@ -547,9 +524,9 @@ function thoughtCard(t) {
 function viewExplore() {
   const f = U.f;
   const cities = [...new Set(PEOPLE.map((p) => p.city))];
-  // Top picks: thoughts from people looking for the same kind of connection as you
+  // Top picks: thoughts from people who share your topics, with a little daily variety
   const ranked = [...SEED_THOUGHTS].sort((a, b) => pickScore(P[b.by], dayKey()) - pickScore(P[a.by], dayKey()));
-  const top = myLooking().length ? ranked.slice(0, TOP_PICKS) : [];
+  const top = ranked.slice(0, TOP_PICKS);
   const rest = SEED_THOUGHTS.filter((t) => !top.includes(t)).filter((t) => {
     const p = P[t.by];
     return (!f.mode || t.mode === f.mode) && (!f.size || t.size === f.size) && (!f.city || p.city === f.city) && (!f.field || p.field === f.field);
@@ -574,8 +551,6 @@ function viewExplore() {
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">${L`Cancel`}</button>
     </div>
   </form>` : ''}
-
-  ${lookingNudge()}
 
   ${S.myThoughts.length ? `
   <section class="mine">
@@ -636,7 +611,7 @@ function brewCard(b) {
 
 function viewBuild() {
   const ranked = [...SEED_POSTS].sort((a, b) => brewFit(b) - brewFit(a));
-  const forYou = myLooking().length ? ranked.filter((b) => brewFit(b) >= 3).slice(0, 2) : [];
+  const forYou = ranked.slice(0, BREW_TOP_PICKS);
   const rest = ranked.filter((b) => !forYou.includes(b));
 
   return `
@@ -648,7 +623,6 @@ function viewBuild() {
   ${U.compose === 'post' ? `
   <form class="panel stack" data-form="post" novalidate>
     ${field('title', L`What you are building and who you are looking for`, '', { area: true, req: true, ph: L`e.g. Building a shared-kitchen platform, looking for someone who knows food regulation` })}
-    ${select('looking', L`Looking for`, INTENTS.filter(([v]) => v !== 'ideas').map(([v, l]) => [v, L(l)]), 'team')}
     ${field('need', L`I need`, '', { req: true })}
     ${field('offer', L`I can offer`, '')}
     ${field('duration', L`Time`, '', { ph: L`e.g. One call, a four-week project` })}
@@ -665,7 +639,6 @@ function viewBuild() {
     <article class="card card--mine">
       <h3 class="post-title">${esc(b.title)}</h3>
       <dl class="brief">
-        ${b.looking ? `<div><dt>${L`Looking for`}</dt><dd>${esc(intentName(b.looking))}</dd></div>` : ''}
         <div><dt>${L`I need`}</dt><dd>${esc(b.need)}</dd></div>
         ${b.offer ? `<div><dt>${L`I can offer`}</dt><dd>${esc(b.offer)}</dd></div>` : ''}
         ${b.duration ? `<div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>` : ''}
@@ -729,18 +702,18 @@ function viewDrop() {
       <div class="shake">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
       <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
       <h1>${L`Shaking your mystery cup`}</h1>
-      <p class="sub">${L`Someone looking for what you are looking for, from a different city and field.`}</p>
+      <p class="sub">${L`Someone in a different city and a different field.`}</p>
     </section>`;
   }
 
   if (D.phase === 'live') {
-    const shared = p.looking.filter((k) => myLooking().includes(k));
+    const shared = sharedTopics(p);
     return `
     <section class="chat">
       <header class="chat__head">
         <div>
           <h1>${L`Someone in ${esc(p.country)}`}</h1>
-          <p class="sub">${shared.length ? L`You are both looking for ${intentInline(shared[0])}.` + (LANG === 'zh' ? '' : ' ') : ''}${L`Field: ${esc(fieldName(p.field))}. That is all you know.`}</p>
+          <p class="sub">${shared.length ? L`You both talk about ${esc(shared[0])}.` + (LANG === 'zh' ? '' : ' ') : ''}${L`Field: ${esc(fieldName(p.field))}. That is all you know.`}</p>
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
@@ -793,9 +766,8 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone looking for the same kind of connection, from a different city and field.`)}</div>
+    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
   </header>
-  ${lookingNudge()}
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
     <div>
@@ -807,7 +779,7 @@ function viewDrop() {
     </div>
   </section>
   <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`Same kind of connection, different city and field.`}</p></div></li>
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`We pour you someone from a different city and field.`}</p></div></li>
     <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`8 minutes`}</strong><p>${L`Text only. When time is up, it ends.`}</p></div></li>
     <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
   </ul>
@@ -817,9 +789,8 @@ function viewDrop() {
 function dropStart() {
   const me = S.me;
   const met = new Set(S.threads.map((t) => t.pid));
-  // Same kind of connection first, then a different field and city. A little luck keeps it a surprise.
-  const score = (x) => x.looking.filter((k) => myLooking().includes(k)).length * 3
-    + (x.field !== me.field ? 2 : 0) + (x.city !== me.city ? 1 : 0) + Math.random();
+  // A different field and city first, a shared topic as a bonus. A little luck keeps it a surprise.
+  const score = (x) => (x.field !== me.field ? 2 : 0) + (x.city !== me.city ? 2 : 0) + (sharedTopics(x).length ? 1 : 0) + Math.random();
   const pool = PEOPLE.filter((x) => !met.has(x.id));
   const p = [...(pool.length ? pool : PEOPLE)].sort((a, b) => score(b) - score(a))[0];
   Object.assign(D, { phase: 'live', pid: p.id, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
@@ -1010,9 +981,9 @@ const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
-  ['Explore', 'ph-compass', 'Browse open thoughts and questions, with top picks first based on what you are looking for. Reply with your view to start talking.'],
+  ['Explore', 'ph-compass', 'Browse open thoughts and questions, with top picks first. Reply with your view to start talking.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need and it goes to the people who fit, or apply to a Brew without showing your titles.'],
-  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week: the same kind of connection, from a different field. Everyone joins at the same time and you cannot pick who you get.'],
+  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
   ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
   ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
   ['Refill', 'ph-arrows-clockwise', 'At the end of a Mystery Cup, you both choose Refill to keep talking.'],
@@ -1026,7 +997,7 @@ function viewAbout() {
     : `<a class="btn btn--primary" href="#/">${L`Start sipping`}</a>`;
   return `
   <article class="about">
-    ${S.me ? '' : `<div class="onboard__top"><p class="logo">${LOGO}</p>${langButton()}</div>`}
+    ${S.me ? '' : `<div class="onboard__top"><p class="logo">${LOGO}</p></div>`}
     <header class="about__hero">
       <div>
         <h1 lang="en">${L`Boba chat, not coffee chat.`}</h1>
@@ -1117,7 +1088,6 @@ function shell(route, body) {
         </a>`).join('')}
       </nav>
       <div class="side__foot">
-        ${langButton()}
         <a class="side__about" href="#/about" ${route.name === 'about' ? 'aria-current="page"' : ''}><i class="ph ph-info" aria-hidden="true"></i>${L`What is Half Sugar?`}</a>
       </div>
     </aside>
@@ -1169,7 +1139,6 @@ const forms = {
   profile(form, data) {
     if (!data.alias || !data.doing) { $('#profile-error', form).hidden = false; return; }
     const first = !S.me;
-    data.looking = new FormData(form).getAll('looking');
     S.me = data;
     save();
     if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast(L`Saved`); render(); }
@@ -1309,10 +1278,6 @@ const acts = {
   'drop-no'() { D.phase = 'result'; D.result = 'passed'; render(); },
   'drop-reset'() { D.phase = 'idle'; D.pid = null; D.msgs = []; render(); },
 
-  lang() {
-    setLang(LANG === 'zh' ? 'en' : 'zh');
-    render();
-  },
 
   // Development shortcuts for chats. Remove before launch.
   'dev-time'(el) {
@@ -1336,7 +1301,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', looking: ['team', 'ideas'], doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');

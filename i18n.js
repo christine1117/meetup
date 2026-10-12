@@ -11,7 +11,12 @@
 
 const LANG_KEY = 'halfsugar.lang';
 
+// Chinese is switched off for now, so the app always shows English.
+// Set ZH_ENABLED to true (and add the language buttons back) to turn it on.
+const ZH_ENABLED = false;
+
 let LANG = (() => {
+  if (!ZH_ENABLED) return 'en';
   try {
     const saved = localStorage.getItem(LANG_KEY);
     if (saved === 'en' || saved === 'zh') return saved;
