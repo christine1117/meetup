@@ -8,7 +8,9 @@
   --bg: #f3eee3;
   --surface: #faf7f0;
   --sunk: #eae3d4;
-  --ink: #211e1a;
+  --ink: #2a1d16; /* dark brown, like tapioca */
+  --pearl: #3b2518; /* tapioca pearls */
+  --milk: #d9be97; /* milk tea */
   --muted: #6a6257;
   --line: #dcd3c3;
   --orange: #e25c14;
@@ -163,7 +165,7 @@ a {
 }
 
 .btn--dark:hover {
-  background: #36312b;
+  background: #46301f;
 }
 
 .btn--ghost {
@@ -627,10 +629,13 @@ textarea:focus-visible {
 /* ---------- Drop ---------- */
 
 .drop-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(20px, 5vw, 48px);
   padding: clamp(24px, 5vw, 44px);
   border-radius: var(--r-card);
   background: var(--orange);
-  text-align: center;
 }
 
 .drop-card__label {
@@ -689,6 +694,120 @@ textarea:focus-visible {
 .drop-stage .btnrow,
 .drop-stage .waiting {
   margin-top: 16px;
+}
+
+/* ---------- Boba pieces ---------- */
+
+.cup {
+  display: block;
+  width: 24px;
+  height: 28px;
+  color: var(--ink);
+  overflow: visible;
+}
+
+.cup--lg {
+  width: 72px;
+  height: 84px;
+}
+
+.cup--hero {
+  width: clamp(88px, 16vw, 128px);
+  height: auto;
+  aspect-ratio: 24 / 28;
+  animation: float 3.2s ease-in-out infinite alternate;
+}
+
+.cup--mystery {
+  width: clamp(92px, 18vw, 136px);
+  height: auto;
+  aspect-ratio: 24 / 28;
+  animation: float 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+  from { transform: translateY(0) rotate(-3deg); }
+  to { transform: translateY(-8px) rotate(3deg); }
+}
+
+.avatar--cup {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.avatar--cup .cup {
+  width: 20px;
+  height: 24px;
+}
+
+.flavor {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 10px;
+  border-radius: var(--r-pill);
+  background: var(--flavor);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 500;
+  vertical-align: 2px;
+}
+
+.onboard__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.onboard__hero h1 {
+  margin-top: 0;
+}
+
+.receipt {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+  border: 1px dashed #b9ad98;
+  border-radius: var(--r-card);
+  background:
+    radial-gradient(circle at 0 50%, var(--bg) 10px, transparent 11px),
+    radial-gradient(circle at 100% 50%, var(--bg) 10px, transparent 11px),
+    var(--surface);
+  margin-bottom: 20px;
+}
+
+.receipt__label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.receipt__item {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.receipt__meta {
+  color: var(--muted);
+}
+
+/* The printed seal film on top of a cup, until both people pop it */
+.brief--locked.is-sealed {
+  padding: 14px;
+  border: 0;
+  border-radius: var(--r-input);
+  background: repeating-linear-gradient(135deg, var(--orange-soft) 0 10px, #fbeadb 10px 20px);
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes shake {
+  from { transform: rotate(-12deg); }
+  to { transform: rotate(12deg); }
 }
 
 /* Three tapioca pearls bouncing while we shake your cup */
@@ -905,10 +1024,10 @@ textarea:focus-visible {
 }
 
 .msg--typing span {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--muted);
+  background: var(--pearl);
   animation: blink 1s infinite alternate;
 }
 
@@ -1047,5 +1166,27 @@ textarea:focus-visible {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* ---------- Boba pieces on small screens ---------- */
+
+.empty .cup {
+  margin-inline: auto;
+}
+
+@media (max-width: 520px) {
+  .drop-card {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .onboard__hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .onboard__hero .cup--hero {
+    display: none;
   }
 }

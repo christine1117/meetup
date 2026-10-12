@@ -23,6 +23,47 @@ const ORIGIN = { explore: 'Explore', build: 'Brew', drop: 'Mystery Cup' };
 // Logo: a half-full boba cup. Simple geometric mark.
 const LOGO = `<svg class="logo__mark" viewBox="0 0 24 28" aria-hidden="true"><path d="M14.5 1.5 12.8 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M5.3 15h13.4" stroke="currentColor" stroke-width="2"/><circle cx="9.6" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="14.4" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="12" cy="19" r="1.7" fill="var(--orange)"/></svg><span>Half Sugar</span>`;
 
+// Each field is a boba flavor. The colour fills that person's cup.
+const FLAVORS = {
+  Design: ['Taro', '#c9b3dd'],
+  Engineering: ['Matcha', '#b9cf98'],
+  Founder: ['Brown sugar', '#c98f5c'],
+  Research: ['Oolong', '#dcc282'],
+  Content: ['Strawberry', '#eeb0ad'],
+  Business: ['Mango', '#f2c36f'],
+  Other: ['Classic milk tea', '#dcc3a1'],
+};
+const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
+const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? n : `${n} milk tea`; };
+
+// Sugar level = how deep someone wants to go in a chat.
+const SUGAR = [
+  ['0', '0%, just saying hi'],
+  ['30', '30%, light chat'],
+  ['50', '50%, swap ideas'],
+  ['70', '70%, dig into a problem'],
+  ['100', '100%, ready to build together'],
+];
+const sugarLabel = (v) => (SUGAR.find(([k]) => k === String(v)) || SUGAR[2])[1];
+const PEOPLE_SUGAR = { p1: 50, p2: 70, p3: 100, p4: 30, p5: 70, p6: 50, p7: 100, p8: 70 };
+
+// A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
+const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
+function cup(color, o = {}) {
+  const id = 'cup' + uid();
+  const level = o.level ?? 0.62;
+  const y = (9 + (1 - level) * 18).toFixed(1);
+  return `<svg class="cup ${o.cls || ''}" viewBox="0 0 24 28" aria-hidden="true">
+    <defs><clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath></defs>
+    <rect x="0" y="${y}" width="24" height="28" fill="${color}" clip-path="url(#${id})"/>
+    ${level > 0 ? `<g fill="var(--pearl)" clip-path="url(#${id})"><circle cx="8.7" cy="24.4" r="1.6"/><circle cx="12" cy="25" r="1.6"/><circle cx="15.3" cy="24.4" r="1.6"/><circle cx="10.4" cy="21.6" r="1.6"/><circle cx="13.6" cy="21.6" r="1.6"/></g>` : ''}
+    <path d="M14.6 1.4 11.8 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    ${o.mark ? `<text x="8.6" y="18.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}
+  </svg>`;
+}
+const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, level: 0.35 + Number(p.sugar ?? PEOPLE_SUGAR[p.id] ?? 50) / 100 * 0.55 });
+
 /* ---------- Simulated people ---------- */
 
 const PEOPLE = [
@@ -184,14 +225,16 @@ const modeLabel = (t) => `${t.mode === 'offline' ? 'In person' : 'Online'}, ${t.
 
 const brief = (p) => `
   <dl class="brief">
+    <div><dt>Flavor</dt><dd>${esc(drinkName(p.field))} (${esc(p.field)})</dd></div>
+    <div><dt>Sugar level</dt><dd>${esc(sugarLabel(p.sugar ?? PEOPLE_SUGAR[p.id]))}</dd></div>
     <div><dt>Working on</dt><dd>${esc(p.doing)}</dd></div>
     ${p.proof ? `<div><dt>Proof of work</dt><dd>${esc(p.proof)}</dd></div>` : ''}
   </dl>`;
 
 const byline = (p) => `
   <p class="byline">
-    <span class="avatar" aria-hidden="true"><i class="ph ph-user"></i></span>
-    <span><strong>${esc(p.alias)}</strong><br><small>${esc(p.field)}. ${esc(p.doing)}</small></span>
+    <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
+    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}">${esc(flavor(p.field)[0])}</span><br><small>${esc(p.field)}. ${esc(p.doing)}</small></span>
   </p>`;
 
 function toast(msg) {
@@ -286,8 +329,9 @@ function profileForm(me, first) {
       ${field('alias', 'Nickname', me.alias, { req: true, hint: 'Not your real name.' })}
       <div class="row2">
         ${field('city', 'City', me.city, { ph: 'e.g. Taipei' })}
-        ${select('field', 'Field', FIELDS, me.field || FIELDS[0])}
+        ${select('field', 'Field (your flavor)', FIELDS.map((f) => [f, `${f}, ${flavor(f)[0]}`]), me.field || FIELDS[0])}
       </div>
+      ${select('sugar', 'Sugar level: how deep do you want to go?', SUGAR, String(me.sugar || '50'))}
       ${field('doing', "What I'm working on", me.doing, { area: true, req: true, ph: 'e.g. A sign-up system for a community college' })}
       ${field('topics', 'Topics I can talk deeply about', me.topics, { hint: 'Separate with commas.' })}
       ${field('proof', 'Proof of work', me.proof, { ph: 'Something you built or achieved' })}
@@ -316,8 +360,13 @@ function viewOnboard() {
       <p class="logo">${LOGO}</p>
       <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
     </div>
-    <h1>Boba chat, not coffee chat.</h1>
-    <p class="lead">Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.</p>
+    <div class="onboard__hero">
+      <div>
+        <h1>Boba chat, not coffee chat.</h1>
+        <p class="lead">Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.</p>
+      </div>
+      ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
+    </div>
     ${profileForm(null, true)}
   </main>`;
 }
@@ -327,6 +376,14 @@ function viewMe() {
   <header class="head">
     <div><h1>My order</h1><p class="sub">Your usual. Change it any time.</p></div>
   </header>
+  <section class="receipt">
+    ${cupFor(S.me, 'cup--lg')}
+    <div>
+      <p class="receipt__label">Your usual</p>
+      <p class="receipt__item">1 × ${esc(drinkName(S.me.field))}</p>
+      <p class="receipt__meta">Sugar ${esc(sugarLabel(S.me.sugar))}. For ${esc(S.me.alias)}.</p>
+    </div>
+  </section>
   ${profileForm(S.me, false)}
   <section class="panel note">
     <h2>Demo mode</h2>
@@ -399,7 +456,7 @@ function viewExplore() {
     <select data-filter="mode" aria-label="Online or in person">${opt('', 'Any format', f.mode)}${opt('online', 'Online', f.mode)}${opt('offline', 'In person', f.mode)}</select>
     <select data-filter="size" aria-label="Group size">${opt('', 'Any size', f.size)}${opt('1on1', '1-on-1', f.size)}${opt('group', 'Small group', f.size)}</select>
     <select data-filter="city" aria-label="City">${opt('', 'All cities', f.city)}${cities.map((c) => opt(c, c, f.city)).join('')}</select>
-    <select data-filter="field" aria-label="Field">${opt('', 'All fields', f.field)}${FIELDS.map((c) => opt(c, c, f.field)).join('')}</select>
+    <select data-filter="field" aria-label="Field">${opt('', 'All fields', f.field)}${FIELDS.map((c) => opt(c, `${c}, ${flavor(c)[0]}`, f.field)).join('')}</select>
   </div>
 
   ${feed.length ? feed.map((t) => {
@@ -523,6 +580,7 @@ function viewDrop() {
   if (D.phase === 'matching') {
     return `
     <section class="drop-stage">
+      <div class="shake">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
       <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
       <h1>Shaking your mystery cup</h1>
       <p class="sub">Someone in a different city and a different field.</p>
@@ -591,11 +649,14 @@ function viewDrop() {
     <div><h1>Mystery Cup</h1><p class="sub">You can’t pick the flavor.</p></div>
   </header>
   <section class="drop-card">
-    ${open
-      ? `<p class="drop-card__label">Mystery Cup is open</p><p class="drop-card__time">Join now</p>`
-      : `<p class="drop-card__label">Next Mystery Cup in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
-    <p class="drop-card__when">${esc(localTime)} your time. Open for 10 minutes.</p>
-    <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Pour me one' : 'Try a practice cup'}</button>
+    ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
+    <div>
+      ${open
+        ? `<p class="drop-card__label">Mystery Cup is open</p><p class="drop-card__time">Join now</p>`
+        : `<p class="drop-card__label">Next Mystery Cup in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
+      <p class="drop-card__when">${esc(localTime)} your time. Open for 10 minutes.</p>
+      <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Pour me one' : 'Try a practice cup'}</button>
+    </div>
   </section>
   <ul class="rules">
     <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>No picking flavors</strong><p>We pour you someone from a different city and field.</p></div></li>
@@ -677,7 +738,7 @@ function viewChats() {
     return `
     <li>
       <a href="#/chats/${t.id}">
-        <span class="avatar ${t.reveal.them ? 'avatar--on' : ''}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : '<i class="ph ph-user"></i>'}</span>
+        <span class="avatar ${t.reveal.them ? 'avatar--on' : 'avatar--cup'}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : cupFor(P[t.pid])}</span>
         <span class="threads__body">
           <strong>${esc(shownName(t))}</strong>
           <small>${ORIGIN[t.origin]}, ${t.reveal.them ? 'Refill' : 'First Sip'}${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
@@ -688,6 +749,7 @@ function viewChats() {
     </li>`;
   }).join('')}</ul>` : `
   <div class="empty">
+    ${cup('var(--milk)', { level: 0, cls: 'cup--lg' })}
     <p>No cups yet.</p>
     <div class="btnrow btnrow--center">
       <a class="btn btn--dark btn--sm" href="#/explore">Respond to a thought</a>
@@ -724,7 +786,7 @@ function viewThread(t) {
       <summary>${both ? 'Their full card' : 'Their card'}</summary>
       ${brief(p)}
       <p class="chips">${p.topics.map((x) => `<span>${esc(x)}</span>`).join('')}</p>
-      <dl class="brief brief--locked">
+      <dl class="brief brief--locked ${both ? '' : 'is-sealed'}">
         ${locked('Name', p.real.name)}
         ${locked('School', p.real.school)}
         ${locked('Company', p.real.company)}
@@ -973,7 +1035,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', sugar: '50', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');
