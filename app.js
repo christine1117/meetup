@@ -542,6 +542,9 @@ function responsesBlock(item, key) {
     </li>`).join('')}</ul>`;
 }
 
+// Shown until someone says what kind of connection they are looking for
+const lookingNudge = () => (myLooking().length ? '' : `<p class="nudge"><i class="ph ph-compass" aria-hidden="true"></i><span>${L`Tell us what kind of connection you are looking for, and your picks will get better.`} <a href="#/me">${L`Set it in My order`}</a></span></p>`);
+
 // One anonymous value card in today's picks
 function valueCard(p) {
   const existing = threadFor('explore', `pick-${dayKey()}-${p.id}`);
@@ -600,7 +603,7 @@ function viewExplore() {
     </div>
   </form>` : ''}
 
-  ${myLooking().length ? '' : `<p class="nudge"><i class="ph ph-compass" aria-hidden="true"></i><span>${L`Tell us what kind of connection you are looking for, and your picks will get better.`} <a href="#/me">${L`Set it in My order`}</a></span></p>`}
+  ${lookingNudge()}
 
   <div class="picks__head">
     <h2>${L`Today's picks`}</h2>
@@ -749,17 +752,18 @@ function viewDrop() {
       <div class="shake">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
       <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
       <h1>${L`Shaking your mystery cup`}</h1>
-      <p class="sub">${L`Someone in a different city and a different field.`}</p>
+      <p class="sub">${L`Someone looking for what you are looking for, from a different city and field.`}</p>
     </section>`;
   }
 
   if (D.phase === 'live') {
+    const shared = p.looking.filter((k) => myLooking().includes(k));
     return `
     <section class="chat">
       <header class="chat__head">
         <div>
           <h1>${L`Someone in ${esc(p.country)}`}</h1>
-          <p class="sub">${L`Field: ${esc(fieldName(p.field))}. That is all you know.`}</p>
+          <p class="sub">${shared.length ? L`You are both looking for ${intentInline(shared[0])}.` + (LANG === 'zh' ? '' : ' ') : ''}${L`Field: ${esc(fieldName(p.field))}. That is all you know.`}</p>
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
@@ -812,8 +816,9 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
+    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone looking for the same kind of connection, from a different city and field.`)}</div>
   </header>
+  ${lookingNudge()}
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
     <div>
@@ -825,7 +830,7 @@ function viewDrop() {
     </div>
   </section>
   <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`We pour you someone from a different city and field.`}</p></div></li>
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`Same kind of connection, different city and field.`}</p></div></li>
     <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`8 minutes`}</strong><p>${L`Text only. When time is up, it ends.`}</p></div></li>
     <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
   </ul>
@@ -835,9 +840,11 @@ function viewDrop() {
 function dropStart() {
   const me = S.me;
   const met = new Set(S.threads.map((t) => t.pid));
-  const far = PEOPLE.filter((p) => p.city !== me.city && p.field !== me.field);
-  const pool = far.filter((p) => !met.has(p.id));
-  const p = pick(pool.length ? pool : far.length ? far : PEOPLE);
+  // Same kind of connection first, then a different field and city. A little luck keeps it a surprise.
+  const score = (x) => x.looking.filter((k) => myLooking().includes(k)).length * 3
+    + (x.field !== me.field ? 2 : 0) + (x.city !== me.city ? 1 : 0) + Math.random();
+  const pool = PEOPLE.filter((x) => !met.has(x.id));
+  const p = [...(pool.length ? pool : PEOPLE)].sort((a, b) => score(b) - score(a))[0];
   Object.assign(D, { phase: 'live', pid: p.id, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
   D.msgs = [{ from: 'sys', text: 'Your first sip lasts 8 minutes. Start by asking what they are busy with.' }];
   render({ fresh: true, focus: 'c-msg' });
@@ -1028,7 +1035,7 @@ const GLOSSARY = [
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
   ['Explore', 'ph-compass', 'Three anonymous cards a day, picked for the kind of connection you are looking for.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need and it goes to the people who fit, or apply to a Brew without showing your titles.'],
-  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
+  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week: the same kind of connection, from a different field. Everyone joins at the same time and you cannot pick who you get.'],
   ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
   ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
   ['Refill', 'ph-arrows-clockwise', 'At the end of a Mystery Cup, you both choose Refill to keep talking.'],
