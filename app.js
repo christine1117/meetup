@@ -420,7 +420,7 @@ function viewOnboard() {
 function viewMe() {
   return `
   <header class="head">
-    <div><h1>${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p>${explain(L`Your order is your profile. It shows what you are working on, never your titles.` + ` <a href="#/about">${L`What is Half Sugar?`}</a>`)}</div>
+    <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p>${explain(L`Your order is your profile. It shows what you are working on, never your titles.` + ` <a href="#/about">${L`What is Half Sugar?`}</a>`)}</div>
     ${langButton()}
   </header>
   <section class="receipt">
@@ -471,7 +471,7 @@ function viewExplore() {
 
   return `
   <header class="head">
-    <div><h1>${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
+    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
     <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Share a thought`}</button>
   </header>
 
@@ -534,7 +534,7 @@ function viewExplore() {
 function viewBuild() {
   return `
   <header class="head">
-    <div><h1>${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p>${explain(L`Brew means building something together. Post what you need, or apply to a post without showing your titles.`)}</div>
+    <div><h1 lang="en">${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p>${explain(L`Brew means building something together. Post what you need, or apply to a post without showing your titles.`)}</div>
     <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Start a brew`}</button>
   </header>
 
@@ -693,7 +693,7 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1>${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
+    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
   </header>
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
@@ -1009,7 +1009,7 @@ function shell(route, body) {
       <nav class="nav" aria-label="${esc(L`Main`)}">
         ${NAV.map(([name, label, icon, desc]) => `
         <a href="#/${name}" ${route.name === name ? 'aria-current="page"' : ''}>
-          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${L(label)}</span><small>${L(desc)}</small></span>
+          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span ${name === 'chats' ? '' : 'lang="en"'}>${L(label)}</span><small>${L(desc)}</small></span>
           ${name === 'chats' && unread ? `<span class="badge" aria-label="${esc(L`${unread} unread`)}">${unread}</span>` : ''}
         </a>`).join('')}
       </nav>
