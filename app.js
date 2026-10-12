@@ -36,18 +36,27 @@ const FLAVORS = {
 const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
 const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? n : `${n} milk tea`; };
 
-// Sugar level = how deep you want ONE conversation to go.
-// It is picked each time: when you post a thought, start a brew or join a Mystery Cup.
-const SUGAR = [
-  ['0', 'just saying hi'],
-  ['30', 'light chat'],
-  ['50', 'swap ideas'],
-  ['70', 'dig into a problem'],
-  ['100', 'ready to build together'],
-];
-const SUGAR_OPTS = SUGAR.map(([v, l]) => [v, `${v}%, ${l}`]);
-const sugarText = (v) => { const [k, l] = SUGAR.find(([x]) => x === String(v)) || SUGAR[2]; return `${k}% sugar, ${l}`; };
-const sugarChip = (v) => `<span class="sugar" title="Sugar level = how deep they want this conversation to go">${cup('var(--milk)', { level: 0.12 + Number(v) / 100 * 0.83, cls: 'cup--chip' })}${esc(sugarText(v))}</span>`;
+// Sugar = how much two people have talked. Every back-and-forth adds 10%.
+// At 50% (half sugar) you can pop the seal. At 100% (full sugar) we suggest a boba run.
+const SUGAR_STEP = 10;
+const REVEAL_AT = 50;
+const sugarOf = (msgs) => {
+  const mine = msgs.filter((m) => m.from === 'me').length;
+  const theirs = msgs.filter((m) => m.from === 'them').length;
+  return Math.min(100, Math.min(mine, theirs) * SUGAR_STEP);
+};
+const sugarMeter = (v) => `<span class="sugar" title="Sugar goes up as you talk. Every back-and-forth adds 10%.">${cup('var(--milk)', { level: v / 100, cls: 'cup--chip' })}${v}% sugar</span>`;
+
+// Add a note in the chat when it reaches half sugar or full sugar
+function sugarNotes(t, before) {
+  const after = sugarOf(t.msgs);
+  if (before < REVEAL_AT && after >= REVEAL_AT && !t.reveal.them) {
+    t.msgs.push({ from: 'sys', text: 'Half sugar! You can pop the seal now.', at: Date.now() });
+  }
+  if (before < 100 && after >= 100) {
+    t.msgs.push({ from: 'sys', text: 'Full sugar. Maybe it is time for a boba run?', at: Date.now() });
+  }
+}
 
 // A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
 const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
@@ -153,19 +162,19 @@ const PEOPLE = [
 const P = Object.fromEntries(PEOPLE.map((p) => [p.id, p]));
 
 const SEED_THOUGHTS = [
-  { id: 't1', sugar: 70, by: 'p2', mode: 'online', size: '1on1', text: 'If a city gives away its data for free, who should be responsible when someone builds something harmful with it?' },
-  { id: 't2', sugar: 50, by: 'p5', mode: 'offline', size: '1on1', text: 'Everyone says "build what users want". But as a researcher, how do I even know who my user is?' },
-  { id: 't3', sugar: 30, by: 'p4', mode: 'online', size: 'group', text: 'Is a newsletter a product or a habit? I cannot tell which one I am building.' },
-  { id: 't4', sugar: 50, by: 'p8', mode: 'offline', size: 'group', text: 'If you took over a family business, how did you convince your parents to let you try something new?' },
-  { id: 't5', sugar: 30, by: 'p3', mode: 'online', size: '1on1', text: 'What is one thing that works in your city that would never work in mine? I am collecting examples.' },
-  { id: 't6', sugar: 50, by: 'p6', mode: 'online', size: '1on1', text: 'Designers: when did you last change your mind because an engineer was right?' },
+  { id: 't1', by: 'p2', mode: 'online', size: '1on1', text: 'If a city gives away its data for free, who should be responsible when someone builds something harmful with it?' },
+  { id: 't2', by: 'p5', mode: 'offline', size: '1on1', text: 'Everyone says "build what users want". But as a researcher, how do I even know who my user is?' },
+  { id: 't3', by: 'p4', mode: 'online', size: 'group', text: 'Is a newsletter a product or a habit? I cannot tell which one I am building.' },
+  { id: 't4', by: 'p8', mode: 'offline', size: 'group', text: 'If you took over a family business, how did you convince your parents to let you try something new?' },
+  { id: 't5', by: 'p3', mode: 'online', size: '1on1', text: 'What is one thing that works in your city that would never work in mine? I am collecting examples.' },
+  { id: 't6', by: 'p6', mode: 'online', size: '1on1', text: 'Designers: when did you last change your mind because an engineer was right?' },
 ];
 
 const SEED_POSTS = [
-  { id: 'b1', sugar: 100, by: 'p1', title: 'Building a checker for second-hand cameras. Looking for someone who knows hardware supply chains.', need: 'Experience with parts sourcing and inspection', offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project' },
-  { id: 'b2', sugar: 100, by: 'p7', title: 'Looking for a designer to make clinic software that nurses do not hate.', need: 'Interface design for people in a hurry', offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint' },
-  { id: 'b3', sugar: 70, by: 'p3', title: 'Need someone to challenge my pricing before I launch in a second city.', need: 'Pricing experience, any industry', offer: 'Real numbers from 1,300 users', duration: 'One or two calls' },
-  { id: 'b4', sugar: 100, by: 'p8', title: 'Looking for an engineer to build a produce ordering system for restaurants.', need: 'Someone who can build a simple back office and chat integration', offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible' },
+  { id: 'b1', by: 'p1', title: 'Building a checker for second-hand cameras. Looking for someone who knows hardware supply chains.', need: 'Experience with parts sourcing and inspection', offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project' },
+  { id: 'b2', by: 'p7', title: 'Looking for a designer to make clinic software that nurses do not hate.', need: 'Interface design for people in a hurry', offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint' },
+  { id: 'b3', by: 'p3', title: 'Need someone to challenge my pricing before I launch in a second city.', need: 'Pricing experience, any industry', offer: 'Real numbers from 1,300 users', duration: 'One or two calls' },
+  { id: 'b4', by: 'p8', title: 'Looking for an engineer to build a produce ordering system for restaurants.', need: 'Someone who can build a simple back office and chat integration', offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible' },
 ];
 
 /* ---------- State ---------- */
@@ -192,7 +201,7 @@ let S = load();
 
 // Screen state that does not need to be saved
 const U = { compose: null, target: null, booking: null, typing: {}, confirmReset: false, f: { mode: '', size: '', city: '', field: '' } };
-const D = { phase: 'idle', sugar: '50', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
+const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
 let lastPath = null;
 
 /* ---------- Routing ---------- */
@@ -259,7 +268,9 @@ function createThread(pid, origin, ref, status, intro) {
 }
 
 function pushMsg(t, from, text) {
+  const before = sugarOf(t.msgs);
   t.msgs.push({ from, text, at: Date.now() });
+  sugarNotes(t, before);
   t.at = Date.now();
   if (from !== 'me' && !viewing(t.id)) t.unread += 1;
   save();
@@ -384,7 +395,7 @@ function viewMe() {
     <div>
       <p class="receipt__label">Your usual</p>
       <p class="receipt__item">1 × ${esc(drinkName(S.me.field))}</p>
-      <p class="receipt__meta">For ${esc(S.me.alias)}. You pick a sugar level each time you start a chat.</p>
+      <p class="receipt__meta">For ${esc(S.me.alias)}. Sugar goes up in each chat as you talk.</p>
     </div>
   </section>
   ${profileForm(S.me, false)}
@@ -438,7 +449,6 @@ function viewExplore() {
       ${select('mode', 'How to meet', [['online', 'Online'], ['offline', 'In person']], 'online')}
       ${select('size', 'How many people', [['1on1', '1-on-1'], ['group', 'Small group']], '1on1')}
     </div>
-    ${select('sugar', 'Sugar level for this one', SUGAR_OPTS, '50', 'How deep do you want this conversation to go?')}
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">Post</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">Cancel</button>
@@ -451,7 +461,7 @@ function viewExplore() {
     ${S.myThoughts.map((t) => `
     <article class="card card--mine">
       <p class="thought">${esc(t.text)}</p>
-      <div class="meta-row"><p class="meta">${modeLabel(t)}</p>${sugarChip(t.sugar ?? 50)}</div>
+      <div class="meta-row"><p class="meta">${modeLabel(t)}</p></div>
       ${responsesBlock(t, 'thought')}
     </article>`).join('')}
   </section>` : ''}
@@ -469,7 +479,7 @@ function viewExplore() {
     return `
     <article class="card">
       <p class="thought">${esc(t.text)}</p>
-      <div class="meta-row"><p class="meta">${modeLabel(t)}, ${esc(p.city)}</p>${sugarChip(t.sugar)}</div>
+      <div class="meta-row"><p class="meta">${modeLabel(t)}, ${esc(p.city)}</p></div>
       ${byline(p)}
       ${existing
         ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">Responded. Open chat</a>`
@@ -501,7 +511,6 @@ function viewBuild() {
     ${field('need', 'I need', '', { req: true })}
     ${field('offer', 'I can offer', '')}
     ${field('duration', 'Time', '', { ph: 'e.g. One call, a four-week project' })}
-    ${select('sugar', 'Sugar level for this brew', SUGAR_OPTS, '70', 'How deep do you want to go with the people who apply?')}
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">Post</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">Cancel</button>
@@ -514,7 +523,6 @@ function viewBuild() {
     ${S.myPosts.map((b) => `
     <article class="card card--mine">
       <h3 class="post-title">${esc(b.title)}</h3>
-      ${sugarChip(b.sugar ?? 70)}
       <dl class="brief">
         <div><dt>I need</dt><dd>${esc(b.need)}</dd></div>
         ${b.offer ? `<div><dt>I can offer</dt><dd>${esc(b.offer)}</dd></div>` : ''}
@@ -530,7 +538,6 @@ function viewBuild() {
     return `
     <article class="card">
       <h3 class="post-title">${esc(b.title)}</h3>
-      ${sugarChip(b.sugar ?? 70)}
       <dl class="brief">
         <div><dt>Needs</dt><dd>${esc(b.need)}</dd></div>
         <div><dt>Offers</dt><dd>${esc(b.offer)}</dd></div>
@@ -600,9 +607,10 @@ function viewDrop() {
       <header class="chat__head">
         <div>
           <h1>Someone in ${esc(p.country)}</h1>
-          <p class="sub">Field: ${esc(p.field)}. You both picked ${esc(sugarText(D.sugar))}. That is all you know.</p>
+          <p class="sub">Field: ${esc(p.field)}. That is all you know.</p>
         </div>
         <div class="chat__tools">
+          ${sugarMeter(sugarOf(D.msgs))}
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
           <button class="btn btn--ghost btn--sm" data-act="drop-end" type="button">End chat</button>
         </div>
@@ -662,10 +670,6 @@ function viewDrop() {
         ? `<p class="drop-card__label">Mystery Cup is open</p><p class="drop-card__time">Join now</p>`
         : `<p class="drop-card__label">Next Mystery Cup in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
       <p class="drop-card__when">${esc(localTime)} your time. Open for 10 minutes.</p>
-      <div class="drop-card__sugar">
-        <label for="f-dropsugar">Sugar level for this cup</label>
-        <select id="f-dropsugar">${SUGAR_OPTS.map(([v, l]) => `<option value="${v}" ${v === String(D.sugar) ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      </div>
       <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Pour me one' : 'Try a practice cup'}</button>
     </div>
   </section>
@@ -742,7 +746,7 @@ function viewChats() {
   const list = [...S.threads].sort((a, b) => b.at - a.at);
   return `
   <header class="head">
-    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p>${explain('First Sip is your first chat, with names hidden. Refill means you both chose to keep going and popped the seal.')}</div>
+    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p>${explain('Sugar goes up the more you talk. At 50% (half sugar) you can pop the seal and see who they are.')}</div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
@@ -752,7 +756,7 @@ function viewChats() {
         <span class="avatar ${t.reveal.them ? 'avatar--on' : 'avatar--cup'}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : cupFor(P[t.pid])}</span>
         <span class="threads__body">
           <strong>${esc(shownName(t))}</strong>
-          <small>${ORIGIN[t.origin]}, ${t.reveal.them ? 'Refill' : 'First Sip'}${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
+          <small>${ORIGIN[t.origin]}, ${t.reveal.them ? 'Refill' : 'First Sip'}, ${sugarOf(t.msgs)}% sugar${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
           <span class="threads__last">${last ? esc(last.text) : ''}</span>
         </span>
         ${t.unread ? `<span class="badge" aria-label="${t.unread} unread">${t.unread}</span>` : ''}
@@ -772,6 +776,7 @@ function viewChats() {
 function viewThread(t) {
   const p = P[t.pid];
   const both = t.reveal.me && t.reveal.them;
+  const sugar = sugarOf(t.msgs);
   const today = new Date().toISOString().slice(0, 10);
   const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : '<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed</span>'}</dd></div>`;
 
@@ -782,6 +787,7 @@ function viewThread(t) {
       <div>
         <h1>${esc(shownName(t))}</h1>
         <p class="sub">${both ? 'Refill' : 'First Sip'}. ${ORIGIN[t.origin]}, ${esc(p.city)}</p>
+        ${sugarMeter(sugar)}
       </div>
       ${t.status === 'open' ? `
       <div class="chat__tools">
@@ -789,11 +795,13 @@ function viewThread(t) {
         <button class="btn btn--ghost btn--sm" data-act="book-open" data-id="${t.id}" type="button"><i class="ph ph-person-simple-walk" aria-hidden="true"></i>Boba run</button>
         ${both ? '' : t.reveal.me
           ? `<button class="btn btn--sm" type="button" disabled>Waiting for them to pop</button>`
-          : `<button class="btn btn--primary btn--sm" data-act="reveal" data-id="${t.id}" type="button">Pop the seal</button>`}
+          : sugar >= REVEAL_AT
+            ? `<button class="btn btn--primary btn--sm" data-act="reveal" data-id="${t.id}" type="button">Pop the seal</button>`
+            : `<button class="btn btn--sm" type="button" disabled>Pop the seal at ${REVEAL_AT}%</button>`}
       </div>` : ''}
     </header>
 
-    ${explain(both ? 'Refill: you both popped the seal, so real names and profiles are visible.' : 'First Sip: names are still hidden. Press “Pop the seal” when you want to swap real profiles. Both of you have to agree. “Boba run” means meeting in person.')}
+    ${explain(both ? 'Refill: you both popped the seal, so real names and profiles are visible.' : 'First Sip: names are still hidden. Sugar goes up as you talk, 10% for every back-and-forth. At 50% (half sugar) you can pop the seal and swap real profiles, if you both agree. “Boba run” means meeting in person.')}
 
     <details class="who">
       <summary>${both ? 'Their full card' : 'Their card'}</summary>
@@ -850,7 +858,7 @@ const explain = (html) => `<p class="explain"><i class="ph ph-info" aria-hidden=
 const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
-  ['Sugar level', 'ph-sliders-horizontal', 'How deep you want one conversation to go, from 0% (just saying hi) to 100% (ready to build together). You pick it each time you post a thought, start a brew or join a Mystery Cup.'],
+  ['Sugar', 'ph-chart-line-up', 'How much you two have talked. Every back-and-forth adds 10%. At 50% (half sugar) you can pop the seal. At 100% (full sugar) it may be time for a boba run.'],
   ['Explore', 'ph-compass', 'Browse open thoughts and questions. Reply with your view to start talking.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need, or apply to a post without showing your titles.'],
   ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
@@ -886,7 +894,7 @@ function viewAbout() {
       </div>
       <div class="about__card about__card--sugar">
         <h2>Why half sugar</h2>
-        <p>Not too sweet, not too serious. Half sugar is the order for people who want balance: less performing, and still something real to take home.</p>
+        <p>Not too sweet, not too serious. Half sugar is the order for people who want balance: less performing, and still something real to take home. It is also the moment a chat reaches 50%, when you can finally see who you have been talking to.</p>
       </div>
     </section>
 
@@ -895,7 +903,7 @@ function viewAbout() {
       <ol class="steps">
         <li><strong>Fill in your order.</strong> Say what you are working on. Your titles stay sealed.</li>
         <li><strong>Take a first sip.</strong> Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.</li>
-        <li><strong>Pop the seal.</strong> If you both want to, show each other who you are.</li>
+        <li><strong>Reach half sugar, then pop the seal.</strong> Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.</li>
         <li><strong>Refill or go on a boba run.</strong> Keep talking, build something, or meet in person.</li>
       </ol>
     </section>
@@ -1001,7 +1009,7 @@ const forms = {
 
   thought(form, data) {
     if (!data.text) { $('#f-text', form).focus(); return; }
-    const item = { id: uid(), text: data.text, mode: data.mode, size: data.size, sugar: data.sugar, responses: [], seen: [] };
+    const item = { id: uid(), text: data.text, mode: data.mode, size: data.size, responses: [], seen: [] };
     S.myThoughts.unshift(item);
     U.compose = null;
     save();
@@ -1044,7 +1052,9 @@ const forms = {
   msg(form, data) {
     const t = thread(form.dataset.id);
     if (!t || !data.msg) return;
+    const before = sugarOf(t.msgs);
     t.msgs.push({ from: 'me', text: data.msg, at: Date.now() });
+    sugarNotes(t, before);
     t.at = Date.now();
     save();
     render({ fresh: true, focus: 'c-msg' });
@@ -1103,7 +1113,7 @@ const acts = {
 
   reveal(el) {
     const t = thread(el.dataset.id);
-    if (!t || t.reveal.me) return;
+    if (!t || t.reveal.me || sugarOf(t.msgs) < REVEAL_AT) return;
     t.reveal.me = true;
     pushMsg(t, 'sys', 'You popped your seal. Waiting for them.');
     later(2600, () => resolveReveal(t));
@@ -1119,8 +1129,6 @@ const acts = {
   'book-close'() { U.booking = null; render({ fresh: true }); },
 
   'drop-join'() {
-    const pickSugar = document.getElementById('f-dropsugar');
-    if (pickSugar) D.sugar = pickSugar.value;
     D.phase = 'matching';
     render();
     later(2200, () => { if (D.phase === 'matching') dropStart(); });
@@ -1132,7 +1140,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', sugar: '50', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');
