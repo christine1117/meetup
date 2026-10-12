@@ -271,7 +271,7 @@ const brief = (p) => `
 const byline = (p) => `
   <p class="byline">
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="${esc(L`Flavor = field. ${flavorName(p.field)} means ${fieldName(p.field)}.`)}">${esc(flavorName(p.field))}</span><br><small>${esc(fieldName(p.field))}. ${esc(p.doing)}</small></span>
+    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="${esc(L`Flavor = field. ${flavorName(p.field)} means ${fieldName(p.field)}.`)}">${esc(flavorName(p.field))}</span><br><small>${L`${esc(fieldName(p.field))}. ${esc(p.doing)}`}</small></span>
   </p>`;
 
 const langButton = () => `<button class="btn btn--ghost btn--sm lang" data-act="lang" type="button" aria-label="${esc(L('Switch language'))}"><i class="ph ph-translate" aria-hidden="true"></i>${LANG === 'zh' ? 'English' : '中文'}</button>`;
@@ -407,7 +407,7 @@ function viewOnboard() {
     </div>
     <div class="onboard__hero">
       <div>
-        <h1>${L`Boba chat, not coffee chat.`}</h1>
+        <h1 lang="en">${L`Boba chat, not coffee chat.`}</h1>
         <p class="lead">${L`Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.`}</p>
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
@@ -471,7 +471,7 @@ function viewExplore() {
 
   return `
   <header class="head">
-    <div><h1>${L`Explore`}</h1><p class="sub">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
+    <div><h1>${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
     <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Share a thought`}</button>
   </header>
 
@@ -512,7 +512,7 @@ function viewExplore() {
     return `
     <article class="card">
       <p class="thought">${esc(t.text)}</p>
-      <div class="meta-row"><p class="meta">${modeLabel(t)}, ${esc(p.city)}</p></div>
+      <div class="meta-row"><p class="meta">${L`${modeLabel(t)}, ${esc(p.city)}`}</p></div>
       ${byline(p)}
       ${existing
         ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Responded. Open chat`}</a>`
@@ -534,7 +534,7 @@ function viewExplore() {
 function viewBuild() {
   return `
   <header class="head">
-    <div><h1>${L`Brew`}</h1><p class="sub">${L`I need someone for something.`}</p>${explain(L`Brew means building something together. Post what you need, or apply to a post without showing your titles.`)}</div>
+    <div><h1>${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p>${explain(L`Brew means building something together. Post what you need, or apply to a post without showing your titles.`)}</div>
     <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Start a brew`}</button>
   </header>
 
@@ -693,7 +693,7 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1>${L`Mystery Cup`}</h1><p class="sub">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
+    <div><h1>${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
   </header>
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
@@ -789,7 +789,7 @@ function viewChats() {
         <span class="avatar ${t.reveal.them ? 'avatar--on' : 'avatar--cup'}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : cupFor(P[t.pid])}</span>
         <span class="threads__body">
           <strong>${esc(shownName(t))}</strong>
-          <small>${originName(t.origin)}, ${status}${t.status === 'pending' ? L`, waiting for them to accept` : ''}</small>
+          <small>${L`${originName(t.origin)}, ${status}`}${t.status === 'pending' ? L`, waiting for them to accept` : ''}</small>
           <span class="threads__last">${last ? esc(last.from === 'sys' ? tr(last.text, last.vars) : last.text) : ''}</span>
         </span>
         ${t.unread ? `<span class="badge" aria-label="${esc(L`${t.unread} unread`)}">${t.unread}</span>` : ''}
@@ -820,7 +820,7 @@ function viewThread(t) {
       <a class="back" href="#/chats" aria-label="${esc(L`Back to chats`)}"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
         <h1>${esc(shownName(t))}</h1>
-        <p class="sub">${originName(t.origin)}, ${esc(p.city)}</p>
+        <p class="sub">${L`${originName(t.origin)}, ${esc(p.city)}`}</p>
         <div class="meta-row">${sugarMeter(sugar)}${t.status === 'open' && !cold ? `<span class="expiry">${closesText(t)}</span>` : ''}</div>
       </div>
       ${t.status === 'open' && !cold ? `
@@ -926,7 +926,7 @@ function viewAbout() {
     ${S.me ? '' : `<div class="onboard__top"><p class="logo">${LOGO}</p>${langButton()}</div>`}
     <header class="about__hero">
       <div>
-        <h1>${L`Boba chat, not coffee chat.`}</h1>
+        <h1 lang="en">${L`Boba chat, not coffee chat.`}</h1>
         <p class="lead">${L`Half Sugar is a place to meet people by talking first. Schools, companies and job titles stay hidden until you both want to share them.`}</p>
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
@@ -981,9 +981,9 @@ function viewAbout() {
     </section>
 
     <section class="about__belief">
-      <p>${L`Conversation before credentials.`}</p>
-      <p>${L`Meet the person before the résumé.`}</p>
-      <p class="accent">Meet. Think. Build.</p>
+      <p lang="en">${L`Conversation before credentials.`}</p>
+      <p lang="en">${L`Meet the person before the résumé.`}</p>
+      <p class="accent" lang="en">Meet. Think. Build.</p>
       <div class="btnrow btnrow--center">${next}</div>
     </section>
   </article>`;

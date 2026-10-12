@@ -1595,3 +1595,66 @@ textarea:focus-visible {
   color: var(--ink);
   font-weight: 500;
 }
+
+/* ---------- Traditional Chinese typography ----------
+   Chinese characters are square and dense, so they need more room
+   between letters and lines than Latin text. English slogans inside
+   the Chinese page are marked lang="en" and keep their tight spacing. */
+
+html:lang(zh-Hant) body {
+  line-height: 1.85;
+  letter-spacing: 0.04em;
+  text-autospace: normal; /* adds a small gap between Chinese and Latin where supported */
+}
+
+html:lang(zh-Hant) :is(h1, h2, h3, .receipt__item, .sub, .lead, .drop-card__label, .glossary dt, .nav__text > span, .about__belief p) {
+  letter-spacing: 0.06em;
+}
+
+html:lang(zh-Hant) :is(h1, h2, h3, .post-title, .receipt__item) {
+  font-weight: 600;
+}
+
+html:lang(zh-Hant) h1 {
+  line-height: 1.35;
+}
+
+html:lang(zh-Hant) :is(.thought, .post-title, .lead) {
+  line-height: 1.65;
+}
+
+html:lang(zh-Hant) :is(.brief, .explain, .byline, .msg, .hint, .quote, .glossary dd, .about__card p, .about__cold p, .steps li, .threads__body, .receipt__meta) {
+  line-height: 1.75;
+}
+
+html:lang(zh-Hant) .nav__text {
+  gap: 2px;
+  line-height: 1.45;
+}
+
+html:lang(zh-Hant) .brief > div {
+  gap: 16px;
+}
+
+html:lang(zh-Hant) .btn {
+  letter-spacing: 0.08em;
+}
+
+html:lang(zh-Hant) .steps {
+  gap: 18px;
+}
+
+/* English slogans on the Chinese page */
+html:lang(zh-Hant) [lang="en"] {
+  letter-spacing: -0.01em;
+}
+
+html:lang(zh-Hant) h1[lang="en"] {
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+/* What people write can be English or Chinese, so it gets a middle value */
+html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .brief dd, .byline small, .chips span) {
+  letter-spacing: 0.015em;
+}
