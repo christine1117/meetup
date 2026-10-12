@@ -36,20 +36,33 @@ const FLAVORS = {
 const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
 const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? n : `${n} milk tea`; };
 
-// Sugar = how much two people have talked. Every back-and-forth adds 10%.
+// Sugar = how long two people have talked. Every minute adds 5%, so 10 minutes is half sugar.
+// A long pause only counts as 3 minutes, so a chat left open in silence does not keep filling.
 // At 50% (half sugar) you can pop the seal. At 100% (full sugar) we suggest a boba run.
-const SUGAR_STEP = 10;
+const SUGAR_PER_MIN = 5;
+const PAUSE_CAP_MIN = 3;
 const REVEAL_AT = 50;
-const sugarOf = (msgs) => {
-  const mine = msgs.filter((m) => m.from === 'me').length;
-  const theirs = msgs.filter((m) => m.from === 'them').length;
-  return Math.min(100, Math.min(mine, theirs) * SUGAR_STEP);
-};
-const sugarMeter = (v) => `<span class="sugar" title="Sugar goes up as you talk. Every back-and-forth adds 10%.">${cup('var(--milk)', { level: v / 100, cls: 'cup--chip' })}${v}% sugar</span>`;
+function talkMinutes(t) {
+  const real = t.msgs.filter((m) => m.from !== 'sys' && m.at);
+  let ms = 0;
+  if (real.some((m) => m.from === 'me') && real.some((m) => m.from === 'them')) {
+    for (let i = 1; i < real.length; i += 1) ms += Math.min(real[i].at - real[i - 1].at, PAUSE_CAP_MIN * 60000);
+  }
+  return ms / 60000 + (t.devMin || 0);
+}
+const sugarOf = (t) => Math.min(100, Math.floor(talkMinutes(t) * SUGAR_PER_MIN));
+const sugarMeter = (v) => `<span class="sugar" title="Sugar goes up the longer you talk. Every minute adds 5%.">${cup('var(--milk)', { level: v / 100, cls: 'cup--chip' })}${v}% sugar</span>`;
+
+// A chat closes ("goes cold") when nobody has replied for this many days
+const CLOSE_AFTER_DAYS = 3;
+const lastActive = (t) => { const real = t.msgs.filter((m) => m.from !== 'sys'); return (real[real.length - 1] || {}).at || t.at; };
+const closesIn = (t) => CLOSE_AFTER_DAYS * 86400000 - (Date.now() - lastActive(t));
+const isCold = (t) => t.status === 'open' && closesIn(t) <= 0;
+const closesText = (t) => { const ms = closesIn(t); return ms > 86400000 ? `Closes in ${Math.ceil(ms / 86400000)}d without a reply` : `Closes in ${Math.max(1, Math.ceil(ms / 3600000))}h without a reply`; };
 
 // Add a note in the chat when it reaches half sugar or full sugar
 function sugarNotes(t, before) {
-  const after = sugarOf(t.msgs);
+  const after = sugarOf(t);
   if (before < REVEAL_AT && after >= REVEAL_AT && !t.reveal.them) {
     t.msgs.push({ from: 'sys', text: 'Half sugar! You can pop the seal now.', at: Date.now() });
   }
@@ -268,7 +281,7 @@ function createThread(pid, origin, ref, status, intro) {
 }
 
 function pushMsg(t, from, text) {
-  const before = sugarOf(t.msgs);
+  const before = sugarOf(t);
   t.msgs.push({ from, text, at: Date.now() });
   sugarNotes(t, before);
   t.at = Date.now();
@@ -395,7 +408,7 @@ function viewMe() {
     <div>
       <p class="receipt__label">Your usual</p>
       <p class="receipt__item">1 × ${esc(drinkName(S.me.field))}</p>
-      <p class="receipt__meta">For ${esc(S.me.alias)}. Sugar goes up in each chat as you talk.</p>
+      <p class="receipt__meta">For ${esc(S.me.alias)}. Sugar goes up in each chat the longer you talk.</p>
     </div>
   </section>
   ${profileForm(S.me, false)}
@@ -438,7 +451,7 @@ function viewExplore() {
 
   return `
   <header class="head">
-    <div><h1>Explore</h1><p class="sub">I want to meet someone.</p>${explain('Browse what people are thinking about. Reply with your view to start a First Sip, your first chat.')}</div>
+    <div><h1>Explore</h1><p class="sub">I want to meet someone.</p>${explain('Browse what people are thinking about. Reply with your view to start a chat.')}</div>
     <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Share a thought</button>
   </header>
 
@@ -610,7 +623,6 @@ function viewDrop() {
           <p class="sub">Field: ${esc(p.field)}. That is all you know.</p>
         </div>
         <div class="chat__tools">
-          ${sugarMeter(sugarOf(D.msgs))}
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
           <button class="btn btn--ghost btn--sm" data-act="drop-end" type="button">End chat</button>
         </div>
@@ -701,7 +713,7 @@ function dropReply(delay) {
     if (D.phase !== 'live' || D.pid !== pid) return;
     const p = P[pid];
     const opener = `Hi. Here is what I'm working on: ${p.doing.charAt(0).toLowerCase()}${p.doing.slice(1)}. What about you?`;
-    D.msgs.push({ from: 'them', text: D.li === 0 ? opener : p.lines[(D.li - 1) % p.lines.length] });
+    D.msgs.push({ from: 'them', at: Date.now(), text: D.li === 0 ? opener : p.lines[(D.li - 1) % p.lines.length] });
     D.li += 1;
     D.typing = false;
     render();
@@ -725,7 +737,7 @@ function dropDecide() {
     const mine = D.msgs.filter((m) => m.from === 'me').length;
     if (mine >= 2) {
       const t = createThread(D.pid, 'drop', uid(), 'open', 'You met over a Mystery Cup and both chose a refill. The seal is popped.');
-      t.msgs.push(...D.msgs.filter((m) => m.from !== 'sys').map((m) => ({ ...m, at: Date.now() })));
+      t.msgs.push(...D.msgs.filter((m) => m.from !== 'sys').map((m) => ({ ...m, at: m.at || Date.now() })));
       t.li = Math.max(0, D.li - 1);
       t.reveal = { me: true, them: true };
       save();
@@ -743,20 +755,20 @@ function dropDecide() {
 const shownName = (t) => (t.reveal.them ? P[t.pid].real.name : P[t.pid].alias);
 
 function viewChats() {
-  const list = [...S.threads].sort((a, b) => b.at - a.at);
+  const list = [...S.threads].sort((a, b) => isCold(a) - isCold(b) || b.at - a.at);
   return `
   <header class="head">
-    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p>${explain('Sugar goes up the more you talk. At 50% (half sugar) you can pop the seal and see who they are.')}</div>
+    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p>${explain('Sugar goes up the longer you talk. At half sugar (50%) you can pop the seal. A chat goes cold and closes if nobody replies for 3 days.')}</div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
     return `
-    <li>
+    <li class="${isCold(t) ? 'is-cold' : ''}">
       <a href="#/chats/${t.id}">
         <span class="avatar ${t.reveal.them ? 'avatar--on' : 'avatar--cup'}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : cupFor(P[t.pid])}</span>
         <span class="threads__body">
           <strong>${esc(shownName(t))}</strong>
-          <small>${ORIGIN[t.origin]}, ${t.reveal.them ? 'Refill' : 'First Sip'}, ${sugarOf(t.msgs)}% sugar${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
+          <small>${ORIGIN[t.origin]}, ${isCold(t) ? 'went cold' : `${sugarOf(t)}% sugar`}${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
           <span class="threads__last">${last ? esc(last.text) : ''}</span>
         </span>
         ${t.unread ? `<span class="badge" aria-label="${t.unread} unread">${t.unread}</span>` : ''}
@@ -776,7 +788,8 @@ function viewChats() {
 function viewThread(t) {
   const p = P[t.pid];
   const both = t.reveal.me && t.reveal.them;
-  const sugar = sugarOf(t.msgs);
+  const sugar = sugarOf(t);
+  const cold = isCold(t);
   const today = new Date().toISOString().slice(0, 10);
   const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : '<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed</span>'}</dd></div>`;
 
@@ -786,10 +799,10 @@ function viewThread(t) {
       <a class="back" href="#/chats" aria-label="Back to chats"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
         <h1>${esc(shownName(t))}</h1>
-        <p class="sub">${both ? 'Refill' : 'First Sip'}. ${ORIGIN[t.origin]}, ${esc(p.city)}</p>
-        ${sugarMeter(sugar)}
+        <p class="sub">${ORIGIN[t.origin]}, ${esc(p.city)}</p>
+        <div class="meta-row">${sugarMeter(sugar)}${t.status === 'open' && !cold ? `<span class="expiry">${closesText(t)}</span>` : ''}</div>
       </div>
-      ${t.status === 'open' ? `
+      ${t.status === 'open' && !cold ? `
       <div class="chat__tools">
         <button class="btn btn--ghost btn--sm" data-act="call" data-id="${t.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Call</button>
         <button class="btn btn--ghost btn--sm" data-act="book-open" data-id="${t.id}" type="button"><i class="ph ph-person-simple-walk" aria-hidden="true"></i>Boba run</button>
@@ -801,7 +814,9 @@ function viewThread(t) {
       </div>` : ''}
     </header>
 
-    ${explain(both ? 'Refill: you both popped the seal, so real names and profiles are visible.' : 'First Sip: names are still hidden. Sugar goes up as you talk, 10% for every back-and-forth. At 50% (half sugar) you can pop the seal and swap real profiles, if you both agree. “Boba run” means meeting in person.')}
+    ${explain(both
+      ? `You both popped the seal, so real names and profiles are visible. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days.`
+      : `Names are still hidden. Sugar goes up the longer you talk: 10 minutes of chatting is half sugar (50%), and then you can pop the seal if you both agree. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days. “Boba run” means meeting in person.`)}
 
     <details class="who">
       <summary>${both ? 'Their full card' : 'Their card'}</summary>
@@ -840,7 +855,13 @@ function viewThread(t) {
 
     <ul class="log" id="log">${bubbles(t.msgs, U.typing[t.id])}</ul>
 
-    ${t.status === 'pending'
+    ${cold
+      ? `<p class="cold"><i class="ph ph-snowflake" aria-hidden="true"></i>This cup went cold. Nobody replied for ${CLOSE_AFTER_DAYS} days, so the chat closed.</p>`
+      : t.status === 'open'
+        ? `<div class="devrow"><button class="btn btn--ghost btn--sm" data-act="dev-time" data-id="${t.id}" type="button">Dev: +5 min</button><button class="btn btn--ghost btn--sm" data-act="dev-days" data-id="${t.id}" type="button">Dev: +${CLOSE_AFTER_DAYS} days</button></div>`
+        : ''}
+
+    ${cold ? '' : t.status === 'pending'
       ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>Waiting for them to accept your response</p>`
       : `<form class="composer" data-form="msg" data-id="${t.id}">
           <label class="sr" for="c-msg">Message</label>
@@ -858,13 +879,14 @@ const explain = (html) => `<p class="explain"><i class="ph ph-info" aria-hidden=
 const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
-  ['Sugar', 'ph-chart-line-up', 'How much you two have talked. Every back-and-forth adds 10%. At 50% (half sugar) you can pop the seal. At 100% (full sugar) it may be time for a boba run.'],
+  ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
   ['Explore', 'ph-compass', 'Browse open thoughts and questions. Reply with your view to start talking.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need, or apply to a post without showing your titles.'],
   ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
   ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
   ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
-  ['Refill', 'ph-arrows-clockwise', 'You both chose to keep talking.'],
+  ['Refill', 'ph-arrows-clockwise', 'At the end of a Mystery Cup, you both choose Refill to keep talking.'],
+  ['Gone cold', 'ph-snowflake', 'A chat closes if nobody replies for 3 days.'],
   ['Boba run', 'ph-person-simple-walk', 'Meet in person, at a boba shop or a café.'],
 ];
 
@@ -904,7 +926,7 @@ function viewAbout() {
         <li><strong>Fill in your order.</strong> Say what you are working on. Your titles stay sealed.</li>
         <li><strong>Take a first sip.</strong> Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.</li>
         <li><strong>Reach half sugar, then pop the seal.</strong> Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.</li>
-        <li><strong>Refill or go on a boba run.</strong> Keep talking, build something, or meet in person.</li>
+        <li><strong>Keep it warm.</strong> Keep talking, build something, or go on a boba run and meet in person. A chat goes cold after 3 days with no reply.</li>
       </ol>
     </section>
 
@@ -1052,7 +1074,8 @@ const forms = {
   msg(form, data) {
     const t = thread(form.dataset.id);
     if (!t || !data.msg) return;
-    const before = sugarOf(t.msgs);
+    if (isCold(t)) return;
+    const before = sugarOf(t);
     t.msgs.push({ from: 'me', text: data.msg, at: Date.now() });
     sugarNotes(t, before);
     t.at = Date.now();
@@ -1063,7 +1086,7 @@ const forms = {
 
   'drop-msg'(form, data) {
     if (D.phase !== 'live' || !data.msg) return;
-    D.msgs.push({ from: 'me', text: data.msg });
+    D.msgs.push({ from: 'me', text: data.msg, at: Date.now() });
     render({ fresh: true, focus: 'c-msg' });
     dropReply(1400 + Math.random() * 1200);
   },
@@ -1113,7 +1136,7 @@ const acts = {
 
   reveal(el) {
     const t = thread(el.dataset.id);
-    if (!t || t.reveal.me || sugarOf(t.msgs) < REVEAL_AT) return;
+    if (!t || t.reveal.me || isCold(t) || sugarOf(t) < REVEAL_AT) return;
     t.reveal.me = true;
     pushMsg(t, 'sys', 'You popped your seal. Waiting for them.');
     later(2600, () => resolveReveal(t));
@@ -1139,6 +1162,26 @@ const acts = {
   'drop-reset'() { D.phase = 'idle'; D.pid = null; D.msgs = []; render(); },
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
+  // Development shortcuts for chats. Remove before launch.
+  'dev-time'(el) {
+    const t = thread(el.dataset.id);
+    if (!t) return;
+    const before = sugarOf(t);
+    t.devMin = (t.devMin || 0) + 5;
+    sugarNotes(t, before);
+    save();
+    render();
+  },
+  'dev-days'(el) {
+    const t = thread(el.dataset.id);
+    if (!t) return;
+    const shift = CLOSE_AFTER_DAYS * 86400000 + 60000;
+    t.msgs.forEach((m) => { if (m.at) m.at -= shift; });
+    t.at -= shift;
+    save();
+    render();
+  },
+
   'dev-skip'() {
     S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
