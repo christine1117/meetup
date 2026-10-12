@@ -213,12 +213,13 @@ const field = (name, label, val = '', o = {}) => `
     ${o.hint ? `<p class="hint">${o.hint}</p>` : ''}
   </div>`;
 
-const select = (name, label, opts, val) => `
+const select = (name, label, opts, val, hint = '') => `
   <div class="field">
     <label for="f-${name}">${label}</label>
     <select id="f-${name}" name="${name}">
       ${opts.map((o) => { const [v, l] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`; }).join('')}
     </select>
+    ${hint ? `<p class="hint">${hint}</p>` : ''}
   </div>`;
 
 const modeLabel = (t) => `${t.mode === 'offline' ? 'In person' : 'Online'}, ${t.size === 'group' ? 'small group' : '1-on-1'}`;
@@ -234,7 +235,7 @@ const brief = (p) => `
 const byline = (p) => `
   <p class="byline">
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}">${esc(flavor(p.field)[0])}</span><br><small>${esc(p.field)}. ${esc(p.doing)}</small></span>
+    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="Flavor = field. ${esc(flavor(p.field)[0])} means ${esc(p.field)}.">${esc(flavor(p.field)[0])}</span><br><small>${esc(p.field)}. ${esc(p.doing)}</small></span>
   </p>`;
 
 function toast(msg) {
@@ -329,15 +330,16 @@ function profileForm(me, first) {
       ${field('alias', 'Nickname', me.alias, { req: true, hint: 'Not your real name.' })}
       <div class="row2">
         ${field('city', 'City', me.city, { ph: 'e.g. Taipei' })}
-        ${select('field', 'Field (your flavor)', FIELDS.map((f) => [f, `${f}, ${flavor(f)[0]}`]), me.field || FIELDS[0])}
+        ${select('field', 'Field (your flavor)', FIELDS.map((f) => [f, `${f}, ${flavor(f)[0]}`]), me.field || FIELDS[0], 'Your flavor is your field. It sets the colour of your cup.')}
       </div>
-      ${select('sugar', 'Sugar level: how deep do you want to go?', SUGAR, String(me.sugar || '50'))}
+      ${select('sugar', 'Sugar level: how deep do you want to go?', SUGAR, String(me.sugar || '50'), 'Sugar level is how deep you want a chat to go. More sugar, fuller cup.')}
       ${field('doing', "What I'm working on", me.doing, { area: true, req: true, ph: 'e.g. A sign-up system for a community college' })}
       ${field('topics', 'Topics I can talk deeply about', me.topics, { hint: 'Separate with commas.' })}
       ${field('proof', 'Proof of work', me.proof, { ph: 'Something you built or achieved' })}
     </fieldset>
     <fieldset class="panel panel--locked">
       <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed until you both pop the seal</legend>
+      ${explain('“Pop the seal” means showing your real profile. It only happens when both people agree.')}
       <div class="row2">
         ${field('name', 'Real name', me.name)}
         ${field('title', 'Job title', me.title)}
@@ -367,6 +369,7 @@ function viewOnboard() {
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
     </div>
+    <p class="onboard__about"><a href="#/about">New here? Read what Half Sugar is and what the boba words mean.</a></p>
     ${profileForm(null, true)}
   </main>`;
 }
@@ -374,7 +377,7 @@ function viewOnboard() {
 function viewMe() {
   return `
   <header class="head">
-    <div><h1>My order</h1><p class="sub">Your usual. Change it any time.</p></div>
+    <div><h1>My order</h1><p class="sub">Your usual. Change it any time.</p>${explain('Your order is your profile. It shows what you are working on, never your titles. <a href="#/about">What is Half Sugar?</a>')}</div>
   </header>
   <section class="receipt">
     ${cupFor(S.me, 'cup--lg')}
@@ -424,7 +427,7 @@ function viewExplore() {
 
   return `
   <header class="head">
-    <div><h1>Explore</h1><p class="sub">I want to meet someone.</p></div>
+    <div><h1>Explore</h1><p class="sub">I want to meet someone.</p>${explain('Browse what people are thinking about. Reply with your view to start a First Sip, your first chat.')}</div>
     <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Share a thought</button>
   </header>
 
@@ -487,7 +490,7 @@ function viewExplore() {
 function viewBuild() {
   return `
   <header class="head">
-    <div><h1>Brew</h1><p class="sub">I need someone for something.</p></div>
+    <div><h1>Brew</h1><p class="sub">I need someone for something.</p>${explain('Brew means building something together. Post what you need, or apply to a post without showing your titles.')}</div>
     <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Start a brew</button>
   </header>
 
@@ -613,7 +616,7 @@ function viewDrop() {
     return `
     <section class="drop-stage">
       <h1>Cup's empty. Want a refill?</h1>
-      <p class="sub">The seal pops only if you both choose a refill. If either of you says no, this cup disappears.</p>
+      <p class="sub">Refill means you keep talking and your real profiles are revealed. It only happens if you both choose it. If either of you says no, this cup disappears.</p>
       ${D.phase === 'waiting'
         ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>Waiting for them to decide</p>`
         : `<div class="btnrow btnrow--center">
@@ -646,7 +649,7 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1>Mystery Cup</h1><p class="sub">You can’t pick the flavor.</p></div>
+    <div><h1>Mystery Cup</h1><p class="sub">You can’t pick the flavor.</p>${explain('A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.')}</div>
   </header>
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
@@ -731,7 +734,7 @@ function viewChats() {
   const list = [...S.threads].sort((a, b) => b.at - a.at);
   return `
   <header class="head">
-    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p></div>
+    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p>${explain('First Sip is your first chat, with names hidden. Refill means you both chose to keep going and popped the seal.')}</div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
@@ -782,6 +785,8 @@ function viewThread(t) {
       </div>` : ''}
     </header>
 
+    ${explain(both ? 'Refill: you both popped the seal, so real names and profiles are visible.' : 'First Sip: names are still hidden. Press “Pop the seal” when you want to swap real profiles. Both of you have to agree. “Boba run” means meeting in person.')}
+
     <details class="who">
       <summary>${both ? 'Their full card' : 'Their card'}</summary>
       ${brief(p)}
@@ -798,6 +803,7 @@ function viewThread(t) {
     ${U.booking === t.id ? `
     <form class="panel stack" data-form="book" data-id="${t.id}" novalidate>
       <h2>Go on a boba run</h2>
+      ${explain('A boba run means meeting in person, at a boba shop or a café.')}
       <div class="row2">
         ${select('kind', 'Type', ['Boba shop, 1-on-1', 'Café', 'Small dinner table'], 'Boba shop, 1-on-1')}
         ${field('area', 'Area', S.me.city || '', { req: true, ph: "e.g. Taipei, Da'an" })}
@@ -828,14 +834,93 @@ function viewThread(t) {
   </section>`;
 }
 
+/* ---------- Screen: About ---------- */
+
+// Small grey line that explains a boba word in plain language
+const explain = (html) => `<p class="explain"><i class="ph ph-info" aria-hidden="true"></i><span>${html}</span></p>`;
+
+const GLOSSARY = [
+  ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
+  ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
+  ['Sugar level', 'ph-sliders-horizontal', 'How deep you want a chat to go, from 0% (just saying hi) to 100% (ready to build together).'],
+  ['Explore', 'ph-compass', 'Browse open thoughts and questions. Reply with your view to start talking.'],
+  ['Brew', 'ph-hammer', 'Build something together. Post what you need, or apply to a post without showing your titles.'],
+  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
+  ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
+  ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
+  ['Refill', 'ph-arrows-clockwise', 'You both chose to keep talking.'],
+  ['Boba run', 'ph-person-simple-walk', 'Meet in person, at a boba shop or a café.'],
+];
+
+function viewAbout() {
+  const next = S.me
+    ? '<a class="btn btn--primary" href="#/explore">Back to Explore</a>'
+    : '<a class="btn btn--primary" href="#/">Start sipping</a>';
+  return `
+  <article class="about">
+    <header class="about__hero">
+      <div>
+        <h1>Boba chat, not coffee chat.</h1>
+        <p class="lead">Half Sugar is a place to meet people by talking first. Schools, companies and job titles stay hidden until you both want to share them.</p>
+      </div>
+      ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
+    </header>
+
+    <section class="about__block">
+      <h2>Why we built it</h2>
+      <p>Networking today leans on résumés. People decide whether you are worth talking to before you say a word. So networking turns into a performance, people from different fields rarely meet, and lots of online matches never become a real conversation.</p>
+    </section>
+
+    <section class="about__pair">
+      <div class="about__card">
+        <h2>Why boba</h2>
+        <p>A coffee chat sounds like a meeting. Grabbing boba sounds like hanging out with a friend. We want that second feeling, because good collaborations often start in relaxed conversations.</p>
+      </div>
+      <div class="about__card about__card--sugar">
+        <h2>Why half sugar</h2>
+        <p>Not too sweet, not too serious. Half sugar is the order for people who want balance: less performing, and still something real to take home.</p>
+      </div>
+    </section>
+
+    <section class="about__block">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><strong>Fill in your order.</strong> Say what you are working on. Your titles stay sealed.</li>
+        <li><strong>Take a first sip.</strong> Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.</li>
+        <li><strong>Pop the seal.</strong> If you both want to, show each other who you are.</li>
+        <li><strong>Refill or go on a boba run.</strong> Keep talking, build something, or meet in person.</li>
+      </ol>
+    </section>
+
+    <section class="about__block">
+      <h2>The menu</h2>
+      <p class="about__hint">What our boba words mean.</p>
+      <dl class="glossary">
+        ${GLOSSARY.map(([term, icon, text]) => `<div><dt><i class="ph ${icon}" aria-hidden="true"></i>${term}</dt><dd>${text}</dd></div>`).join('')}
+      </dl>
+      <h3 class="flavors__title">Flavors</h3>
+      <ul class="flavors">
+        ${FIELDS.map((f) => `<li><span class="flavor" style="--flavor:${flavor(f)[1]}">${esc(flavor(f)[0])}</span>${esc(f)}</li>`).join('')}
+      </ul>
+    </section>
+
+    <section class="about__belief">
+      <p>Conversation before credentials.</p>
+      <p>Meet the person before the résumé.</p>
+      <p class="accent">Meet. Think. Build.</p>
+      <div class="btnrow btnrow--center">${next}</div>
+    </section>
+  </article>`;
+}
+
 /* ---------- Shell ---------- */
 
 const NAV = [
-  ['explore', 'Explore', 'ph-compass'],
-  ['build', 'Brew', 'ph-hammer'],
-  ['drop', 'Mystery Cup', 'ph-sparkle'],
-  ['chats', 'Chats', 'ph-chat-circle'],
-  ['me', 'My order', 'ph-receipt'],
+  ['explore', 'Explore', 'ph-compass', 'Browse ideas'],
+  ['build', 'Brew', 'ph-hammer', 'Build together'],
+  ['drop', 'Mystery Cup', 'ph-sparkle', 'Weekly surprise match'],
+  ['chats', 'Chats', 'ph-chat-circle', 'Your conversations'],
+  ['me', 'My order', 'ph-receipt', 'Your profile'],
 ];
 
 function shell(route, body) {
@@ -846,12 +931,13 @@ function shell(route, body) {
     <aside class="side">
       <a class="logo" href="#/explore" aria-label="Half Sugar home">${LOGO}</a>
       <nav class="nav" aria-label="Main">
-        ${NAV.map(([name, label, icon]) => `
+        ${NAV.map(([name, label, icon, desc]) => `
         <a href="#/${name}" ${route.name === name ? 'aria-current="page"' : ''}>
-          <i class="ph ${icon}" aria-hidden="true"></i><span>${label}</span>
+          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${label}</span><small>${desc}</small></span>
           ${name === 'chats' && unread ? `<span class="badge" aria-label="${unread} unread">${unread}</span>` : ''}
         </a>`).join('')}
       </nav>
+      <a class="side__about" href="#/about" ${route.name === 'about' ? 'aria-current="page"' : ''}><i class="ph ph-info" aria-hidden="true"></i>What is Half Sugar?</a>
     </aside>
     <main class="main ${isChat ? 'main--chat' : ''}" id="main">${body}</main>
   </div>`;
@@ -867,7 +953,7 @@ function render(opt = {}) {
   const whoOpen = path === lastPath && $('.who', app) && $('.who', app).open;
 
   if (!S.me) {
-    app.innerHTML = viewOnboard();
+    app.innerHTML = route.name === 'about' ? `<main class="about-page">${viewAbout()}</main>` : viewOnboard();
   } else {
     let body;
     if (route.name === 'chats' && route.id) {
@@ -877,6 +963,7 @@ function render(opt = {}) {
     else if (route.name === 'build') body = viewBuild();
     else if (route.name === 'drop') body = viewDrop();
     else if (route.name === 'me') body = viewMe();
+    else if (route.name === 'about') body = viewAbout();
     else body = viewExplore();
     app.innerHTML = shell(route, body);
   }
