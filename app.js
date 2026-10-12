@@ -36,16 +36,18 @@ const FLAVORS = {
 const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
 const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? n : `${n} milk tea`; };
 
-// Sugar level = how deep someone wants to go in a chat.
+// Sugar level = how deep you want ONE conversation to go.
+// It is picked each time: when you post a thought, start a brew or join a Mystery Cup.
 const SUGAR = [
-  ['0', '0%, just saying hi'],
-  ['30', '30%, light chat'],
-  ['50', '50%, swap ideas'],
-  ['70', '70%, dig into a problem'],
-  ['100', '100%, ready to build together'],
+  ['0', 'just saying hi'],
+  ['30', 'light chat'],
+  ['50', 'swap ideas'],
+  ['70', 'dig into a problem'],
+  ['100', 'ready to build together'],
 ];
-const sugarLabel = (v) => (SUGAR.find(([k]) => k === String(v)) || SUGAR[2])[1];
-const PEOPLE_SUGAR = { p1: 50, p2: 70, p3: 100, p4: 30, p5: 70, p6: 50, p7: 100, p8: 70 };
+const SUGAR_OPTS = SUGAR.map(([v, l]) => [v, `${v}%, ${l}`]);
+const sugarText = (v) => { const [k, l] = SUGAR.find(([x]) => x === String(v)) || SUGAR[2]; return `${k}% sugar, ${l}`; };
+const sugarChip = (v) => `<span class="sugar" title="Sugar level = how deep they want this conversation to go">${cup('var(--milk)', { level: 0.12 + Number(v) / 100 * 0.83, cls: 'cup--chip' })}${esc(sugarText(v))}</span>`;
 
 // A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
 const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
@@ -62,7 +64,7 @@ function cup(color, o = {}) {
     ${o.mark ? `<text x="8.6" y="18.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}
   </svg>`;
 }
-const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, level: 0.35 + Number(p.sugar ?? PEOPLE_SUGAR[p.id] ?? 50) / 100 * 0.55 });
+const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls });
 
 /* ---------- Simulated people ---------- */
 
@@ -151,19 +153,19 @@ const PEOPLE = [
 const P = Object.fromEntries(PEOPLE.map((p) => [p.id, p]));
 
 const SEED_THOUGHTS = [
-  { id: 't1', by: 'p2', mode: 'online', size: '1on1', text: 'If a city gives away its data for free, who should be responsible when someone builds something harmful with it?' },
-  { id: 't2', by: 'p5', mode: 'offline', size: '1on1', text: 'Everyone says "build what users want". But as a researcher, how do I even know who my user is?' },
-  { id: 't3', by: 'p4', mode: 'online', size: 'group', text: 'Is a newsletter a product or a habit? I cannot tell which one I am building.' },
-  { id: 't4', by: 'p8', mode: 'offline', size: 'group', text: 'If you took over a family business, how did you convince your parents to let you try something new?' },
-  { id: 't5', by: 'p3', mode: 'online', size: '1on1', text: 'What is one thing that works in your city that would never work in mine? I am collecting examples.' },
-  { id: 't6', by: 'p6', mode: 'online', size: '1on1', text: 'Designers: when did you last change your mind because an engineer was right?' },
+  { id: 't1', sugar: 70, by: 'p2', mode: 'online', size: '1on1', text: 'If a city gives away its data for free, who should be responsible when someone builds something harmful with it?' },
+  { id: 't2', sugar: 50, by: 'p5', mode: 'offline', size: '1on1', text: 'Everyone says "build what users want". But as a researcher, how do I even know who my user is?' },
+  { id: 't3', sugar: 30, by: 'p4', mode: 'online', size: 'group', text: 'Is a newsletter a product or a habit? I cannot tell which one I am building.' },
+  { id: 't4', sugar: 50, by: 'p8', mode: 'offline', size: 'group', text: 'If you took over a family business, how did you convince your parents to let you try something new?' },
+  { id: 't5', sugar: 30, by: 'p3', mode: 'online', size: '1on1', text: 'What is one thing that works in your city that would never work in mine? I am collecting examples.' },
+  { id: 't6', sugar: 50, by: 'p6', mode: 'online', size: '1on1', text: 'Designers: when did you last change your mind because an engineer was right?' },
 ];
 
 const SEED_POSTS = [
-  { id: 'b1', by: 'p1', title: 'Building a checker for second-hand cameras. Looking for someone who knows hardware supply chains.', need: 'Experience with parts sourcing and inspection', offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project' },
-  { id: 'b2', by: 'p7', title: 'Looking for a designer to make clinic software that nurses do not hate.', need: 'Interface design for people in a hurry', offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint' },
-  { id: 'b3', by: 'p3', title: 'Need someone to challenge my pricing before I launch in a second city.', need: 'Pricing experience, any industry', offer: 'Real numbers from 1,300 users', duration: 'One or two calls' },
-  { id: 'b4', by: 'p8', title: 'Looking for an engineer to build a produce ordering system for restaurants.', need: 'Someone who can build a simple back office and chat integration', offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible' },
+  { id: 'b1', sugar: 100, by: 'p1', title: 'Building a checker for second-hand cameras. Looking for someone who knows hardware supply chains.', need: 'Experience with parts sourcing and inspection', offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project' },
+  { id: 'b2', sugar: 100, by: 'p7', title: 'Looking for a designer to make clinic software that nurses do not hate.', need: 'Interface design for people in a hurry', offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint' },
+  { id: 'b3', sugar: 70, by: 'p3', title: 'Need someone to challenge my pricing before I launch in a second city.', need: 'Pricing experience, any industry', offer: 'Real numbers from 1,300 users', duration: 'One or two calls' },
+  { id: 'b4', sugar: 100, by: 'p8', title: 'Looking for an engineer to build a produce ordering system for restaurants.', need: 'Someone who can build a simple back office and chat integration', offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible' },
 ];
 
 /* ---------- State ---------- */
@@ -190,7 +192,7 @@ let S = load();
 
 // Screen state that does not need to be saved
 const U = { compose: null, target: null, booking: null, typing: {}, confirmReset: false, f: { mode: '', size: '', city: '', field: '' } };
-const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
+const D = { phase: 'idle', sugar: '50', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
 let lastPath = null;
 
 /* ---------- Routing ---------- */
@@ -227,7 +229,6 @@ const modeLabel = (t) => `${t.mode === 'offline' ? 'In person' : 'Online'}, ${t.
 const brief = (p) => `
   <dl class="brief">
     <div><dt>Flavor</dt><dd>${esc(drinkName(p.field))} (${esc(p.field)})</dd></div>
-    <div><dt>Sugar level</dt><dd>${esc(sugarLabel(p.sugar ?? PEOPLE_SUGAR[p.id]))}</dd></div>
     <div><dt>Working on</dt><dd>${esc(p.doing)}</dd></div>
     ${p.proof ? `<div><dt>Proof of work</dt><dd>${esc(p.proof)}</dd></div>` : ''}
   </dl>`;
@@ -332,7 +333,6 @@ function profileForm(me, first) {
         ${field('city', 'City', me.city, { ph: 'e.g. Taipei' })}
         ${select('field', 'Field (your flavor)', FIELDS.map((f) => [f, `${f}, ${flavor(f)[0]}`]), me.field || FIELDS[0], 'Your flavor is your field. It sets the colour of your cup.')}
       </div>
-      ${select('sugar', 'Sugar level: how deep do you want to go?', SUGAR, String(me.sugar || '50'), 'Sugar level is how deep you want a chat to go. More sugar, fuller cup.')}
       ${field('doing', "What I'm working on", me.doing, { area: true, req: true, ph: 'e.g. A sign-up system for a community college' })}
       ${field('topics', 'Topics I can talk deeply about', me.topics, { hint: 'Separate with commas.' })}
       ${field('proof', 'Proof of work', me.proof, { ph: 'Something you built or achieved' })}
@@ -384,7 +384,7 @@ function viewMe() {
     <div>
       <p class="receipt__label">Your usual</p>
       <p class="receipt__item">1 × ${esc(drinkName(S.me.field))}</p>
-      <p class="receipt__meta">Sugar ${esc(sugarLabel(S.me.sugar))}. For ${esc(S.me.alias)}.</p>
+      <p class="receipt__meta">For ${esc(S.me.alias)}. You pick a sugar level each time you start a chat.</p>
     </div>
   </section>
   ${profileForm(S.me, false)}
@@ -438,6 +438,7 @@ function viewExplore() {
       ${select('mode', 'How to meet', [['online', 'Online'], ['offline', 'In person']], 'online')}
       ${select('size', 'How many people', [['1on1', '1-on-1'], ['group', 'Small group']], '1on1')}
     </div>
+    ${select('sugar', 'Sugar level for this one', SUGAR_OPTS, '50', 'How deep do you want this conversation to go?')}
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">Post</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">Cancel</button>
@@ -450,7 +451,7 @@ function viewExplore() {
     ${S.myThoughts.map((t) => `
     <article class="card card--mine">
       <p class="thought">${esc(t.text)}</p>
-      <p class="meta">${modeLabel(t)}</p>
+      <div class="meta-row"><p class="meta">${modeLabel(t)}</p>${sugarChip(t.sugar ?? 50)}</div>
       ${responsesBlock(t, 'thought')}
     </article>`).join('')}
   </section>` : ''}
@@ -468,7 +469,7 @@ function viewExplore() {
     return `
     <article class="card">
       <p class="thought">${esc(t.text)}</p>
-      <p class="meta">${modeLabel(t)}, ${esc(p.city)}</p>
+      <div class="meta-row"><p class="meta">${modeLabel(t)}, ${esc(p.city)}</p>${sugarChip(t.sugar)}</div>
       ${byline(p)}
       ${existing
         ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">Responded. Open chat</a>`
@@ -500,6 +501,7 @@ function viewBuild() {
     ${field('need', 'I need', '', { req: true })}
     ${field('offer', 'I can offer', '')}
     ${field('duration', 'Time', '', { ph: 'e.g. One call, a four-week project' })}
+    ${select('sugar', 'Sugar level for this brew', SUGAR_OPTS, '70', 'How deep do you want to go with the people who apply?')}
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">Post</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">Cancel</button>
@@ -512,6 +514,7 @@ function viewBuild() {
     ${S.myPosts.map((b) => `
     <article class="card card--mine">
       <h3 class="post-title">${esc(b.title)}</h3>
+      ${sugarChip(b.sugar ?? 70)}
       <dl class="brief">
         <div><dt>I need</dt><dd>${esc(b.need)}</dd></div>
         ${b.offer ? `<div><dt>I can offer</dt><dd>${esc(b.offer)}</dd></div>` : ''}
@@ -527,6 +530,7 @@ function viewBuild() {
     return `
     <article class="card">
       <h3 class="post-title">${esc(b.title)}</h3>
+      ${sugarChip(b.sugar ?? 70)}
       <dl class="brief">
         <div><dt>Needs</dt><dd>${esc(b.need)}</dd></div>
         <div><dt>Offers</dt><dd>${esc(b.offer)}</dd></div>
@@ -596,7 +600,7 @@ function viewDrop() {
       <header class="chat__head">
         <div>
           <h1>Someone in ${esc(p.country)}</h1>
-          <p class="sub">Field: ${esc(p.field)}. That is all you know.</p>
+          <p class="sub">Field: ${esc(p.field)}. You both picked ${esc(sugarText(D.sugar))}. That is all you know.</p>
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
@@ -658,6 +662,10 @@ function viewDrop() {
         ? `<p class="drop-card__label">Mystery Cup is open</p><p class="drop-card__time">Join now</p>`
         : `<p class="drop-card__label">Next Mystery Cup in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
       <p class="drop-card__when">${esc(localTime)} your time. Open for 10 minutes.</p>
+      <div class="drop-card__sugar">
+        <label for="f-dropsugar">Sugar level for this cup</label>
+        <select id="f-dropsugar">${SUGAR_OPTS.map(([v, l]) => `<option value="${v}" ${v === String(D.sugar) ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      </div>
       <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Pour me one' : 'Try a practice cup'}</button>
     </div>
   </section>
@@ -842,7 +850,7 @@ const explain = (html) => `<p class="explain"><i class="ph ph-info" aria-hidden=
 const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
-  ['Sugar level', 'ph-sliders-horizontal', 'How deep you want a chat to go, from 0% (just saying hi) to 100% (ready to build together).'],
+  ['Sugar level', 'ph-sliders-horizontal', 'How deep you want one conversation to go, from 0% (just saying hi) to 100% (ready to build together). You pick it each time you post a thought, start a brew or join a Mystery Cup.'],
   ['Explore', 'ph-compass', 'Browse open thoughts and questions. Reply with your view to start talking.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need, or apply to a post without showing your titles.'],
   ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
@@ -993,7 +1001,7 @@ const forms = {
 
   thought(form, data) {
     if (!data.text) { $('#f-text', form).focus(); return; }
-    const item = { id: uid(), text: data.text, mode: data.mode, size: data.size, responses: [], seen: [] };
+    const item = { id: uid(), text: data.text, mode: data.mode, size: data.size, sugar: data.sugar, responses: [], seen: [] };
     S.myThoughts.unshift(item);
     U.compose = null;
     save();
@@ -1111,6 +1119,8 @@ const acts = {
   'book-close'() { U.booking = null; render({ fresh: true }); },
 
   'drop-join'() {
+    const pickSugar = document.getElementById('f-dropsugar');
+    if (pickSugar) D.sugar = pickSugar.value;
     D.phase = 'matching';
     render();
     later(2200, () => { if (D.phase === 'matching') dropStart(); });

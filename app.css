@@ -1447,3 +1447,50 @@ textarea:focus-visible {
     display: none;
   }
 }
+
+/* ---------- Sugar level chip (set per thought, brew or Mystery Cup) ---------- */
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.sugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 8px;
+  border-radius: var(--r-pill);
+  background: var(--sunk);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.cup--chip {
+  width: 14px;
+  height: 17px;
+}
+
+.drop-card__sugar {
+  display: grid;
+  gap: 6px;
+  max-width: 280px;
+  margin-top: 18px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.drop-card__sugar select {
+  min-height: 42px;
+  border-color: var(--ink);
+  border-radius: var(--r-pill);
+}
+
+@media (max-width: 520px) {
+  .drop-card__sugar {
+    margin-inline: auto;
+  }
+}
