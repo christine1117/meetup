@@ -1537,3 +1537,31 @@ textarea:focus-visible {
   border-style: dashed;
   font-size: 0.8125rem;
 }
+
+/* ---------- Language switch ---------- */
+
+.side__foot {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.side__foot .side__about {
+  margin-top: 0;
+}
+
+.lang {
+  justify-self: start;
+  min-height: 36px;
+  font-size: 0.875rem;
+}
+
+.lang i {
+  font-size: 1.0625rem;
+}
+
+@media (max-width: 820px) {
+  .side__foot {
+    display: none;
+  }
+}

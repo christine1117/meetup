@@ -5,6 +5,10 @@
    their replies are pre-written lines.
    To make this a real multi-user product, replace load / save
    and themReply with calls to a backend.
+
+   Interface text goes through L`...` (see i18n.js), so it can be
+   shown in English or Traditional Chinese. What people write
+   (posts, messages, profiles) stays in the language it was written in.
    ========================================================= */
 
 const KEY = 'meetup.v1';
@@ -19,6 +23,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 const FIELDS = ['Design', 'Engineering', 'Founder', 'Research', 'Content', 'Business', 'Other'];
 const ORIGIN = { explore: 'Explore', build: 'Brew', drop: 'Mystery Cup' };
+const fieldName = (f) => L(f);
+const originName = (o) => L(ORIGIN[o]);
 
 // Logo: a half-full boba cup. Simple geometric mark.
 const LOGO = `<svg class="logo__mark" viewBox="0 0 24 28" aria-hidden="true"><path d="M14.5 1.5 12.8 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M5.3 15h13.4" stroke="currentColor" stroke-width="2"/><circle cx="9.6" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="14.4" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="12" cy="19" r="1.7" fill="var(--orange)"/></svg><span>Half Sugar</span>`;
@@ -34,7 +40,8 @@ const FLAVORS = {
   Other: ['Classic milk tea', '#dcc3a1'],
 };
 const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
-const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? n : `${n} milk tea`; };
+const flavorName = (f) => L(flavor(f)[0]);
+const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? L(n) : L`${L(n)} milk tea`; };
 
 // Sugar = how long two people have talked. Every minute adds 5%, so 10 minutes is half sugar.
 // A long pause only counts as 3 minutes, so a chat left open in silence does not keep filling.
@@ -51,16 +58,22 @@ function talkMinutes(t) {
   return ms / 60000 + (t.devMin || 0);
 }
 const sugarOf = (t) => Math.min(100, Math.floor(talkMinutes(t) * SUGAR_PER_MIN));
-const sugarMeter = (v) => `<span class="sugar" title="Sugar goes up the longer you talk. Every minute adds 5%.">${cup('var(--milk)', { level: v / 100, cls: 'cup--chip' })}${v}% sugar</span>`;
+const sugarMeter = (v) => `<span class="sugar" title="${esc(L('Sugar goes up the longer you talk. Every minute adds 5%.'))}">${cup('var(--milk)', { level: v / 100, cls: 'cup--chip' })}${L`${v}% sugar`}</span>`;
 
 // A chat closes ("goes cold") when nobody has replied for this many days
 const CLOSE_AFTER_DAYS = 3;
 const lastActive = (t) => { const real = t.msgs.filter((m) => m.from !== 'sys'); return (real[real.length - 1] || {}).at || t.at; };
 const closesIn = (t) => CLOSE_AFTER_DAYS * 86400000 - (Date.now() - lastActive(t));
 const isCold = (t) => t.status === 'open' && closesIn(t) <= 0;
-const closesText = (t) => { const ms = closesIn(t); return ms > 86400000 ? `Closes in ${Math.ceil(ms / 86400000)}d without a reply` : `Closes in ${Math.max(1, Math.ceil(ms / 3600000))}h without a reply`; };
+const closesText = (t) => {
+  const ms = closesIn(t);
+  return ms > 86400000
+    ? L`Closes in ${Math.ceil(ms / 86400000)}d without a reply`
+    : L`Closes in ${Math.max(1, Math.ceil(ms / 3600000))}h without a reply`;
+};
 
-// Add a note in the chat when it reaches half sugar or full sugar
+// Add a note in the chat when it reaches half sugar or full sugar.
+// System notes are saved as English keys and translated when shown.
 function sugarNotes(t, before) {
   const after = sugarOf(t);
   if (before < REVEAL_AT && after >= REVEAL_AT && !t.reveal.them) {
@@ -246,20 +259,22 @@ const select = (name, label, opts, val, hint = '') => `
     ${hint ? `<p class="hint">${hint}</p>` : ''}
   </div>`;
 
-const modeLabel = (t) => `${t.mode === 'offline' ? 'In person' : 'Online'}, ${t.size === 'group' ? 'small group' : '1-on-1'}`;
+const modeLabel = (t) => L`${t.mode === 'offline' ? L('In person') : L('Online')}, ${t.size === 'group' ? L('small group') : L('1-on-1')}`;
 
 const brief = (p) => `
   <dl class="brief">
-    <div><dt>Flavor</dt><dd>${esc(drinkName(p.field))} (${esc(p.field)})</dd></div>
-    <div><dt>Working on</dt><dd>${esc(p.doing)}</dd></div>
-    ${p.proof ? `<div><dt>Proof of work</dt><dd>${esc(p.proof)}</dd></div>` : ''}
+    <div><dt>${L`Flavor`}</dt><dd>${esc(drinkName(p.field))} (${esc(fieldName(p.field))})</dd></div>
+    <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
+    ${p.proof ? `<div><dt>${L`Proof of work`}</dt><dd>${esc(p.proof)}</dd></div>` : ''}
   </dl>`;
 
 const byline = (p) => `
   <p class="byline">
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="Flavor = field. ${esc(flavor(p.field)[0])} means ${esc(p.field)}.">${esc(flavor(p.field)[0])}</span><br><small>${esc(p.field)}. ${esc(p.doing)}</small></span>
+    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="${esc(L`Flavor = field. ${flavorName(p.field)} means ${fieldName(p.field)}.`)}">${esc(flavorName(p.field))}</span><br><small>${esc(fieldName(p.field))}. ${esc(p.doing)}</small></span>
   </p>`;
+
+const langButton = () => `<button class="btn btn--ghost btn--sm lang" data-act="lang" type="button" aria-label="${esc(L('Switch language'))}"><i class="ph ph-translate" aria-hidden="true"></i>${LANG === 'zh' ? 'English' : '中文'}</button>`;
 
 function toast(msg) {
   toastEl.textContent = msg;
@@ -273,16 +288,17 @@ function toast(msg) {
 const thread = (tid) => S.threads.find((t) => t.id === tid);
 const threadFor = (origin, ref) => S.threads.find((t) => t.origin === origin && t.ref === ref);
 
-function createThread(pid, origin, ref, status, intro) {
+function createThread(pid, origin, ref, status, intro, vars) {
   const t = { id: uid(), pid, origin, ref, status, msgs: [], li: 0, reveal: { me: false, them: false }, booking: null, unread: 0, at: Date.now() };
-  if (intro) t.msgs.push({ from: 'sys', text: intro, at: Date.now() });
+  if (intro) t.msgs.push({ from: 'sys', text: intro, vars, at: Date.now() });
   S.threads.push(t);
   return t;
 }
 
-function pushMsg(t, from, text) {
+// System notes pass an English key (and vars) so they can be shown in either language
+function pushMsg(t, from, text, vars) {
   const before = sugarOf(t);
-  t.msgs.push({ from, text, at: Date.now() });
+  t.msgs.push({ from, text, vars, at: Date.now() });
   sugarNotes(t, before);
   t.at = Date.now();
   if (from !== 'me' && !viewing(t.id)) t.unread += 1;
@@ -308,7 +324,7 @@ function scheduleAccept(t) {
     if (!thread(t.id) || t.status !== 'pending') return;
     t.status = 'open';
     pushMsg(t, 'sys', 'They accepted. Take your first sip.');
-    toast(`${P[t.pid].alias} accepted your response`);
+    toast(L`${P[t.pid].alias} accepted your response`);
     themReply(t, 1500);
   });
 }
@@ -319,7 +335,7 @@ function resolveReveal(t) {
   if (mine >= 2) {
     t.reveal.them = true;
     pushMsg(t, 'sys', 'You both popped the seal. Identities are unlocked.');
-    toast('Seal popped');
+    toast(L`Seal popped`);
   } else {
     t.reveal.me = false;
     pushMsg(t, 'them', "Let's sip a bit longer before we pop the seal.");
@@ -338,7 +354,7 @@ function scheduleIncoming(item, key) {
     item.seen.push(p.id);
     item.responses.push({ pid: p.id, text: key === 'thought' ? p.take : p.pitch });
     save();
-    toast(key === 'thought' ? 'Someone responded to your thought' : 'Someone applied to your post');
+    toast(key === 'thought' ? L`Someone responded to your thought` : L`Someone applied to your post`);
     render();
     scheduleIncoming(item, key);
   });
@@ -351,31 +367,31 @@ function profileForm(me, first) {
   return `
   <form data-form="profile" class="stack" novalidate>
     <fieldset class="panel">
-      <legend><i class="ph ph-eye" aria-hidden="true"></i>Visible from the start</legend>
-      ${field('alias', 'Nickname', me.alias, { req: true, hint: 'Not your real name.' })}
+      <legend><i class="ph ph-eye" aria-hidden="true"></i>${L`Visible from the start`}</legend>
+      ${field('alias', L`Nickname`, me.alias, { req: true, hint: L`Not your real name.` })}
       <div class="row2">
-        ${field('city', 'City', me.city, { ph: 'e.g. Taipei' })}
-        ${select('field', 'Field (your flavor)', FIELDS.map((f) => [f, `${f}, ${flavor(f)[0]}`]), me.field || FIELDS[0], 'Your flavor is your field. It sets the colour of your cup.')}
+        ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
+        ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0], L`Your flavor is your field. It sets the colour of your cup.`)}
       </div>
-      ${field('doing', "What I'm working on", me.doing, { area: true, req: true, ph: 'e.g. A sign-up system for a community college' })}
-      ${field('topics', 'Topics I can talk deeply about', me.topics, { hint: 'Separate with commas.' })}
-      ${field('proof', 'Proof of work', me.proof, { ph: 'Something you built or achieved' })}
+      ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
+      ${field('topics', L`Topics I can talk deeply about`, me.topics, { hint: L`Separate with commas.` })}
+      ${field('proof', L`Proof of work`, me.proof, { ph: L`Something you built or achieved` })}
     </fieldset>
     <fieldset class="panel panel--locked">
-      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed until you both pop the seal</legend>
-      ${explain('“Pop the seal” means showing your real profile. It only happens when both people agree.')}
+      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed until you both pop the seal`}</legend>
+      ${explain(L`“Pop the seal” means showing your real profile. It only happens when both people agree.`)}
       <div class="row2">
-        ${field('name', 'Real name', me.name)}
-        ${field('title', 'Job title', me.title)}
+        ${field('name', L`Real name`, me.name)}
+        ${field('title', L`Job title`, me.title)}
       </div>
       <div class="row2">
-        ${field('school', 'School', me.school)}
-        ${field('company', 'Company', me.company)}
+        ${field('school', L`School`, me.school)}
+        ${field('company', L`Company`, me.company)}
       </div>
       ${field('linkedin', 'LinkedIn', me.linkedin)}
     </fieldset>
-    <p class="error" id="profile-error" hidden>Please add a nickname and what you're working on.</p>
-    <button class="btn btn--primary" type="submit">${first ? 'Start sipping' : 'Save my order'}</button>
+    <p class="error" id="profile-error" hidden>${L`Please add a nickname and what you're working on.`}</p>
+    <button class="btn btn--primary" type="submit">${first ? L`Start sipping` : L`Save my order`}</button>
   </form>`;
 }
 
@@ -384,16 +400,19 @@ function viewOnboard() {
   <main class="onboard">
     <div class="onboard__top">
       <p class="logo">${LOGO}</p>
-      <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
+      <div class="btnrow">
+        ${langButton()}
+        <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
+      </div>
     </div>
     <div class="onboard__hero">
       <div>
-        <h1>Boba chat, not coffee chat.</h1>
-        <p class="lead">Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.</p>
+        <h1>${L`Boba chat, not coffee chat.`}</h1>
+        <p class="lead">${L`Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.`}</p>
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
     </div>
-    <p class="onboard__about"><a href="#/about">New here? Read what Half Sugar is and what the boba words mean.</a></p>
+    <p class="onboard__about"><a href="#/about">${L`New here? Read what Half Sugar is and what the boba words mean.`}</a></p>
     ${profileForm(null, true)}
   </main>`;
 }
@@ -401,23 +420,24 @@ function viewOnboard() {
 function viewMe() {
   return `
   <header class="head">
-    <div><h1>My order</h1><p class="sub">Your usual. Change it any time.</p>${explain('Your order is your profile. It shows what you are working on, never your titles. <a href="#/about">What is Half Sugar?</a>')}</div>
+    <div><h1>${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p>${explain(L`Your order is your profile. It shows what you are working on, never your titles.` + ` <a href="#/about">${L`What is Half Sugar?`}</a>`)}</div>
+    ${langButton()}
   </header>
   <section class="receipt">
     ${cupFor(S.me, 'cup--lg')}
     <div>
-      <p class="receipt__label">Your usual</p>
+      <p class="receipt__label">${L`Your usual`}</p>
       <p class="receipt__item">1 × ${esc(drinkName(S.me.field))}</p>
-      <p class="receipt__meta">For ${esc(S.me.alias)}. Sugar goes up in each chat the longer you talk.</p>
+      <p class="receipt__meta">${L`For ${esc(S.me.alias)}. Sugar goes up in each chat the longer you talk.`}</p>
     </div>
   </section>
   ${profileForm(S.me, false)}
   <section class="panel note">
-    <h2>Demo mode</h2>
-    <p>This is not connected to a server yet. Your data stays in this browser, the other people are simulated, and their replies are pre-written. Bookings and notifications are not really sent.</p>
+    <h2>${L`Demo mode`}</h2>
+    <p>${L`This is not connected to a server yet. Your data stays in this browser, the other people are simulated, and their replies are pre-written. Bookings and notifications are not really sent.`}</p>
     ${U.confirmReset
-      ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">Yes, clear it</button><button class="btn btn--ghost" data-act="reset-no" type="button">Cancel</button></div>`
-      : `<button class="btn btn--ghost" data-act="reset" type="button">Clear all data</button>`}
+      ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
+      : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear all data`}</button>`}
   </section>`;
 }
 
@@ -426,16 +446,16 @@ function viewMe() {
 function responsesBlock(item, key) {
   if (!item.responses.length) {
     return (item.seen || []).length >= 2
-      ? `<p class="waiting">No more responses for now.</p>`
-      : `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>Waiting for responses</p>`;
+      ? `<p class="waiting">${L`No more responses for now.`}</p>`
+      : `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>${L`Waiting for responses`}</p>`;
   }
   return `<ul class="responses">${item.responses.map((r) => `
     <li>
       ${byline(P[r.pid])}
       <p class="quote">${esc(r.text)}</p>
       <div class="btnrow">
-        <button class="btn btn--dark btn--sm" data-act="accept" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">Accept, first sip</button>
-        <button class="btn btn--ghost btn--sm" data-act="decline" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">Skip</button>
+        <button class="btn btn--dark btn--sm" data-act="accept" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">${L`Accept, first sip`}</button>
+        <button class="btn btn--ghost btn--sm" data-act="decline" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">${L`Skip`}</button>
       </div>
     </li>`).join('')}</ul>`;
 }
@@ -451,26 +471,26 @@ function viewExplore() {
 
   return `
   <header class="head">
-    <div><h1>Explore</h1><p class="sub">I want to meet someone.</p>${explain('Browse what people are thinking about. Reply with your view to start a chat.')}</div>
-    <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Share a thought</button>
+    <div><h1>${L`Explore`}</h1><p class="sub">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
+    <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Share a thought`}</button>
   </header>
 
   ${U.compose === 'thought' ? `
   <form class="panel stack" data-form="thought" novalidate>
-    ${field('text', 'Your thought or question', '', { area: true, rows: 3, req: true, ph: 'Something you have been turning over lately' })}
+    ${field('text', L`Your thought or question`, '', { area: true, rows: 3, req: true, ph: L`Something you have been turning over lately` })}
     <div class="row2">
-      ${select('mode', 'How to meet', [['online', 'Online'], ['offline', 'In person']], 'online')}
-      ${select('size', 'How many people', [['1on1', '1-on-1'], ['group', 'Small group']], '1on1')}
+      ${select('mode', L`How to meet`, [['online', L`Online`], ['offline', L`In person`]], 'online')}
+      ${select('size', L`How many people`, [['1on1', L`1-on-1`], ['group', L`Small group`]], '1on1')}
     </div>
     <div class="btnrow">
-      <button class="btn btn--dark" type="submit">Post</button>
-      <button class="btn btn--ghost" data-act="compose" data-what="" type="button">Cancel</button>
+      <button class="btn btn--dark" type="submit">${L`Post`}</button>
+      <button class="btn btn--ghost" data-act="compose" data-what="" type="button">${L`Cancel`}</button>
     </div>
   </form>` : ''}
 
   ${S.myThoughts.length ? `
   <section class="mine">
-    <h2>Your thoughts</h2>
+    <h2>${L`Your thoughts`}</h2>
     ${S.myThoughts.map((t) => `
     <article class="card card--mine">
       <p class="thought">${esc(t.text)}</p>
@@ -479,11 +499,11 @@ function viewExplore() {
     </article>`).join('')}
   </section>` : ''}
 
-  <div class="filters" role="group" aria-label="Filters">
-    <select data-filter="mode" aria-label="Online or in person">${opt('', 'Any format', f.mode)}${opt('online', 'Online', f.mode)}${opt('offline', 'In person', f.mode)}</select>
-    <select data-filter="size" aria-label="Group size">${opt('', 'Any size', f.size)}${opt('1on1', '1-on-1', f.size)}${opt('group', 'Small group', f.size)}</select>
-    <select data-filter="city" aria-label="City">${opt('', 'All cities', f.city)}${cities.map((c) => opt(c, c, f.city)).join('')}</select>
-    <select data-filter="field" aria-label="Field">${opt('', 'All fields', f.field)}${FIELDS.map((c) => opt(c, `${c}, ${flavor(c)[0]}`, f.field)).join('')}</select>
+  <div class="filters" role="group" aria-label="${esc(L`Filters`)}">
+    <select data-filter="mode" aria-label="${esc(L`Online or in person`)}">${opt('', L`Any format`, f.mode)}${opt('online', L`Online`, f.mode)}${opt('offline', L`In person`, f.mode)}</select>
+    <select data-filter="size" aria-label="${esc(L`Group size`)}">${opt('', L`Any size`, f.size)}${opt('1on1', L`1-on-1`, f.size)}${opt('group', L`Small group`, f.size)}</select>
+    <select data-filter="city" aria-label="${esc(L`City`)}">${opt('', L`All cities`, f.city)}${cities.map((c) => opt(c, c, f.city)).join('')}</select>
+    <select data-filter="field" aria-label="${esc(L`Field`)}">${opt('', L`All fields`, f.field)}${FIELDS.map((c) => opt(c, L`${fieldName(c)}, ${flavorName(c)}`, f.field)).join('')}</select>
   </div>
 
   ${feed.length ? feed.map((t) => {
@@ -495,18 +515,18 @@ function viewExplore() {
       <div class="meta-row"><p class="meta">${modeLabel(t)}, ${esc(p.city)}</p></div>
       ${byline(p)}
       ${existing
-        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">Responded. Open chat</a>`
+        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Responded. Open chat`}</a>`
         : U.target === t.id
           ? `<form class="stack reply" data-form="respond" data-id="${t.id}" novalidate>
-              ${field('reply', 'Your perspective', '', { area: true, rows: 3, req: true, ph: 'They see your response and your card, not your titles' })}
+              ${field('reply', L`Your perspective`, '', { area: true, rows: 3, req: true, ph: L`They see your response and your card, not your titles` })}
               <div class="btnrow">
-                <button class="btn btn--dark btn--sm" type="submit">Send response</button>
-                <button class="btn btn--ghost btn--sm" data-act="target" data-id="" type="button">Cancel</button>
+                <button class="btn btn--dark btn--sm" type="submit">${L`Send response`}</button>
+                <button class="btn btn--ghost btn--sm" data-act="target" data-id="" type="button">${L`Cancel`}</button>
               </div>
             </form>`
-          : `<button class="btn btn--dark btn--sm" data-act="target" data-id="${t.id}" type="button">Respond</button>`}
+          : `<button class="btn btn--dark btn--sm" data-act="target" data-id="${t.id}" type="button">${L`Respond`}</button>`}
     </article>`;
-  }).join('') : `<p class="empty">Nothing matches. Change the filters, or share a thought of your own.</p>`}`;
+  }).join('') : `<p class="empty">${L`Nothing matches. Change the filters, or share a thought of your own.`}</p>`}`;
 }
 
 /* ---------- Screen: Build ---------- */
@@ -514,32 +534,32 @@ function viewExplore() {
 function viewBuild() {
   return `
   <header class="head">
-    <div><h1>Brew</h1><p class="sub">I need someone for something.</p>${explain('Brew means building something together. Post what you need, or apply to a post without showing your titles.')}</div>
-    <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Start a brew</button>
+    <div><h1>${L`Brew`}</h1><p class="sub">${L`I need someone for something.`}</p>${explain(L`Brew means building something together. Post what you need, or apply to a post without showing your titles.`)}</div>
+    <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Start a brew`}</button>
   </header>
 
   ${U.compose === 'post' ? `
   <form class="panel stack" data-form="post" novalidate>
-    ${field('title', 'What you are building and who you are looking for', '', { area: true, req: true, ph: 'e.g. Building a shared-kitchen platform, looking for someone who knows food regulation' })}
-    ${field('need', 'I need', '', { req: true })}
-    ${field('offer', 'I can offer', '')}
-    ${field('duration', 'Time', '', { ph: 'e.g. One call, a four-week project' })}
+    ${field('title', L`What you are building and who you are looking for`, '', { area: true, req: true, ph: L`e.g. Building a shared-kitchen platform, looking for someone who knows food regulation` })}
+    ${field('need', L`I need`, '', { req: true })}
+    ${field('offer', L`I can offer`, '')}
+    ${field('duration', L`Time`, '', { ph: L`e.g. One call, a four-week project` })}
     <div class="btnrow">
-      <button class="btn btn--dark" type="submit">Post</button>
-      <button class="btn btn--ghost" data-act="compose" data-what="" type="button">Cancel</button>
+      <button class="btn btn--dark" type="submit">${L`Post`}</button>
+      <button class="btn btn--ghost" data-act="compose" data-what="" type="button">${L`Cancel`}</button>
     </div>
   </form>` : ''}
 
   ${S.myPosts.length ? `
   <section class="mine">
-    <h2>Your brews</h2>
+    <h2>${L`Your brews`}</h2>
     ${S.myPosts.map((b) => `
     <article class="card card--mine">
       <h3 class="post-title">${esc(b.title)}</h3>
       <dl class="brief">
-        <div><dt>I need</dt><dd>${esc(b.need)}</dd></div>
-        ${b.offer ? `<div><dt>I can offer</dt><dd>${esc(b.offer)}</dd></div>` : ''}
-        ${b.duration ? `<div><dt>Time</dt><dd>${esc(b.duration)}</dd></div>` : ''}
+        <div><dt>${L`I need`}</dt><dd>${esc(b.need)}</dd></div>
+        ${b.offer ? `<div><dt>${L`I can offer`}</dt><dd>${esc(b.offer)}</dd></div>` : ''}
+        ${b.duration ? `<div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>` : ''}
       </dl>
       ${responsesBlock(b, 'post')}
     </article>`).join('')}
@@ -552,22 +572,22 @@ function viewBuild() {
     <article class="card">
       <h3 class="post-title">${esc(b.title)}</h3>
       <dl class="brief">
-        <div><dt>Needs</dt><dd>${esc(b.need)}</dd></div>
-        <div><dt>Offers</dt><dd>${esc(b.offer)}</dd></div>
-        <div><dt>Time</dt><dd>${esc(b.duration)}</dd></div>
+        <div><dt>${L`Needs`}</dt><dd>${esc(b.need)}</dd></div>
+        <div><dt>${L`Offers`}</dt><dd>${esc(b.offer)}</dd></div>
+        <div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>
       </dl>
       ${byline(p)}
       ${existing
-        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">Applied. Open chat</a>`
+        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Applied. Open chat`}</a>`
         : U.target === b.id
           ? `<form class="stack reply" data-form="apply" data-id="${b.id}" novalidate>
-              ${field('reply', 'Why you are a fit', '', { area: true, rows: 3, req: true, ph: 'Say what you would bring. They cannot see your titles' })}
+              ${field('reply', L`Why you are a fit`, '', { area: true, rows: 3, req: true, ph: L`Say what you would bring. They cannot see your titles` })}
               <div class="btnrow">
-                <button class="btn btn--dark btn--sm" type="submit">Send anonymously</button>
-                <button class="btn btn--ghost btn--sm" data-act="target" data-id="" type="button">Cancel</button>
+                <button class="btn btn--dark btn--sm" type="submit">${L`Send anonymously`}</button>
+                <button class="btn btn--ghost btn--sm" data-act="target" data-id="" type="button">${L`Cancel`}</button>
               </div>
             </form>`
-          : `<button class="btn btn--dark btn--sm" data-act="target" data-id="${b.id}" type="button">Apply anonymously</button>`}
+          : `<button class="btn btn--dark btn--sm" data-act="target" data-id="${b.id}" type="button">${L`Apply anonymously`}</button>`}
     </article>`;
   }).join('')}`;
 }
@@ -592,12 +612,12 @@ const clock = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${M
 
 function countdownText(now) {
   const s = Math.floor((nextDrop(now) - now) / 1000);
-  return `${Math.floor(s / 86400)}d ${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  return L`${Math.floor(s / 86400)}d ${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
 }
 
 function bubbles(msgs, typing) {
-  return msgs.map((m) => `<li class="msg msg--${m.from}">${esc(m.text)}</li>`).join('')
-    + (typing ? `<li class="msg msg--them msg--typing" aria-label="They are typing"><span></span><span></span><span></span></li>` : '');
+  return msgs.map((m) => `<li class="msg msg--${m.from}">${esc(m.from === 'sys' ? tr(m.text, m.vars) : m.text)}</li>`).join('')
+    + (typing ? `<li class="msg msg--them msg--typing" aria-label="${esc(L`They are typing`)}"><span></span><span></span><span></span></li>` : '');
 }
 
 function viewDrop() {
@@ -609,8 +629,8 @@ function viewDrop() {
     <section class="drop-stage">
       <div class="shake">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
       <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
-      <h1>Shaking your mystery cup</h1>
-      <p class="sub">Someone in a different city and a different field.</p>
+      <h1>${L`Shaking your mystery cup`}</h1>
+      <p class="sub">${L`Someone in a different city and a different field.`}</p>
     </section>`;
   }
 
@@ -619,19 +639,19 @@ function viewDrop() {
     <section class="chat">
       <header class="chat__head">
         <div>
-          <h1>Someone in ${esc(p.country)}</h1>
-          <p class="sub">Field: ${esc(p.field)}. That is all you know.</p>
+          <h1>${L`Someone in ${esc(p.country)}`}</h1>
+          <p class="sub">${L`Field: ${esc(fieldName(p.field))}. That is all you know.`}</p>
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
-          <button class="btn btn--ghost btn--sm" data-act="drop-end" type="button">End chat</button>
+          <button class="btn btn--ghost btn--sm" data-act="drop-end" type="button">${L`End chat`}</button>
         </div>
       </header>
       <ul class="log" id="log">${bubbles(D.msgs, D.typing)}</ul>
       <form class="composer" data-form="drop-msg">
-        <label class="sr" for="c-msg">Message</label>
-        <input id="c-msg" name="msg" autocomplete="off" placeholder="Say something">
-        <button class="btn btn--dark" type="submit" aria-label="Send"><i class="ph ph-paper-plane-right" aria-hidden="true"></i></button>
+        <label class="sr" for="c-msg">${L`Message`}</label>
+        <input id="c-msg" name="msg" autocomplete="off" placeholder="${esc(L`Say something`)}">
+        <button class="btn btn--dark" type="submit" aria-label="${esc(L`Send`)}"><i class="ph ph-paper-plane-right" aria-hidden="true"></i></button>
       </form>
     </section>`;
   }
@@ -639,13 +659,13 @@ function viewDrop() {
   if (D.phase === 'decide' || D.phase === 'waiting') {
     return `
     <section class="drop-stage">
-      <h1>Cup's empty. Want a refill?</h1>
-      <p class="sub">Refill means you keep talking and your real profiles are revealed. It only happens if you both choose it. If either of you says no, this cup disappears.</p>
+      <h1>${L`Cup's empty. Want a refill?`}</h1>
+      <p class="sub">${L`Refill means you keep talking and your real profiles are revealed. It only happens if you both choose it. If either of you says no, this cup disappears.`}</p>
       ${D.phase === 'waiting'
-        ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>Waiting for them to decide</p>`
+        ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>${L`Waiting for them to decide`}</p>`
         : `<div class="btnrow btnrow--center">
-            <button class="btn btn--primary" data-act="drop-yes" type="button">Refill</button>
-            <button class="btn btn--ghost" data-act="drop-no" type="button">I'm good</button>
+            <button class="btn btn--primary" data-act="drop-yes" type="button">${L`Refill`}</button>
+            <button class="btn btn--ghost" data-act="drop-no" type="button">${L`I'm good`}</button>
           </div>`}
     </section>`;
   }
@@ -655,42 +675,42 @@ function viewDrop() {
     return `
     <section class="drop-stage">
       ${t ? `
-        <h1>You both want a refill.</h1>
-        <p class="sub">You were talking to ${esc(p.real.name)}, ${esc(p.real.title.toLowerCase())}.</p>
+        <h1>${L`You both want a refill.`}</h1>
+        <p class="sub">${L`You were talking to ${esc(p.real.name)}, ${esc(p.real.title)}.`}</p>
         <div class="btnrow btnrow--center">
-          <a class="btn btn--primary" href="#/chats/${t.id}">Refill</a>
-          <button class="btn btn--ghost" data-act="drop-reset" type="button">Back to Mystery Cup</button>
+          <a class="btn btn--primary" href="#/chats/${t.id}">${L`Refill`}</a>
+          <button class="btn btn--ghost" data-act="drop-reset" type="button">${L`Back to Mystery Cup`}</button>
         </div>` : `
-        <h1>This cup is gone.</h1>
-        <p class="sub">${D.result === 'passed' ? 'You chose not to refill.' : 'They passed on a refill this time. Say a bit more next time and your odds go up.'}</p>
+        <h1>${L`This cup is gone.`}</h1>
+        <p class="sub">${D.result === 'passed' ? L`You chose not to refill.` : L`They passed on a refill this time. Say a bit more next time and your odds go up.`}</p>
         <div class="btnrow btnrow--center">
-          <button class="btn btn--primary" data-act="drop-reset" type="button">Back to Mystery Cup</button>
+          <button class="btn btn--primary" data-act="drop-reset" type="button">${L`Back to Mystery Cup`}</button>
         </div>`}
     </section>`;
   }
 
   const open = dropIsOpen(now);
-  const localTime = nextDrop(now).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
+  const localTime = nextDrop(now).toLocaleString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1>Mystery Cup</h1><p class="sub">You can’t pick the flavor.</p>${explain('A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.')}</div>
+    <div><h1>${L`Mystery Cup`}</h1><p class="sub">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
   </header>
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
     <div>
       ${open
-        ? `<p class="drop-card__label">Mystery Cup is open</p><p class="drop-card__time">Join now</p>`
-        : `<p class="drop-card__label">Next Mystery Cup in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
-      <p class="drop-card__when">${esc(localTime)} your time. Open for 10 minutes.</p>
-      <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Pour me one' : 'Try a practice cup'}</button>
+        ? `<p class="drop-card__label">${L`Mystery Cup is open`}</p><p class="drop-card__time">${L`Join now`}</p>`
+        : `<p class="drop-card__label">${L`Next Mystery Cup in`}</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
+      <p class="drop-card__when">${L`${esc(localTime)} your time. Open for 10 minutes.`}</p>
+      <button class="btn btn--dark" data-act="drop-join" type="button">${open ? L`Pour me one` : L`Try a practice cup`}</button>
     </div>
   </section>
   <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>No picking flavors</strong><p>We pour you someone from a different city and field.</p></div></li>
-    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>8 minutes</strong><p>Text only. When time is up, it ends.</p></div></li>
-    <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>Refill only if you both want one</strong><p>Otherwise the cup disappears.</p></div></li>
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`We pour you someone from a different city and field.`}</p></div></li>
+    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`8 minutes`}</strong><p>${L`Text only. When time is up, it ends.`}</p></div></li>
+    <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
   </ul>
-  ${S.drops ? `<p class="meta">You have had ${S.drops} mystery ${S.drops === 1 ? 'cup' : 'cups'}.</p>` : ''}`;
+  ${S.drops ? `<p class="meta">${S.drops === 1 ? L`You have had 1 mystery cup.` : L`You have had ${S.drops} mystery cups.`}</p>` : ''}`;
 }
 
 function dropStart() {
@@ -758,29 +778,30 @@ function viewChats() {
   const list = [...S.threads].sort((a, b) => isCold(a) - isCold(b) || b.at - a.at);
   return `
   <header class="head">
-    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p>${explain('Sugar goes up the longer you talk. At half sugar (50%) you can pop the seal. A chat goes cold and closes if nobody replies for 3 days.')}</div>
+    <div><h1>${L`Chats`}</h1><p class="sub">${L`Every chat starts with a first sip.`}</p>${explain(L`Sugar goes up the longer you talk. At half sugar (50%) you can pop the seal. A chat goes cold and closes if nobody replies for 3 days.`)}</div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
+    const status = isCold(t) ? L`went cold` : L`${sugarOf(t)}% sugar`;
     return `
     <li class="${isCold(t) ? 'is-cold' : ''}">
       <a href="#/chats/${t.id}">
         <span class="avatar ${t.reveal.them ? 'avatar--on' : 'avatar--cup'}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : cupFor(P[t.pid])}</span>
         <span class="threads__body">
           <strong>${esc(shownName(t))}</strong>
-          <small>${ORIGIN[t.origin]}, ${isCold(t) ? 'went cold' : `${sugarOf(t)}% sugar`}${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
-          <span class="threads__last">${last ? esc(last.text) : ''}</span>
+          <small>${originName(t.origin)}, ${status}${t.status === 'pending' ? L`, waiting for them to accept` : ''}</small>
+          <span class="threads__last">${last ? esc(last.from === 'sys' ? tr(last.text, last.vars) : last.text) : ''}</span>
         </span>
-        ${t.unread ? `<span class="badge" aria-label="${t.unread} unread">${t.unread}</span>` : ''}
+        ${t.unread ? `<span class="badge" aria-label="${esc(L`${t.unread} unread`)}">${t.unread}</span>` : ''}
       </a>
     </li>`;
   }).join('')}</ul>` : `
   <div class="empty">
     ${cup('var(--milk)', { level: 0, cls: 'cup--lg' })}
-    <p>No cups yet.</p>
+    <p>${L`No cups yet.`}</p>
     <div class="btnrow btnrow--center">
-      <a class="btn btn--dark btn--sm" href="#/explore">Respond to a thought</a>
-      <a class="btn btn--ghost btn--sm" href="#/drop">Try a Mystery Cup</a>
+      <a class="btn btn--dark btn--sm" href="#/explore">${L`Respond to a thought`}</a>
+      <a class="btn btn--ghost btn--sm" href="#/drop">${L`Try a Mystery Cup`}</a>
     </div>
   </div>`}`;
 }
@@ -791,84 +812,90 @@ function viewThread(t) {
   const sugar = sugarOf(t);
   const cold = isCold(t);
   const today = new Date().toISOString().slice(0, 10);
-  const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : '<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed</span>'}</dd></div>`;
+  const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : `<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed`}</span>`}</dd></div>`;
 
   return `
   <section class="chat">
     <header class="chat__head">
-      <a class="back" href="#/chats" aria-label="Back to chats"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
+      <a class="back" href="#/chats" aria-label="${esc(L`Back to chats`)}"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
         <h1>${esc(shownName(t))}</h1>
-        <p class="sub">${ORIGIN[t.origin]}, ${esc(p.city)}</p>
+        <p class="sub">${originName(t.origin)}, ${esc(p.city)}</p>
         <div class="meta-row">${sugarMeter(sugar)}${t.status === 'open' && !cold ? `<span class="expiry">${closesText(t)}</span>` : ''}</div>
       </div>
       ${t.status === 'open' && !cold ? `
       <div class="chat__tools">
-        <button class="btn btn--ghost btn--sm" data-act="call" data-id="${t.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Call</button>
-        <button class="btn btn--ghost btn--sm" data-act="book-open" data-id="${t.id}" type="button"><i class="ph ph-person-simple-walk" aria-hidden="true"></i>Boba run</button>
+        <button class="btn btn--ghost btn--sm" data-act="call" data-id="${t.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>${L`Call`}</button>
+        <button class="btn btn--ghost btn--sm" data-act="book-open" data-id="${t.id}" type="button"><i class="ph ph-person-simple-walk" aria-hidden="true"></i>${L`Boba run`}</button>
         ${both ? '' : t.reveal.me
-          ? `<button class="btn btn--sm" type="button" disabled>Waiting for them to pop</button>`
+          ? `<button class="btn btn--sm" type="button" disabled>${L`Waiting for them to pop`}</button>`
           : sugar >= REVEAL_AT
-            ? `<button class="btn btn--primary btn--sm" data-act="reveal" data-id="${t.id}" type="button">Pop the seal</button>`
-            : `<button class="btn btn--sm" type="button" disabled>Pop the seal at ${REVEAL_AT}%</button>`}
+            ? `<button class="btn btn--primary btn--sm" data-act="reveal" data-id="${t.id}" type="button">${L`Pop the seal`}</button>`
+            : `<button class="btn btn--sm" type="button" disabled>${L`Pop the seal at ${REVEAL_AT}%`}</button>`}
       </div>` : ''}
     </header>
 
     ${explain(both
-      ? `You both popped the seal, so real names and profiles are visible. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days.`
-      : `Names are still hidden. Sugar goes up the longer you talk: 10 minutes of chatting is half sugar (50%), and then you can pop the seal if you both agree. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days. “Boba run” means meeting in person.`)}
+      ? L`You both popped the seal, so real names and profiles are visible. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days.`
+      : L`Names are still hidden. Sugar goes up the longer you talk: 10 minutes of chatting is half sugar (50%), and then you can pop the seal if you both agree. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days. “Boba run” means meeting in person.`)}
 
     <details class="who">
-      <summary>${both ? 'Their full card' : 'Their card'}</summary>
+      <summary>${both ? L`Their full card` : L`Their card`}</summary>
       ${brief(p)}
       <p class="chips">${p.topics.map((x) => `<span>${esc(x)}</span>`).join('')}</p>
       <dl class="brief brief--locked ${both ? '' : 'is-sealed'}">
-        ${locked('Name', p.real.name)}
-        ${locked('School', p.real.school)}
-        ${locked('Company', p.real.company)}
-        ${locked('Job title', p.real.title)}
+        ${locked(L`Name`, p.real.name)}
+        ${locked(L`School`, p.real.school)}
+        ${locked(L`Company`, p.real.company)}
+        ${locked(L`Job title`, p.real.title)}
         ${locked('LinkedIn', p.real.linkedin)}
       </dl>
     </details>
 
     ${U.booking === t.id ? `
     <form class="panel stack" data-form="book" data-id="${t.id}" novalidate>
-      <h2>Go on a boba run</h2>
-      ${explain('A boba run means meeting in person, at a boba shop or a café.')}
+      <h2>${L`Go on a boba run`}</h2>
+      ${explain(L`A boba run means meeting in person, at a boba shop or a café.`)}
       <div class="row2">
-        ${select('kind', 'Type', ['Boba shop, 1-on-1', 'Café', 'Small dinner table'], 'Boba shop, 1-on-1')}
-        ${field('area', 'Area', S.me.city || '', { req: true, ph: "e.g. Taipei, Da'an" })}
+        ${select('kind', L`Type`, [['Boba shop, 1-on-1', L`Boba shop, 1-on-1`], ['Café', L`Café`], ['Small dinner table', L`Small dinner table`]], 'Boba shop, 1-on-1')}
+        ${field('area', L`Area`, S.me.city || '', { req: true, ph: L`e.g. Taipei, Da'an` })}
       </div>
       <div class="row2">
-        ${field('date', 'Date', '', { type: 'date', req: true, min: today })}
-        ${select('time', 'Time', ['12:00', '15:00', '19:00'], '15:00')}
+        ${field('date', L`Date`, '', { type: 'date', req: true, min: today })}
+        ${select('time', L`Time`, ['12:00', '15:00', '19:00'], '15:00')}
       </div>
-      <p class="hint">Demo mode: this is saved in the chat, but no table is really booked.</p>
-      <p class="error" id="book-error" hidden>Please add an area and a date.</p>
+      <p class="hint">${L`Demo mode: this is saved in the chat, but no table is really booked.`}</p>
+      <p class="error" id="book-error" hidden>${L`Please add an area and a date.`}</p>
       <div class="btnrow">
-        <button class="btn btn--dark btn--sm" type="submit">Send invite</button>
-        <button class="btn btn--ghost btn--sm" data-act="book-close" type="button">Cancel</button>
+        <button class="btn btn--dark btn--sm" type="submit">${L`Send invite`}</button>
+        <button class="btn btn--ghost btn--sm" data-act="book-close" type="button">${L`Cancel`}</button>
       </div>
     </form>` : ''}
 
-    ${t.booking ? `<p class="booking"><i class="ph ph-calendar-check" aria-hidden="true"></i>${esc(t.booking.label)}</p>` : ''}
+    ${t.booking ? `<p class="booking"><i class="ph ph-calendar-check" aria-hidden="true"></i>${esc(bookingLabel(t.booking))}</p>` : ''}
 
     <ul class="log" id="log">${bubbles(t.msgs, U.typing[t.id])}</ul>
 
     ${cold
-      ? `<p class="cold"><i class="ph ph-snowflake" aria-hidden="true"></i>This cup went cold. Nobody replied for ${CLOSE_AFTER_DAYS} days, so the chat closed.</p>`
+      ? `<p class="cold"><i class="ph ph-snowflake" aria-hidden="true"></i>${L`This cup went cold. Nobody replied for ${CLOSE_AFTER_DAYS} days, so the chat closed.`}</p>`
       : t.status === 'open'
         ? `<div class="devrow"><button class="btn btn--ghost btn--sm" data-act="dev-time" data-id="${t.id}" type="button">Dev: +5 min</button><button class="btn btn--ghost btn--sm" data-act="dev-days" data-id="${t.id}" type="button">Dev: +${CLOSE_AFTER_DAYS} days</button></div>`
         : ''}
 
     ${cold ? '' : t.status === 'pending'
-      ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>Waiting for them to accept your response</p>`
+      ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>${L`Waiting for them to accept your response`}</p>`
       : `<form class="composer" data-form="msg" data-id="${t.id}">
-          <label class="sr" for="c-msg">Message</label>
-          <input id="c-msg" name="msg" autocomplete="off" placeholder="Say something">
-          <button class="btn btn--dark" type="submit" aria-label="Send"><i class="ph ph-paper-plane-right" aria-hidden="true"></i></button>
+          <label class="sr" for="c-msg">${L`Message`}</label>
+          <input id="c-msg" name="msg" autocomplete="off" placeholder="${esc(L`Say something`)}">
+          <button class="btn btn--dark" type="submit" aria-label="${esc(L`Send`)}"><i class="ph ph-paper-plane-right" aria-hidden="true"></i></button>
         </form>`}
   </section>`;
+}
+
+// The booking line is built when shown, so it follows the current language
+function bookingLabel(b) {
+  const day = new Date(`${b.date}T${b.time}`).toLocaleDateString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return L`${day}, ${b.time}. ${L(b.kind)}, ${b.area}`;
 }
 
 /* ---------- Screen: About ---------- */
@@ -892,59 +919,60 @@ const GLOSSARY = [
 
 function viewAbout() {
   const next = S.me
-    ? '<a class="btn btn--primary" href="#/explore">Back to Explore</a>'
-    : '<a class="btn btn--primary" href="#/">Start sipping</a>';
+    ? `<a class="btn btn--primary" href="#/explore">${L`Back to Explore`}</a>`
+    : `<a class="btn btn--primary" href="#/">${L`Start sipping`}</a>`;
   return `
   <article class="about">
+    ${S.me ? '' : `<div class="onboard__top"><p class="logo">${LOGO}</p>${langButton()}</div>`}
     <header class="about__hero">
       <div>
-        <h1>Boba chat, not coffee chat.</h1>
-        <p class="lead">Half Sugar is a place to meet people by talking first. Schools, companies and job titles stay hidden until you both want to share them.</p>
+        <h1>${L`Boba chat, not coffee chat.`}</h1>
+        <p class="lead">${L`Half Sugar is a place to meet people by talking first. Schools, companies and job titles stay hidden until you both want to share them.`}</p>
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
     </header>
 
     <section class="about__block">
-      <h2>Why we built it</h2>
-      <p>Networking today leans on résumés. People decide whether you are worth talking to before you say a word. So networking turns into a performance, people from different fields rarely meet, and lots of online matches never become a real conversation.</p>
+      <h2>${L`Why we built it`}</h2>
+      <p>${L`Networking today leans on résumés. People decide whether you are worth talking to before you say a word. So networking turns into a performance, people from different fields rarely meet, and lots of online matches never become a real conversation.`}</p>
     </section>
 
     <section class="about__pair">
       <div class="about__card">
-        <h2>Why boba</h2>
-        <p>A coffee chat sounds like a meeting. Grabbing boba sounds like hanging out with a friend. We want that second feeling, because good collaborations often start in relaxed conversations.</p>
+        <h2>${L`Why boba`}</h2>
+        <p>${L`A coffee chat sounds like a meeting. Grabbing boba sounds like hanging out with a friend. We want that second feeling, because good collaborations often start in relaxed conversations.`}</p>
       </div>
       <div class="about__card about__card--sugar">
-        <h2>Why half sugar</h2>
-        <p>Not too sweet, not too serious. Half sugar is the order for people who want balance: less performing, and still something real to take home. It is also the moment a chat reaches 50%, when you can finally see who you have been talking to.</p>
+        <h2>${L`Why half sugar`}</h2>
+        <p>${L`Not too sweet, not too serious. Half sugar is the order for people who want balance: less performing, and still something real to take home. It is also the moment a chat reaches 50%, when you can finally see who you have been talking to.`}</p>
       </div>
     </section>
 
     <section class="about__block">
-      <h2>How it works</h2>
+      <h2>${L`How it works`}</h2>
       <ol class="steps">
-        <li><strong>Fill in your order.</strong> Say what you are working on. Your titles stay sealed.</li>
-        <li><strong>Take a first sip.</strong> Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.</li>
-        <li><strong>Reach half sugar, then pop the seal.</strong> Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.</li>
-        <li><strong>Keep it warm.</strong> Keep talking, build something, or go on a boba run and meet in person. A chat goes cold after 3 days with no reply.</li>
+        <li><strong>${L`Fill in your order.`}</strong> ${L`Say what you are working on. Your titles stay sealed.`}</li>
+        <li><strong>${L`Take a first sip.`}</strong> ${L`Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.`}</li>
+        <li><strong>${L`Reach half sugar, then pop the seal.`}</strong> ${L`Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.`}</li>
+        <li><strong>${L`Keep it warm.`}</strong> ${L`Keep talking, build something, or go on a boba run and meet in person. A chat goes cold after 3 days with no reply.`}</li>
       </ol>
     </section>
 
     <section class="about__block">
-      <h2>The menu</h2>
-      <p class="about__hint">What our boba words mean.</p>
+      <h2>${L`The menu`}</h2>
+      <p class="about__hint">${L`What our boba words mean.`}</p>
       <dl class="glossary">
-        ${GLOSSARY.map(([term, icon, text]) => `<div><dt><i class="ph ${icon}" aria-hidden="true"></i>${term}</dt><dd>${text}</dd></div>`).join('')}
+        ${GLOSSARY.map(([term, icon, text]) => `<div><dt><i class="ph ${icon}" aria-hidden="true"></i>${L(term)}</dt><dd>${L(text)}</dd></div>`).join('')}
       </dl>
-      <h3 class="flavors__title">Flavors</h3>
+      <h3 class="flavors__title">${L`Flavors`}</h3>
       <ul class="flavors">
-        ${FIELDS.map((f) => `<li><span class="flavor" style="--flavor:${flavor(f)[1]}">${esc(flavor(f)[0])}</span>${esc(f)}</li>`).join('')}
+        ${FIELDS.map((f) => `<li><span class="flavor" style="--flavor:${flavor(f)[1]}">${esc(flavorName(f))}</span>${esc(fieldName(f))}</li>`).join('')}
       </ul>
     </section>
 
     <section class="about__belief">
-      <p>Conversation before credentials.</p>
-      <p>Meet the person before the résumé.</p>
+      <p>${L`Conversation before credentials.`}</p>
+      <p>${L`Meet the person before the résumé.`}</p>
       <p class="accent">Meet. Think. Build.</p>
       <div class="btnrow btnrow--center">${next}</div>
     </section>
@@ -967,15 +995,18 @@ function shell(route, body) {
   return `
   <div class="app">
     <aside class="side">
-      <a class="logo" href="#/explore" aria-label="Half Sugar home">${LOGO}</a>
-      <nav class="nav" aria-label="Main">
+      <a class="logo" href="#/explore" aria-label="${esc(L`Half Sugar home`)}">${LOGO}</a>
+      <nav class="nav" aria-label="${esc(L`Main`)}">
         ${NAV.map(([name, label, icon, desc]) => `
         <a href="#/${name}" ${route.name === name ? 'aria-current="page"' : ''}>
-          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${label}</span><small>${desc}</small></span>
-          ${name === 'chats' && unread ? `<span class="badge" aria-label="${unread} unread">${unread}</span>` : ''}
+          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${L(label)}</span><small>${L(desc)}</small></span>
+          ${name === 'chats' && unread ? `<span class="badge" aria-label="${esc(L`${unread} unread`)}">${unread}</span>` : ''}
         </a>`).join('')}
       </nav>
-      <a class="side__about" href="#/about" ${route.name === 'about' ? 'aria-current="page"' : ''}><i class="ph ph-info" aria-hidden="true"></i>What is Half Sugar?</a>
+      <div class="side__foot">
+        ${langButton()}
+        <a class="side__about" href="#/about" ${route.name === 'about' ? 'aria-current="page"' : ''}><i class="ph ph-info" aria-hidden="true"></i>${L`What is Half Sugar?`}</a>
+      </div>
     </aside>
     <main class="main ${isChat ? 'main--chat' : ''}" id="main">${body}</main>
   </div>`;
@@ -989,6 +1020,7 @@ function render(opt = {}) {
   const keep = {};
   if (same) app.querySelectorAll('[id^="f-"], [id^="c-"]').forEach((el) => { keep[el.id] = el.value; });
   const whoOpen = path === lastPath && $('.who', app) && $('.who', app).open;
+  document.documentElement.lang = LANG === 'zh' ? 'zh-Hant' : 'en';
 
   if (!S.me) {
     app.innerHTML = route.name === 'about' ? `<main class="about-page">${viewAbout()}</main>` : viewOnboard();
@@ -1026,7 +1058,7 @@ const forms = {
     const first = !S.me;
     S.me = data;
     save();
-    if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast('Saved'); render(); }
+    if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast(L`Saved`); render(); }
   },
 
   thought(form, data) {
@@ -1052,7 +1084,7 @@ const forms = {
   respond(form, data) {
     if (!data.reply) { $('#f-reply', form).focus(); return; }
     const seed = SEED_THOUGHTS.find((t) => t.id === form.dataset.id);
-    const t = createThread(seed.by, 'explore', seed.id, 'pending', `You responded to this thought: "${seed.text}"`);
+    const t = createThread(seed.by, 'explore', seed.id, 'pending', 'You responded to this thought: "{0}"', [seed.text]);
     t.msgs.push({ from: 'me', text: data.reply, at: Date.now() });
     U.target = null;
     save();
@@ -1063,7 +1095,7 @@ const forms = {
   apply(form, data) {
     if (!data.reply) { $('#f-reply', form).focus(); return; }
     const seed = SEED_POSTS.find((b) => b.id === form.dataset.id);
-    const t = createThread(seed.by, 'build', seed.id, 'pending', `You applied anonymously to this post: "${seed.title}"`);
+    const t = createThread(seed.by, 'build', seed.id, 'pending', 'You applied anonymously to this post: "{0}"', [seed.title]);
     t.msgs.push({ from: 'me', text: data.reply, at: Date.now() });
     U.target = null;
     save();
@@ -1095,10 +1127,9 @@ const forms = {
     const t = thread(form.dataset.id);
     if (!t) return;
     if (!data.area || !data.date) { $('#book-error', form).hidden = false; return; }
-    const day = new Date(`${data.date}T${data.time}`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    t.booking = { ...data, label: `${day}, ${data.time}. ${data.kind}, ${data.area}` };
+    t.booking = { ...data };
     U.booking = null;
-    pushMsg(t, 'sys', `You suggested a boba run: ${t.booking.label}.`);
+    pushMsg(t, 'sys', 'You suggested a boba run.');
     later(2400, () => {
       if (!thread(t.id)) return;
       pushMsg(t, 'them', 'That works for me. See you there.');
@@ -1125,8 +1156,9 @@ const acts = {
     const key = el.dataset.key;
     const { item, resp } = takeResponse(el);
     if (!resp) return;
-    const intro = key === 'thought' ? `They responded to your thought: "${item.text}"` : `They applied anonymously to your post: "${item.title}"`;
-    const t = createThread(resp.pid, key === 'thought' ? 'explore' : 'build', item.id + resp.pid, 'open', intro);
+    const t = key === 'thought'
+      ? createThread(resp.pid, 'explore', item.id + resp.pid, 'open', 'They responded to your thought: "{0}"', [item.text])
+      : createThread(resp.pid, 'build', item.id + resp.pid, 'open', 'They applied anonymously to your post: "{0}"', [item.title]);
     t.msgs.push({ from: 'them', text: resp.text, at: Date.now() });
     save();
     go('chats/' + t.id);
@@ -1145,7 +1177,7 @@ const acts = {
   call(el) {
     // External video: opens a Jitsi room. The simulated person will not actually join.
     window.open(`https://meet.jit.si/HalfSugar-${el.dataset.id}`, '_blank', 'noopener');
-    toast('Call room opened in a new tab');
+    toast(L`Call room opened in a new tab`);
   },
 
   'book-open'(el) { U.booking = el.dataset.id; render({ fresh: true, focus: 'f-area' }); },
@@ -1161,7 +1193,11 @@ const acts = {
   'drop-no'() { D.phase = 'result'; D.result = 'passed'; render(); },
   'drop-reset'() { D.phase = 'idle'; D.pid = null; D.msgs = []; render(); },
 
-  // Development shortcut: skip onboarding with a sample card. Remove before launch.
+  lang() {
+    setLang(LANG === 'zh' ? 'en' : 'zh');
+    render();
+  },
+
   // Development shortcuts for chats. Remove before launch.
   'dev-time'(el) {
     const t = thread(el.dataset.id);
@@ -1182,6 +1218,7 @@ const acts = {
     render();
   },
 
+  // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
     S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
