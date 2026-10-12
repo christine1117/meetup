@@ -1,6 +1,6 @@
 /* =========================================================
-   Meetup app
-   Main colour: cream. Accent: one orange, used everywhere.
+   Half Sugar app
+   Main colour: cream, like milk tea. Accent: one orange, used everywhere.
    Radius rule: buttons are pills, cards 20px, inputs 12px.
    ========================================================= */
 
@@ -104,9 +104,19 @@ a {
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 1.375rem;
   font-weight: 600;
   letter-spacing: -0.03em;
+}
+
+.logo__mark {
+  flex: none;
+  width: 22px;
+  height: 26px;
+  color: var(--ink);
 }
 
 /* ---------- Buttons ---------- */
@@ -681,18 +691,33 @@ textarea:focus-visible {
   margin-top: 16px;
 }
 
-.pulse {
-  width: 72px;
-  height: 72px;
-  margin-bottom: 16px;
-  border-radius: 50%;
-  background: var(--orange);
-  animation: pulse 1.2s var(--ease) infinite alternate;
+/* Three tapioca pearls bouncing while we shake your cup */
+.pearls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-@keyframes pulse {
-  from { transform: scale(0.7); opacity: 0.5; }
-  to { transform: scale(1); opacity: 1; }
+.pearls span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink);
+  animation: bounce 0.8s var(--ease) infinite alternate;
+}
+
+.pearls span:nth-child(2) {
+  background: var(--orange);
+  animation-delay: 0.15s;
+}
+
+.pearls span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes bounce {
+  from { transform: translateY(8px); }
+  to { transform: translateY(-12px); }
 }
 
 @keyframes rise {

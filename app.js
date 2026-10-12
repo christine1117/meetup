@@ -1,5 +1,5 @@
 /* =========================================================
-   Meetup app
+   Half Sugar app
    Demo mode: there is no backend. Data lives in this browser's
    localStorage, the other people (PEOPLE) are simulated, and
    their replies are pre-written lines.
@@ -18,7 +18,10 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const FIELDS = ['Design', 'Engineering', 'Founder', 'Research', 'Content', 'Business', 'Other'];
-const ORIGIN = { explore: 'Explore', build: 'Build', drop: 'Drop' };
+const ORIGIN = { explore: 'Explore', build: 'Brew', drop: 'Mystery Cup' };
+
+// Logo: a half-full boba cup. Simple geometric mark.
+const LOGO = `<svg class="logo__mark" viewBox="0 0 24 28" aria-hidden="true"><path d="M14.5 1.5 12.8 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M5.3 15h13.4" stroke="currentColor" stroke-width="2"/><circle cx="9.6" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="14.4" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="12" cy="19" r="1.7" fill="var(--orange)"/></svg><span>Half Sugar</span>`;
 
 /* ---------- Simulated people ---------- */
 
@@ -235,7 +238,7 @@ function scheduleAccept(t) {
   later(3200, () => {
     if (!thread(t.id) || t.status !== 'pending') return;
     t.status = 'open';
-    pushMsg(t, 'sys', 'They accepted. You can start talking.');
+    pushMsg(t, 'sys', 'They accepted. Take your first sip.');
     toast(`${P[t.pid].alias} accepted your response`);
     themReply(t, 1500);
   });
@@ -246,11 +249,11 @@ function resolveReveal(t) {
   const mine = t.msgs.filter((m) => m.from === 'me').length;
   if (mine >= 2) {
     t.reveal.them = true;
-    pushMsg(t, 'sys', 'You both agreed. Identities are unlocked.');
-    toast('Identities unlocked');
+    pushMsg(t, 'sys', 'You both popped the seal. Identities are unlocked.');
+    toast('Seal popped');
   } else {
     t.reveal.me = false;
-    pushMsg(t, 'them', "Let's talk a bit more before we reveal.");
+    pushMsg(t, 'them', "Let's sip a bit longer before we pop the seal.");
   }
 }
 
@@ -290,7 +293,7 @@ function profileForm(me, first) {
       ${field('proof', 'Proof of work', me.proof, { ph: 'Something you built or achieved' })}
     </fieldset>
     <fieldset class="panel panel--locked">
-      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>Unlocked only when both agree</legend>
+      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed until you both pop the seal</legend>
       <div class="row2">
         ${field('name', 'Real name', me.name)}
         ${field('title', 'Job title', me.title)}
@@ -302,7 +305,7 @@ function profileForm(me, first) {
       ${field('linkedin', 'LinkedIn', me.linkedin)}
     </fieldset>
     <p class="error" id="profile-error" hidden>Please add a nickname and what you're working on.</p>
-    <button class="btn btn--primary" type="submit">${first ? 'Get started' : 'Save'}</button>
+    <button class="btn btn--primary" type="submit">${first ? 'Start sipping' : 'Save my order'}</button>
   </form>`;
 }
 
@@ -310,11 +313,11 @@ function viewOnboard() {
   return `
   <main class="onboard">
     <div class="onboard__top">
-      <p class="logo">Meetup</p>
+      <p class="logo">${LOGO}</p>
       <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
     </div>
-    <h1>Meet the person before the résumé.</h1>
-    <p class="lead">Fill in one card to start. People see the top half. The bottom half unlocks only when you both agree.</p>
+    <h1>Boba chat, not coffee chat.</h1>
+    <p class="lead">Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.</p>
     ${profileForm(null, true)}
   </main>`;
 }
@@ -322,7 +325,7 @@ function viewOnboard() {
 function viewMe() {
   return `
   <header class="head">
-    <div><h1>Me</h1><p class="sub">Your card. Change it any time.</p></div>
+    <div><h1>My order</h1><p class="sub">Your usual. Change it any time.</p></div>
   </header>
   ${profileForm(S.me, false)}
   <section class="panel note">
@@ -347,7 +350,7 @@ function responsesBlock(item, key) {
       ${byline(P[r.pid])}
       <p class="quote">${esc(r.text)}</p>
       <div class="btnrow">
-        <button class="btn btn--dark btn--sm" data-act="accept" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">Accept and chat</button>
+        <button class="btn btn--dark btn--sm" data-act="accept" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">Accept, first sip</button>
         <button class="btn btn--ghost btn--sm" data-act="decline" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">Skip</button>
       </div>
     </li>`).join('')}</ul>`;
@@ -427,8 +430,8 @@ function viewExplore() {
 function viewBuild() {
   return `
   <header class="head">
-    <div><h1>Build</h1><p class="sub">I need someone for something.</p></div>
-    <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Post a need</button>
+    <div><h1>Brew</h1><p class="sub">I need someone for something.</p></div>
+    <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>Start a brew</button>
   </header>
 
   ${U.compose === 'post' ? `
@@ -445,7 +448,7 @@ function viewBuild() {
 
   ${S.myPosts.length ? `
   <section class="mine">
-    <h2>Your posts</h2>
+    <h2>Your brews</h2>
     ${S.myPosts.map((b) => `
     <article class="card card--mine">
       <h3 class="post-title">${esc(b.title)}</h3>
@@ -520,8 +523,8 @@ function viewDrop() {
   if (D.phase === 'matching') {
     return `
     <section class="drop-stage">
-      <div class="pulse" aria-hidden="true"></div>
-      <h1>Finding your match</h1>
+      <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
+      <h1>Shaking your mystery cup</h1>
       <p class="sub">Someone in a different city and a different field.</p>
     </section>`;
   }
@@ -551,13 +554,13 @@ function viewDrop() {
   if (D.phase === 'decide' || D.phase === 'waiting') {
     return `
     <section class="drop-stage">
-      <h1>Time is up. Want to keep talking?</h1>
-      <p class="sub">Identities unlock only if you both choose to continue. If either of you says no, this chat disappears.</p>
+      <h1>Cup's empty. Want a refill?</h1>
+      <p class="sub">The seal pops only if you both choose a refill. If either of you says no, this cup disappears.</p>
       ${D.phase === 'waiting'
         ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>Waiting for them to decide</p>`
         : `<div class="btnrow btnrow--center">
-            <button class="btn btn--primary" data-act="drop-yes" type="button">Continue</button>
-            <button class="btn btn--ghost" data-act="drop-no" type="button">No thanks</button>
+            <button class="btn btn--primary" data-act="drop-yes" type="button">Refill</button>
+            <button class="btn btn--ghost" data-act="drop-no" type="button">I'm good</button>
           </div>`}
     </section>`;
   }
@@ -567,16 +570,16 @@ function viewDrop() {
     return `
     <section class="drop-stage">
       ${t ? `
-        <h1>You both want to continue.</h1>
+        <h1>You both want a refill.</h1>
         <p class="sub">You were talking to ${esc(p.real.name)}, ${esc(p.real.title.toLowerCase())}.</p>
         <div class="btnrow btnrow--center">
-          <a class="btn btn--primary" href="#/chats/${t.id}">Keep talking</a>
-          <button class="btn btn--ghost" data-act="drop-reset" type="button">Back to Drop</button>
+          <a class="btn btn--primary" href="#/chats/${t.id}">Refill</a>
+          <button class="btn btn--ghost" data-act="drop-reset" type="button">Back to Mystery Cup</button>
         </div>` : `
-        <h1>This chat is gone.</h1>
-        <p class="sub">${D.result === 'passed' ? 'You chose not to continue.' : 'They did not choose to continue this time. Say a bit more next time and your odds go up.'}</p>
+        <h1>This cup is gone.</h1>
+        <p class="sub">${D.result === 'passed' ? 'You chose not to refill.' : 'They passed on a refill this time. Say a bit more next time and your odds go up.'}</p>
         <div class="btnrow btnrow--center">
-          <button class="btn btn--primary" data-act="drop-reset" type="button">Back to Drop</button>
+          <button class="btn btn--primary" data-act="drop-reset" type="button">Back to Mystery Cup</button>
         </div>`}
     </section>`;
   }
@@ -585,21 +588,21 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1>Drop</h1><p class="sub">I wonder who I’ll meet.</p></div>
+    <div><h1>Mystery Cup</h1><p class="sub">You can’t pick the flavor.</p></div>
   </header>
   <section class="drop-card">
     ${open
-      ? `<p class="drop-card__label">Drop is open</p><p class="drop-card__time">Join now</p>`
-      : `<p class="drop-card__label">Next Drop in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
+      ? `<p class="drop-card__label">Mystery Cup is open</p><p class="drop-card__time">Join now</p>`
+      : `<p class="drop-card__label">Next Mystery Cup in</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
     <p class="drop-card__when">${esc(localTime)} your time. Open for 10 minutes.</p>
-    <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Drop me in' : 'Try a practice round'}</button>
+    <button class="btn btn--dark" data-act="drop-join" type="button">${open ? 'Pour me one' : 'Try a practice cup'}</button>
   </section>
   <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>You cannot pick</strong><p>We match you with someone in a different city and field.</p></div></li>
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>No picking flavors</strong><p>We pour you someone from a different city and field.</p></div></li>
     <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>8 minutes</strong><p>Text only. When time is up, it ends.</p></div></li>
-    <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>Unlock only if you both continue</strong><p>Otherwise the chat disappears.</p></div></li>
+    <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>Refill only if you both want one</strong><p>Otherwise the cup disappears.</p></div></li>
   </ul>
-  ${S.drops ? `<p class="meta">You have joined ${S.drops} ${S.drops === 1 ? 'Drop' : 'Drops'}.</p>` : ''}`;
+  ${S.drops ? `<p class="meta">You have had ${S.drops} mystery ${S.drops === 1 ? 'cup' : 'cups'}.</p>` : ''}`;
 }
 
 function dropStart() {
@@ -609,7 +612,7 @@ function dropStart() {
   const pool = far.filter((p) => !met.has(p.id));
   const p = pick(pool.length ? pool : far.length ? far : PEOPLE);
   Object.assign(D, { phase: 'live', pid: p.id, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
-  D.msgs = [{ from: 'sys', text: 'You have 8 minutes. Start by asking what they are busy with.' }];
+  D.msgs = [{ from: 'sys', text: 'Your first sip lasts 8 minutes. Start by asking what they are busy with.' }];
   render({ fresh: true, focus: 'c-msg' });
   dropReply(1600);
 }
@@ -645,7 +648,7 @@ function dropDecide() {
     if (D.phase !== 'waiting') return;
     const mine = D.msgs.filter((m) => m.from === 'me').length;
     if (mine >= 2) {
-      const t = createThread(D.pid, 'drop', uid(), 'open', 'You met in a Drop and both chose to continue. Identities are unlocked.');
+      const t = createThread(D.pid, 'drop', uid(), 'open', 'You met over a Mystery Cup and both chose a refill. The seal is popped.');
       t.msgs.push(...D.msgs.filter((m) => m.from !== 'sys').map((m) => ({ ...m, at: Date.now() })));
       t.li = Math.max(0, D.li - 1);
       t.reveal = { me: true, them: true };
@@ -667,7 +670,7 @@ function viewChats() {
   const list = [...S.threads].sort((a, b) => b.at - a.at);
   return `
   <header class="head">
-    <div><h1>Chats</h1><p class="sub">Talk first. Decide about revealing later.</p></div>
+    <div><h1>Chats</h1><p class="sub">Every chat starts with a first sip.</p></div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
@@ -677,7 +680,7 @@ function viewChats() {
         <span class="avatar ${t.reveal.them ? 'avatar--on' : ''}" aria-hidden="true">${t.reveal.them ? esc(P[t.pid].real.name.charAt(0)) : '<i class="ph ph-user"></i>'}</span>
         <span class="threads__body">
           <strong>${esc(shownName(t))}</strong>
-          <small>${ORIGIN[t.origin]}${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
+          <small>${ORIGIN[t.origin]}, ${t.reveal.them ? 'Refill' : 'First Sip'}${t.status === 'pending' ? ', waiting for them to accept' : ''}</small>
           <span class="threads__last">${last ? esc(last.text) : ''}</span>
         </span>
         ${t.unread ? `<span class="badge" aria-label="${t.unread} unread">${t.unread}</span>` : ''}
@@ -685,10 +688,10 @@ function viewChats() {
     </li>`;
   }).join('')}</ul>` : `
   <div class="empty">
-    <p>No chats yet.</p>
+    <p>No cups yet.</p>
     <div class="btnrow btnrow--center">
       <a class="btn btn--dark btn--sm" href="#/explore">Respond to a thought</a>
-      <a class="btn btn--ghost btn--sm" href="#/drop">Try a Drop</a>
+      <a class="btn btn--ghost btn--sm" href="#/drop">Try a Mystery Cup</a>
     </div>
   </div>`}`;
 }
@@ -697,7 +700,7 @@ function viewThread(t) {
   const p = P[t.pid];
   const both = t.reveal.me && t.reveal.them;
   const today = new Date().toISOString().slice(0, 10);
-  const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : '<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>Locked</span>'}</dd></div>`;
+  const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : '<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed</span>'}</dd></div>`;
 
   return `
   <section class="chat">
@@ -705,15 +708,15 @@ function viewThread(t) {
       <a class="back" href="#/chats" aria-label="Back to chats"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
         <h1>${esc(shownName(t))}</h1>
-        <p class="sub">${ORIGIN[t.origin]}, ${esc(p.city)}</p>
+        <p class="sub">${both ? 'Refill' : 'First Sip'}. ${ORIGIN[t.origin]}, ${esc(p.city)}</p>
       </div>
       ${t.status === 'open' ? `
       <div class="chat__tools">
         <button class="btn btn--ghost btn--sm" data-act="call" data-id="${t.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Call</button>
-        <button class="btn btn--ghost btn--sm" data-act="book-open" data-id="${t.id}" type="button"><i class="ph ph-coffee" aria-hidden="true"></i>Meet up</button>
+        <button class="btn btn--ghost btn--sm" data-act="book-open" data-id="${t.id}" type="button"><i class="ph ph-person-simple-walk" aria-hidden="true"></i>Boba run</button>
         ${both ? '' : t.reveal.me
-          ? `<button class="btn btn--sm" type="button" disabled>Waiting for them</button>`
-          : `<button class="btn btn--primary btn--sm" data-act="reveal" data-id="${t.id}" type="button">Reveal</button>`}
+          ? `<button class="btn btn--sm" type="button" disabled>Waiting for them to pop</button>`
+          : `<button class="btn btn--primary btn--sm" data-act="reveal" data-id="${t.id}" type="button">Pop the seal</button>`}
       </div>` : ''}
     </header>
 
@@ -732,9 +735,9 @@ function viewThread(t) {
 
     ${U.booking === t.id ? `
     <form class="panel stack" data-form="book" data-id="${t.id}" novalidate>
-      <h2>Meet in person</h2>
+      <h2>Go on a boba run</h2>
       <div class="row2">
-        ${select('kind', 'Type', ['Café, 1-on-1', 'Restaurant', 'Small dinner table'], 'Café, 1-on-1')}
+        ${select('kind', 'Type', ['Boba shop, 1-on-1', 'Café', 'Small dinner table'], 'Boba shop, 1-on-1')}
         ${field('area', 'Area', S.me.city || '', { req: true, ph: "e.g. Taipei, Da'an" })}
       </div>
       <div class="row2">
@@ -767,10 +770,10 @@ function viewThread(t) {
 
 const NAV = [
   ['explore', 'Explore', 'ph-compass'],
-  ['build', 'Build', 'ph-hammer'],
-  ['drop', 'Drop', 'ph-lightning'],
+  ['build', 'Brew', 'ph-hammer'],
+  ['drop', 'Mystery Cup', 'ph-sparkle'],
   ['chats', 'Chats', 'ph-chat-circle'],
-  ['me', 'Me', 'ph-user'],
+  ['me', 'My order', 'ph-receipt'],
 ];
 
 function shell(route, body) {
@@ -779,7 +782,7 @@ function shell(route, body) {
   return `
   <div class="app">
     <aside class="side">
-      <a class="logo" href="#/explore">Meetup</a>
+      <a class="logo" href="#/explore" aria-label="Half Sugar home">${LOGO}</a>
       <nav class="nav" aria-label="Main">
         ${NAV.map(([name, label, icon]) => `
         <a href="#/${name}" ${route.name === name ? 'aria-current="page"' : ''}>
@@ -905,7 +908,7 @@ const forms = {
     const day = new Date(`${data.date}T${data.time}`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     t.booking = { ...data, label: `${day}, ${data.time}. ${data.kind}, ${data.area}` };
     U.booking = null;
-    pushMsg(t, 'sys', `You suggested meeting in person: ${t.booking.label}.`);
+    pushMsg(t, 'sys', `You suggested a boba run: ${t.booking.label}.`);
     later(2400, () => {
       if (!thread(t.id)) return;
       pushMsg(t, 'them', 'That works for me. See you there.');
@@ -945,13 +948,13 @@ const acts = {
     const t = thread(el.dataset.id);
     if (!t || t.reveal.me) return;
     t.reveal.me = true;
-    pushMsg(t, 'sys', 'You asked to reveal. Waiting for them to decide.');
+    pushMsg(t, 'sys', 'You popped your seal. Waiting for them.');
     later(2600, () => resolveReveal(t));
   },
 
   call(el) {
     // External video: opens a Jitsi room. The simulated person will not actually join.
-    window.open(`https://meet.jit.si/Meetup-${el.dataset.id}`, '_blank', 'noopener');
+    window.open(`https://meet.jit.si/HalfSugar-${el.dataset.id}`, '_blank', 'noopener');
     toast('Call room opened in a new tab');
   },
 
@@ -970,7 +973,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing the Meetup app', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');
