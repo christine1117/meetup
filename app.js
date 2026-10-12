@@ -218,7 +218,7 @@ const intentName = (k) => L((INTENTS.find(([v]) => v === k) || INTENTS[2])[1]);
 // Lower-case first letter so it reads well inside an English sentence
 const intentInline = (k) => { const n = intentName(k); return LANG === 'zh' ? n : n.charAt(0).toLowerCase() + n.slice(1); };
 
-const PICKS_PER_DAY = 3;
+const TOP_PICKS = 3;
 const BREW_SEND_TO = 4;
 
 const PEOPLE_LOOKING = {
@@ -236,33 +236,9 @@ const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getM
 const hashNum = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 const myLooking = () => (S.me && Array.isArray(S.me.looking) ? S.me.looking : []);
 
-// Why the two of you were matched, in a few short lines
-function whyYou(p) {
-  const out = p.looking.filter((k) => myLooking().includes(k)).map((k) => L`Both looking for: ${intentInline(k)}`);
-  if (p.field !== S.me.field) out.push(L`Different field: ${fieldName(p.field)}`);
-  if (S.me.city && p.city === S.me.city) out.push(L`Also in ${p.city}`);
-  return out;
-}
-
 function pickScore(p, seed) {
   const shared = p.looking.filter((k) => myLooking().includes(k)).length;
   return shared * 3 + (p.field !== S.me.field ? 1 : 0) + (S.me.city && p.city === S.me.city ? 1 : 0) + (hashNum(seed + p.id) % 100) / 100;
-}
-
-// Today's cards are chosen once and kept, so they do not shuffle while you look
-function todaysPicks() {
-  const d = dayKey();
-  S.picks = S.picks || {};
-  if (!S.picks[d]) {
-    const met = new Set(S.threads.map((t) => t.pid));
-    S.picks[d] = PEOPLE.filter((p) => !met.has(p.id))
-      .sort((a, b) => pickScore(b, d) - pickScore(a, d))
-      .slice(0, PICKS_PER_DAY)
-      .map((p) => p.id);
-    save();
-  }
-  const passed = (S.passed && S.passed[d]) || [];
-  return S.picks[d].filter((pid) => !passed.includes(pid)).map((pid) => P[pid]);
 }
 
 // Who a new Brew is sent to: the same kind of connection first, then matching words
@@ -300,7 +276,7 @@ function save() {
 let S = load();
 
 // Screen state that does not need to be saved
-const U = { compose: null, target: null, booking: null, typing: {}, confirmReset: false };
+const U = { compose: null, target: null, booking: null, typing: {}, confirmReset: false, f: { mode: '', size: '', city: '', field: '' } };
 const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
 let lastPath = null;
 
@@ -545,48 +521,44 @@ function responsesBlock(item, key) {
 // Shown until someone says what kind of connection they are looking for
 const lookingNudge = () => (myLooking().length ? '' : `<p class="nudge"><i class="ph ph-compass" aria-hidden="true"></i><span>${L`Tell us what kind of connection you are looking for, and your picks will get better.`} <a href="#/me">${L`Set it in My order`}</a></span></p>`);
 
-// One anonymous value card in today's picks
-function valueCard(p) {
-  const existing = threadFor('explore', `pick-${dayKey()}-${p.id}`);
-  const why = whyYou(p);
+// One thought card. Reply to it to start a chat.
+function thoughtCard(t) {
+  const p = P[t.by];
+  const existing = threadFor('explore', t.id);
   return `
-    <article class="card pick">
+    <article class="card">
+      <p class="thought">${esc(t.text)}</p>
+      <div class="meta-row"><p class="meta">${L`${modeLabel(t)}, ${esc(p.city)}`}</p></div>
       ${byline(p)}
-      <dl class="brief">
-        <div><dt>${L`Looking for`}</dt><dd>${esc(p.looking.map(intentName).join(L`, `))}</dd></div>
-        ${p.proof ? `<div><dt>${L`Proof of work`}</dt><dd>${esc(p.proof)}</dd></div>` : ''}
-      </dl>
-      ${p.thought ? `<blockquote class="pick__thought"><span>${L`On their mind`}</span>${esc(p.thought)}</blockquote>` : ''}
-      <p class="chips">${p.topics.map((x) => `<span>${esc(x)}</span>`).join('')}</p>
-      ${why.length ? `
-      <div class="why">
-        <p class="why__label"><i class="ph ph-sparkle" aria-hidden="true"></i>${L`Why you two`}</p>
-        <ul>${why.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>
-      </div>` : ''}
       ${existing
-        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Said hi. Open chat`}</a>`
-        : U.target === p.id
-          ? `<form class="stack reply" data-form="hi" data-id="${p.id}" novalidate>
-              ${field('reply', L`Say hi`, '', { area: true, rows: 3, req: true, ph: L`Start with what caught your eye. They see your card, not your titles.` })}
+        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Responded. Open chat`}</a>`
+        : U.target === t.id
+          ? `<form class="stack reply" data-form="respond" data-id="${t.id}" novalidate>
+              ${field('reply', L`Your perspective`, '', { area: true, rows: 3, req: true, ph: L`They see your response and your card, not your titles` })}
               <div class="btnrow">
-                <button class="btn btn--dark btn--sm" type="submit">${L`Send`}</button>
+                <button class="btn btn--dark btn--sm" type="submit">${L`Send response`}</button>
                 <button class="btn btn--ghost btn--sm" data-act="target" data-id="" type="button">${L`Cancel`}</button>
               </div>
             </form>`
-          : `<div class="btnrow">
-              <button class="btn btn--dark btn--sm" data-act="target" data-id="${p.id}" type="button">${L`Say hi`}</button>
-              <button class="btn btn--ghost btn--sm" data-act="pass" data-id="${p.id}" type="button">${L`Pass`}</button>
-            </div>`}
+          : `<button class="btn btn--dark btn--sm" data-act="target" data-id="${t.id}" type="button">${L`Respond`}</button>`}
     </article>`;
 }
 
 function viewExplore() {
-  const picks = todaysPicks();
-  const hoursLeft = Math.max(1, Math.ceil((new Date().setHours(24, 0, 0, 0) - Date.now()) / 3600000));
+  const f = U.f;
+  const cities = [...new Set(PEOPLE.map((p) => p.city))];
+  // Top picks: thoughts from people looking for the same kind of connection as you
+  const ranked = [...SEED_THOUGHTS].sort((a, b) => pickScore(P[b.by], dayKey()) - pickScore(P[a.by], dayKey()));
+  const top = myLooking().length ? ranked.slice(0, TOP_PICKS) : [];
+  const rest = SEED_THOUGHTS.filter((t) => !top.includes(t)).filter((t) => {
+    const p = P[t.by];
+    return (!f.mode || t.mode === f.mode) && (!f.size || t.size === f.size) && (!f.city || p.city === f.city) && (!f.field || p.field === f.field);
+  });
+  const opt = (v, l, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`;
 
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`Three anonymous cards a day, picked for what you are looking for. Say hi, or pass.`)}</div>
+    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
     <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Share a thought`}</button>
   </header>
 
@@ -605,17 +577,6 @@ function viewExplore() {
 
   ${lookingNudge()}
 
-  <div class="picks__head">
-    <h2>${L`Today's picks`}</h2>
-    <p class="meta">${L`New cards in ${hoursLeft}h`}</p>
-  </div>
-
-  ${picks.length ? picks.map(valueCard).join('') : `
-  <div class="empty">
-    ${cup('var(--milk)', { level: 0, cls: 'cup--lg' })}
-    <p>${L`That's today's menu. New cards tomorrow.`}</p>
-  </div>`}
-
   ${S.myThoughts.length ? `
   <section class="mine">
     <h2>${L`Your thoughts`}</h2>
@@ -625,18 +586,34 @@ function viewExplore() {
       <div class="meta-row"><p class="meta">${modeLabel(t)}</p></div>
       ${responsesBlock(t, 'thought')}
     </article>`).join('')}
-  </section>` : ''}`;
+  </section>` : ''}
+
+  ${top.length ? `
+  <section class="mine">
+    <h2>${L`Top picks`}</h2>
+    ${top.map(thoughtCard).join('')}
+  </section>` : ''}
+
+  <section class="mine">
+    <h2>${top.length ? L`More thoughts` : L`All thoughts`}</h2>
+    <div class="filters" role="group" aria-label="${esc(L`Filters`)}">
+      <select data-filter="mode" aria-label="${esc(L`Online or in person`)}">${opt('', L`Any format`, f.mode)}${opt('online', L`Online`, f.mode)}${opt('offline', L`In person`, f.mode)}</select>
+      <select data-filter="size" aria-label="${esc(L`Group size`)}">${opt('', L`Any size`, f.size)}${opt('1on1', L`1-on-1`, f.size)}${opt('group', L`Small group`, f.size)}</select>
+      <select data-filter="city" aria-label="${esc(L`City`)}">${opt('', L`All cities`, f.city)}${cities.map((c) => opt(c, c, f.city)).join('')}</select>
+      <select data-filter="field" aria-label="${esc(L`Field`)}">${opt('', L`All fields`, f.field)}${FIELDS.map((c) => opt(c, L`${fieldName(c)}, ${flavorName(c)}`, f.field)).join('')}</select>
+    </div>
+    ${rest.length ? rest.map(thoughtCard).join('') : `<p class="empty">${L`Nothing matches. Change the filters, or share a thought of your own.`}</p>`}
+  </section>`;
 }
 
 /* ---------- Screen: Build ---------- */
 
-function brewCard(b, forYou) {
+function brewCard(b) {
   const p = P[b.by];
   const existing = threadFor('build', b.id);
   return `
     <article class="card">
       <h3 class="post-title">${esc(b.title)}</h3>
-      ${forYou ? `<p class="why why--inline"><i class="ph ph-sparkle" aria-hidden="true"></i>${esc(L`They want ${intentInline(b.looking)}, and so do you.`)}</p>` : ''}
       <dl class="brief">
         <div><dt>${L`Needs`}</dt><dd>${esc(b.need)}</dd></div>
         <div><dt>${L`Offers`}</dt><dd>${esc(b.offer)}</dd></div>
@@ -704,13 +681,13 @@ function viewBuild() {
 
   ${forYou.length ? `
   <section class="mine">
-    <h2>${L`Sent to you`}</h2>
-    ${forYou.map((b) => brewCard(b, true)).join('')}
+    <h2>${L`Top picks`}</h2>
+    ${forYou.map(brewCard).join('')}
   </section>` : ''}
 
   <section class="mine">
     <h2>${forYou.length ? L`More brews` : L`All brews`}</h2>
-    ${rest.map((b) => brewCard(b, false)).join('')}
+    ${rest.map(brewCard).join('')}
   </section>`;
 }
 
@@ -1033,7 +1010,7 @@ const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
-  ['Explore', 'ph-compass', 'Three anonymous cards a day, picked for the kind of connection you are looking for.'],
+  ['Explore', 'ph-compass', 'Browse open thoughts and questions, with top picks first based on what you are looking for. Reply with your view to start talking.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need and it goes to the people who fit, or apply to a Brew without showing your titles.'],
   ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week: the same kind of connection, from a different field. Everyone joins at the same time and you cannot pick who you get.'],
   ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
@@ -1078,7 +1055,7 @@ function viewAbout() {
       <h2>${L`How it works`}</h2>
       <ol class="steps">
         <li><strong>${L`Fill in your order.`}</strong> ${L`Say what you are working on. Your titles stay sealed.`}</li>
-        <li><strong>${L`Take a first sip.`}</strong> ${L`Say hi to a card in Explore, apply to a Brew, or join the weekly Mystery Cup.`}</li>
+        <li><strong>${L`Take a first sip.`}</strong> ${L`Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.`}</li>
         <li><strong>${L`Reach half sugar, then pop the seal.`}</strong> ${L`Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.`}</li>
         <li><strong>${L`Keep it warm.`}</strong> ${L`Keep talking, build something, or go on a boba run and meet in person. A chat goes cold after 3 days with no reply.`}</li>
       </ol>
@@ -1118,7 +1095,7 @@ function viewAbout() {
 /* ---------- Shell ---------- */
 
 const NAV = [
-  ['explore', 'Explore', 'ph-compass', 'Daily picks'],
+  ['explore', 'Explore', 'ph-compass', 'Browse ideas'],
   ['build', 'Brew', 'ph-hammer', 'Build together'],
   ['drop', 'Mystery Cup', 'ph-sparkle', 'Weekly surprise match'],
   ['chats', 'Chats', 'ph-chat-circle', 'Your conversations'],
@@ -1193,14 +1170,7 @@ const forms = {
     if (!data.alias || !data.doing) { $('#profile-error', form).hidden = false; return; }
     const first = !S.me;
     data.looking = new FormData(form).getAll('looking');
-    const changed = !S.me || String(S.me.looking) !== String(data.looking);
     S.me = data;
-    if (changed && S.picks) {
-      // New answers mean new picks, unless you already acted on today's cards
-      const d = dayKey();
-      const acted = S.threads.some((t) => String(t.ref).startsWith(`pick-${d}`)) || ((S.passed || {})[d] || []).length;
-      if (!acted) delete S.picks[d];
-    }
     save();
     if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast(L`Saved`); render(); }
   },
@@ -1227,10 +1197,10 @@ const forms = {
     scheduleIncoming(item, 'post');
   },
 
-  hi(form, data) {
+  respond(form, data) {
     if (!data.reply) { $('#f-reply', form).focus(); return; }
-    const pid = form.dataset.id;
-    const t = createThread(pid, 'explore', `pick-${dayKey()}-${pid}`, 'pending', "You said hi from Today's picks.");
+    const seed = SEED_THOUGHTS.find((t) => t.id === form.dataset.id);
+    const t = createThread(seed.by, 'explore', seed.id, 'pending', 'You responded to this thought: "{0}"', [seed.text]);
     t.msgs.push({ from: 'me', text: data.reply, at: Date.now() });
     U.target = null;
     save();
@@ -1312,14 +1282,6 @@ const acts = {
 
   decline(el) { takeResponse(el); save(); render(); },
 
-  pass(el) {
-    const d = dayKey();
-    S.passed = S.passed || {};
-    S.passed[d] = [...(S.passed[d] || []), el.dataset.id];
-    save();
-    render();
-  },
-
   reveal(el) {
     const t = thread(el.dataset.id);
     if (!t || t.reveal.me || isCold(t) || sugarOf(t) < REVEAL_AT) return;
@@ -1395,6 +1357,13 @@ const acts = {
 document.addEventListener('click', (event) => {
   const el = event.target.closest('[data-act]');
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
+});
+
+document.addEventListener('change', (event) => {
+  const el = event.target.closest('[data-filter]');
+  if (!el) return;
+  U.f[el.dataset.filter] = el.value;
+  render();
 });
 
 document.addEventListener('submit', (event) => {
