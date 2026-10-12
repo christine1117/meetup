@@ -958,6 +958,16 @@ function viewAbout() {
       </ol>
     </section>
 
+    <section class="about__cold">
+      <i class="ph ph-snowflake" aria-hidden="true"></i>
+      <div>
+        <h2>${L`Why chats go cold`}</h2>
+        <p>${L`If nobody replies for ${CLOSE_AFTER_DAYS} days, the chat closes. We do this on purpose.`}</p>
+        <p>${L`On most networking apps, people match and then disappear, or agree to meet and never show up. Here, every chat is a small chance that will not wait forever. So reply while it is warm, and show up when you say you will.`}</p>
+        <p class="about__hint">${L`Each chat shows how much time is left, so nothing closes by surprise.`}</p>
+      </div>
+    </section>
+
     <section class="about__block">
       <h2>${L`The menu`}</h2>
       <p class="about__hint">${L`What our boba words mean.`}</p>
