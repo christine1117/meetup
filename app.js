@@ -84,6 +84,7 @@ function sugarNotes(t, before) {
   const after = sugarOf(t);
   if (before < REVEAL_AT && after >= REVEAL_AT && !t.reveal.them) {
     t.msgs.push({ from: 'sys', text: 'Half sugar! You can pop the seal now.', at: Date.now() });
+    learnWeights();
   }
   if (before < 100 && after >= 100) {
     t.msgs.push({ from: 'sys', text: 'Full sugar. Maybe it is time for a boba run?', at: Date.now() });
@@ -211,11 +212,14 @@ const SEED_POSTS = [
 ];
 
 /* ---------- Matching ----------
-   Every pair gets a score from five things (see WEIGHTS). We score both
-   directions, "is this person good for you" and "are you good for them",
-   and keep the lower one, so a match has to work for both people.
-   Explore and Brew show the top picks first; a new Brew is sent to the
-   people who fit it best. */
+   1. Who can show up: people you do not have a chat with yet.
+   2. Score each person from six things (see DEFAULT_WEIGHTS), in both
+      directions: "is this person good for you" and "are you good for them".
+      Keep the lower one, so a match has to work for both people.
+   3. Highest first, no more than two people from one field.
+   4. Every chat remembers the score it started with. Once enough chats have
+      finished, the weights move toward what actually led to good chats
+      (reaching half sugar). */
 
 const INTERESTS = [
   'AI', 'Climate', 'Cities', 'Community', 'Creators', 'Design', 'Education', 'Fintech', 'Food',
@@ -232,15 +236,22 @@ const STAGES = [
 ];
 const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
 
-// relevance: shared interests and the same stage. complement: different fields.
-// reliable: how often they reply. active: visited recently. fresh: a little daily luck.
-const WEIGHTS = { relevance: 0.4, complement: 0.2, reliable: 0.2, active: 0.1, fresh: 0.1 };
+// relevance: shared interests, the same stage, and shared words in what you work on.
+// complement: different fields. reliable: how often they reply. active: visited recently.
+// nearby: the same city. fresh: a little daily luck so picks change from day to day.
+const DEFAULT_WEIGHTS = { relevance: 0.35, complement: 0.2, reliable: 0.2, active: 0.1, nearby: 0.1, fresh: 0.05 };
+const weights = () => S.weights || DEFAULT_WEIGHTS;
+
 const TOP_PICKS = 3;
 const BREW_TOP_PICKS = 2;
 const BREW_SEND_TO = 4;
 const SAME_FIELD_LIMIT = 2; // top picks never hold more than this many people from one field
+const PRIOR_CHATS = 5;      // how much someone's starting reply rate counts against real history
+const LEARN_AFTER = 20;     // finished chats needed before the weights start to move
+const LEARN_STEP = 0.05;    // how much weight moves each time
+const MIN_WEIGHT = 0.05;    // no factor ever drops below this
 
-// Simulated people: interests, stage, how they like to meet, how often they reply, days since their last visit
+// Simulated people: interests, stage, how they like to meet, a starting reply rate, days since their last visit
 const PEOPLE_EXTRA = {
   p1: { field2: 'Engineering', interests: ['Small business', 'User research', 'Design'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
   p2: { interests: ['Cities', 'Open data', 'Climate'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
@@ -273,6 +284,12 @@ function sharedTopics(p) {
   return p.interests.filter((t) => mine.includes(t.toLowerCase()));
 }
 
+// The meaningful words in what someone works on. A real version would use AI to compare meaning.
+const STOP_WORDS = new Set(['about', 'after', 'also', 'because', 'from', 'have', 'into', 'just', 'like', 'more', 'that', 'their', 'them', 'they', 'this', 'what', 'when', 'with', 'your', 'tool', 'people', 'someone', 'something', 'looking', 'building', 'working', 'every', 'cannot', 'should']);
+const wordsOf = (text) => new Set((String(text || '').toLowerCase().match(/[a-z]{4,}/g) || [])
+  .map((w) => w.replace(/s$/, ''))
+  .filter((w) => w.length > 3 && !STOP_WORDS.has(w)));
+
 // Share of chats where you wrote back after they wrote to you. Starts at 0.8 with no history.
 function myReplyRate() {
   const theyWrote = S.threads.filter((t) => t.msgs.some((m) => m.from === 'them'));
@@ -284,26 +301,55 @@ function myReplyRate() {
   return replied.length / theyWrote.length;
 }
 
-// You, in the same shape as the simulated people
+// Their starting reply rate, corrected by whether they actually wrote back to you
+function replyRateOf(p) {
+  const chats = S.threads.filter((t) => t.pid === p.id && t.msgs.some((m) => m.from === 'me'));
+  const replied = chats.filter((t) => {
+    const first = t.msgs.findIndex((m) => m.from === 'me');
+    return t.msgs.slice(first + 1).some((m) => m.from === 'them');
+  }).length;
+  return (p.replyRate * PRIOR_CHATS + replied) / (PRIOR_CHATS + chats.length);
+}
+
+// Days since they were last seen: their last message to you, or their starting value
+function activeDaysOf(p) {
+  const times = S.threads.filter((t) => t.pid === p.id).flatMap((t) => t.msgs.filter((m) => m.from === 'them' && m.at).map((m) => m.at));
+  return times.length ? Math.min(p.activeDays, (Date.now() - Math.max(...times)) / 86400000) : p.activeDays;
+}
+
+// Everyone, you included, in the same shape for scoring
+const asCandidate = (p) => ({ ...p, replyRate: replyRateOf(p), activeDays: activeDaysOf(p), words: wordsOf(`${p.doing} ${p.thought || ''}`) });
 const meAsPerson = () => ({
-  id: 'me', field: S.me.field, field2: S.me.field2, interests: myInterests(), stage: S.me.stage, meet: S.me.meet || 'both', replyRate: myReplyRate(), activeDays: 0,
+  id: 'me', field: S.me.field, field2: S.me.field2, interests: myInterests(), stage: S.me.stage,
+  meet: S.me.meet || 'both', city: S.me.city, replyRate: myReplyRate(), activeDays: 0,
+  words: wordsOf([S.me.doing, ...S.myThoughts.map((t) => t.text), ...S.myPosts.map((b) => `${b.title} ${b.need}`)].join(' ')),
 });
 
 const meetsFit = (a, b) => a === 'both' || b === 'both' || a === b;
+const sameCity = (a, b) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
 
-// How good `to` is for `from`, from 0 to 1
-function oneWay(from, to, seed) {
+// Each factor from 0 to 1, for how good `to` is for `from`
+function scoreParts(from, to, seed) {
   const shared = from.interests.filter((i) => to.interests.includes(i)).length;
+  const sharedWords = [...from.words].filter((w) => to.words.has(w)).length;
   const overlap = fieldsOf(from).filter((f) => fieldsOf(to).includes(f)).length;
-  const parts = {
-    relevance: Math.min(1, shared * 0.4 + (from.stage && from.stage === to.stage ? 0.2 : 0)),
+  return {
+    relevance: Math.min(1, shared * 0.3 + Math.min(2, sharedWords) * 0.15 + (from.stage && from.stage === to.stage ? 0.2 : 0)),
     // No field in common is best; sharing one of two fields still counts half
     complement: overlap === 0 ? 1 : overlap < Math.max(fieldsOf(from).length, fieldsOf(to).length) ? 0.5 : 0,
     reliable: to.replyRate ?? 0.8,
     active: Math.max(0, 1 - (to.activeDays || 0) / 7),
+    // Same city counts fully when both are open to meeting in person
+    nearby: sameCity(from.city, to.city) ? (from.meet !== 'online' && to.meet !== 'online' ? 1 : 0.5) : 0,
     fresh: (hashNum(seed + [from.id, to.id].sort().join()) % 100) / 100,
   };
-  const score = Object.keys(WEIGHTS).reduce((sum, k) => sum + WEIGHTS[k] * parts[k], 0);
+}
+
+const weigh = (parts) => Object.entries(weights()).reduce((sum, [k, w]) => sum + w * parts[k], 0);
+
+// How good `to` is for `from`, from 0 to 1
+function oneWay(from, to, seed) {
+  const score = weigh(scoreParts(from, to, seed));
   // One wants online only and the other in person only: still possible, but less likely to happen
   return meetsFit(from.meet, to.meet) ? score : score * 0.5;
 }
@@ -311,12 +357,14 @@ function oneWay(from, to, seed) {
 // Both directions have to work, so the match score is the lower of the two
 function matchScore(p, seed) {
   const me = meAsPerson();
-  return Math.min(oneWay(me, p, seed), oneWay(p, me, seed));
+  const them = asCandidate(p);
+  return Math.min(oneWay(me, them, seed), oneWay(them, me, seed));
 }
 
-// Highest scores first, without letting one field take over
+// People you already have a chat with are not recommended again
 function topPicks(people, n, seed) {
-  const ranked = [...people].sort((a, b) => matchScore(b, seed) - matchScore(a, seed));
+  const met = new Set(S.threads.map((t) => t.pid));
+  const ranked = people.filter((p) => !met.has(p.id)).sort((a, b) => matchScore(b, seed) - matchScore(a, seed));
   const out = [];
   ranked.forEach((p) => {
     if (out.length < n && out.filter((x) => x.field === p.field).length < SAME_FIELD_LIMIT) out.push(p);
@@ -327,9 +375,72 @@ function topPicks(people, n, seed) {
 // Who a new Brew is sent to: people whose field or interests show up in it, reliable people first
 function brewMatches(item) {
   const text = `${item.title} ${item.need}`.toLowerCase();
-  const score = (p) => [p.field, ...p.interests].filter((w) => text.includes(w.toLowerCase())).length * 2
-    + p.replyRate + (hashNum(item.id + p.id) % 100) / 100;
+  const score = (p) => [p.field, p.field2, ...p.interests].filter((w) => w && text.includes(w.toLowerCase())).length * 2
+    + replyRateOf(p) + (hashNum(item.id + p.id) % 100) / 100;
   return [...PEOPLE].sort((a, b) => score(b) - score(a)).slice(0, BREW_SEND_TO).map((p) => p.id);
+}
+
+/* ---------- Scorecard ----------
+   A chat is "good" if it reached half sugar. A finished chat either got
+   there or went cold. */
+
+// Save the factors a chat started with
+function stampMatch(t) {
+  t.match = { parts: scoreParts(meAsPerson(), asCandidate(P[t.pid]), dayKey()), at: Date.now() };
+}
+
+const outcomeOf = (t) => ({
+  replied: t.msgs.some((m) => m.from === 'them') && t.msgs.some((m) => m.from === 'me'),
+  half: sugarOf(t) >= REVEAL_AT,
+  popped: t.reveal.me && t.reveal.them,
+  bobaRun: !!t.booking,
+});
+
+// With enough finished chats, move a little weight from the factor that tells good
+// and bad chats apart the least, to the one that tells them apart the most
+function learnWeights() {
+  const finished = S.threads.filter((t) => t.match && (outcomeOf(t).half || isCold(t)));
+  const good = finished.filter((t) => outcomeOf(t).half);
+  const bad = finished.filter((t) => !outcomeOf(t).half);
+  if (finished.length < LEARN_AFTER || good.length < 5 || bad.length < 5) return;
+  const avg = (list, k) => list.reduce((sum, t) => sum + (t.match.parts[k] || 0), 0) / list.length;
+  const keys = Object.keys(DEFAULT_WEIGHTS).filter((k) => k !== 'fresh');
+  const gap = Object.fromEntries(keys.map((k) => [k, avg(good, k) - avg(bad, k)]));
+  const w = { ...weights() };
+  const up = keys.reduce((a, b) => (gap[b] > gap[a] ? b : a));
+  // Take from the factor that helps least; on a tie, take from the smaller weight so key factors are not drained
+  const down = keys.filter((k) => k !== up && w[k] - LEARN_STEP >= MIN_WEIGHT)
+    .sort((a, b) => gap[a] - gap[b] || w[a] - w[b])[0];
+  if (!down || gap[up] <= gap[down]) return;
+  w[up] = +(w[up] + LEARN_STEP).toFixed(2);
+  w[down] = +(w[down] - LEARN_STEP).toFixed(2);
+  S.weights = w;
+}
+
+// The scorecard and weights, shown in My order
+function viewAlgorithm() {
+  const chats = S.threads.filter((t) => t.match);
+  const count = (k) => chats.filter((t) => outcomeOf(t)[k]).length;
+  const finished = chats.filter((t) => outcomeOf(t).half || isCold(t)).length;
+  const pct = (n) => (chats.length ? Math.round((n / chats.length) * 100) : 0);
+  const names = { relevance: L`Relevance`, complement: L`Different fields`, reliable: L`Replies`, active: L`Recently active`, nearby: L`Same city`, fresh: L`Daily luck` };
+  return `
+  <section class="panel algo">
+    <h2>${L`How your picks are chosen`}</h2>
+    <p class="hint">${L`Each person gets a score from these factors, checked from both sides. The weights start here and shift toward what leads to good chats once ${LEARN_AFTER} chats have finished (now ${finished}).`}</p>
+    <ul class="algo__weights">
+      ${Object.entries(weights()).map(([k, w]) => `<li><span>${names[k]}</span><strong>${Math.round(w * 100)}%</strong></li>`).join('')}
+    </ul>
+    <h3>${L`Scorecard`}</h3>
+    <ul class="algo__funnel">
+      <li><span>${L`Chats started`}</span><strong>${chats.length}</strong></li>
+      <li><span>${L`Both replied`}</span><strong>${count('replied')} (${pct(count('replied'))}%)</strong></li>
+      <li><span>${L`Reached half sugar`}</span><strong>${count('half')} (${pct(count('half'))}%)</strong></li>
+      <li><span>${L`Popped the seal`}</span><strong>${count('popped')} (${pct(count('popped'))}%)</strong></li>
+      <li><span>${L`Boba runs`}</span><strong>${count('bobaRun')} (${pct(count('bobaRun'))}%)</strong></li>
+    </ul>
+    ${S.weights ? `<button class="btn btn--ghost btn--sm" data-act="reset-weights" type="button">${L`Reset weights`}</button>` : ''}
+  </section>`;
 }
 
 /* ---------- State ---------- */
@@ -422,6 +533,7 @@ const threadFor = (origin, ref) => S.threads.find((t) => t.origin === origin && 
 function createThread(pid, origin, ref, status, intro, vars) {
   const t = { id: uid(), pid, origin, ref, status, msgs: [], li: 0, reveal: { me: false, them: false }, booking: null, unread: 0, at: Date.now() };
   if (intro) t.msgs.push({ from: 'sys', text: intro, vars, at: Date.now() });
+  stampMatch(t);
   S.threads.push(t);
   return t;
 }
@@ -634,9 +746,13 @@ function viewMe() {
       <p class="receipt__label">${L`Your usual`}</p>
       <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
       <p class="receipt__meta">${L`For ${esc(S.me.alias)}. Sugar goes up in each chat the longer you talk.`}</p>
+      <p class="receipt__meta">${S.threads.some((t) => t.msgs.some((m) => m.from === 'them'))
+        ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats. Replying helps your picks.`
+        : L`Your reply rate shows up after your first chats.`}</p>
     </div>
   </section>
   ${profileForm(S.me, false)}
+  ${viewAlgorithm()}
   <section class="panel note">
     <h2>${L`Demo mode`}</h2>
     <p>${L`This is not connected to a server yet. Your data stays in this browser, the other people are simulated, and their replies are pre-written. Bookings and notifications are not really sent.`}</p>
@@ -1518,6 +1634,8 @@ const acts = {
     render({ fresh: true });
   },
 
+  'reset-weights'() { delete S.weights; save(); render(); },
+
   reset() { U.confirmReset = true; render(); },
   'reset-no'() { U.confirmReset = false; render(); },
   'reset-yes'() {
@@ -1575,6 +1693,7 @@ S.threads.forEach((t) => {
   if (t.status === 'pending') scheduleAccept(t);
   if (t.reveal.me && !t.reveal.them) later(2600, () => resolveReveal(t));
 });
+learnWeights();
 S.myThoughts.forEach((item) => scheduleIncoming(item, 'thought'));
 S.myPosts.forEach((item) => scheduleIncoming(item, 'post'));
 

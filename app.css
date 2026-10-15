@@ -1977,3 +1977,44 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
   width: 48px;
   height: 56px;
 }
+
+/* ---------- Algorithm panel in My order ---------- */
+
+.algo > * + * {
+  margin-top: 12px;
+}
+
+.algo h3 {
+  margin-top: 20px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.algo__weights,
+.algo__funnel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+}
+
+.algo__weights li,
+.algo__funnel li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 6px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.9375rem;
+}
+
+.algo__weights strong,
+.algo__funnel strong {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+  .algo__weights,
+  .algo__funnel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
