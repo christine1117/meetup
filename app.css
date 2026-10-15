@@ -1947,3 +1947,33 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ---------- Two-flavor cups ---------- */
+
+.flavor {
+  background: linear-gradient(90deg, var(--flavor) 50%, var(--flavor2, var(--flavor)) 50%);
+}
+
+.option small {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.quiz__preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 14px 18px;
+  border: 1px dashed #b9ad98;
+  border-radius: var(--r-card);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.quiz__preview .cup--lg {
+  width: 48px;
+  height: 56px;
+}

@@ -43,6 +43,12 @@ const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
 const flavorName = (f) => L(flavor(f)[0]);
 const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? L(n) : L`${L(n)} milk tea`; };
 
+// Someone can have two fields, like a layered two-flavor drink. The first one is their main field.
+const fieldsOf = (p) => [p.field, p.field2].filter(Boolean);
+const fieldsLabel = (p) => fieldsOf(p).map(fieldName).join(' + ');
+const flavorsLabel = (p) => fieldsOf(p).map(flavorName).join(' + ');
+const drinkFor = (p) => (p.field2 ? L`${flavorsLabel(p)} milk tea` : drinkName(p.field));
+
 // Sugar = how long two people have talked. Every minute adds 5%, so 10 minutes is half sugar.
 // A long pause only counts as 3 minutes, so a chat left open in silence does not keep filling.
 // At 50% (half sugar) you can pop the seal. At 100% (full sugar) we suggest a boba run.
@@ -92,14 +98,15 @@ function cup(color, o = {}) {
   const y = (9 + (1 - level) * 18).toFixed(1);
   return `<svg class="cup ${o.cls || ''}" viewBox="0 0 24 28" aria-hidden="true">
     <defs><clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath></defs>
-    <rect x="0" y="${y}" width="24" height="28" fill="${color}" clip-path="url(#${id})"/>
+    <rect x="0" y="${y}" width="24" height="28" fill="${o.color2 || color}" clip-path="url(#${id})"/>
+    ${o.color2 ? `<rect x="0" y="${((+y + 27) / 2).toFixed(1)}" width="24" height="28" fill="${color}" clip-path="url(#${id})"/>` : ''}
     ${level > 0 ? `<g fill="var(--pearl)" clip-path="url(#${id})"><circle cx="8.7" cy="24.4" r="1.6"/><circle cx="12" cy="25" r="1.6"/><circle cx="15.3" cy="24.4" r="1.6"/><circle cx="10.4" cy="21.6" r="1.6"/><circle cx="13.6" cy="21.6" r="1.6"/></g>` : ''}
     <path d="M14.6 1.4 11.8 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
     <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
     ${o.mark ? `<text x="8.6" y="18.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}
   </svg>`;
 }
-const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls });
+const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
 /* ---------- Simulated people ---------- */
 
@@ -225,7 +232,7 @@ const STAGES = [
 ];
 const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
 
-// relevance: shared interests and the same stage. complement: a different field.
+// relevance: shared interests and the same stage. complement: different fields.
 // reliable: how often they reply. active: visited recently. fresh: a little daily luck.
 const WEIGHTS = { relevance: 0.4, complement: 0.2, reliable: 0.2, active: 0.1, fresh: 0.1 };
 const TOP_PICKS = 3;
@@ -235,11 +242,11 @@ const SAME_FIELD_LIMIT = 2; // top picks never hold more than this many people f
 
 // Simulated people: interests, stage, how they like to meet, how often they reply, days since their last visit
 const PEOPLE_EXTRA = {
-  p1: { interests: ['Small business', 'User research', 'Design'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
+  p1: { field2: 'Engineering', interests: ['Small business', 'User research', 'Design'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
   p2: { interests: ['Cities', 'Open data', 'Climate'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
   p3: { interests: ['Fintech', 'Small business', 'Community'], stage: 'startup', meet: 'online', replyRate: 0.85, activeDays: 1 },
   p4: { interests: ['Writing', 'Manufacturing', 'Community'], stage: 'side', meet: 'online', replyRate: 0.6, activeDays: 3 },
-  p5: { interests: ['Climate', 'Health', 'Hardware'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
+  p5: { field2: 'Engineering', interests: ['Climate', 'Health', 'Hardware'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
   p6: { interests: ['Design', 'Creators', 'Small business'], stage: 'startup', meet: 'online', replyRate: 0.75, activeDays: 0 },
   p7: { interests: ['AI', 'Health', 'User research'], stage: 'job', meet: 'online', replyRate: 0.95, activeDays: 0 },
   p8: { interests: ['Food', 'Logistics', 'Small business'], stage: 'startup', meet: 'inperson', replyRate: 0.65, activeDays: 4 },
@@ -279,7 +286,7 @@ function myReplyRate() {
 
 // You, in the same shape as the simulated people
 const meAsPerson = () => ({
-  id: 'me', field: S.me.field, interests: myInterests(), stage: S.me.stage, meet: S.me.meet || 'both', replyRate: myReplyRate(), activeDays: 0,
+  id: 'me', field: S.me.field, field2: S.me.field2, interests: myInterests(), stage: S.me.stage, meet: S.me.meet || 'both', replyRate: myReplyRate(), activeDays: 0,
 });
 
 const meetsFit = (a, b) => a === 'both' || b === 'both' || a === b;
@@ -287,9 +294,11 @@ const meetsFit = (a, b) => a === 'both' || b === 'both' || a === b;
 // How good `to` is for `from`, from 0 to 1
 function oneWay(from, to, seed) {
   const shared = from.interests.filter((i) => to.interests.includes(i)).length;
+  const overlap = fieldsOf(from).filter((f) => fieldsOf(to).includes(f)).length;
   const parts = {
     relevance: Math.min(1, shared * 0.4 + (from.stage && from.stage === to.stage ? 0.2 : 0)),
-    complement: from.field !== to.field ? 1 : 0,
+    // No field in common is best; sharing one of two fields still counts half
+    complement: overlap === 0 ? 1 : overlap < Math.max(fieldsOf(from).length, fieldsOf(to).length) ? 0.5 : 0,
     reliable: to.replyRate ?? 0.8,
     active: Math.max(0, 1 - (to.activeDays || 0) / 7),
     fresh: (hashNum(seed + [from.id, to.id].sort().join()) % 100) / 100,
@@ -349,7 +358,7 @@ let S = load();
 const U = {
   compose: null, target: null, booking: null, typing: {}, confirmReset: false,
   f: { mode: '', size: '', city: '', field: '' },
-  quiz: { step: 0, field: '', stage: '', interests: [], meet: '', city: '' },
+  quiz: { step: 0, field: '', field2: '', stage: '', interests: [], meet: '', city: '' },
 };
 const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
 let lastPath = null;
@@ -387,7 +396,7 @@ const modeLabel = (t) => L`${t.mode === 'offline' ? L('In person') : L('Online')
 
 const brief = (p) => `
   <dl class="brief">
-    <div><dt>${L`Flavor`}</dt><dd>${esc(drinkName(p.field))} (${esc(fieldName(p.field))})</dd></div>
+    <div><dt>${L`Flavor`}</dt><dd>${esc(drinkFor(p))} (${esc(fieldsLabel(p))})</dd></div>
     <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
     ${p.proof ? `<div><dt>${L`Proof of work`}</dt><dd>${esc(p.proof)}</dd></div>` : ''}
   </dl>`;
@@ -395,7 +404,7 @@ const brief = (p) => `
 const byline = (p) => `
   <p class="byline">
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]}" title="${esc(L`Flavor = field. ${flavorName(p.field)} means ${fieldName(p.field)}.`)}">${esc(flavorName(p.field))}</span><br><small>${L`${esc(fieldName(p.field))}. ${esc(p.doing)}`}</small></span>
+    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span><br><small>${L`${esc(fieldsLabel(p))}. ${esc(p.doing)}`}</small></span>
   </p>`;
 
 function toast(msg) {
@@ -505,9 +514,10 @@ function profileForm(me, first) {
       ${field('alias', L`Nickname`, me.alias, { req: true, hint: L`Not your real name.` })}
       ${first ? '' : `
       <div class="row2">
-        ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
         ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0], L`Your flavor is your field. It sets the colour of your cup.`)}
+        ${select('field2', L`Second field (optional)`, [['', L`None`], ...FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`])], me.field2 || '', L`Doing two things? It makes a two-flavor cup.`)}
       </div>
+      ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
       <div class="row2">
         ${select('stage', L`What you are doing these days`, STAGES.map(([v, l]) => [v, L(l)]), me.stage || 'exploring')}
         ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
@@ -547,8 +557,13 @@ function quizStep(q) {
   if (q.step === 0) {
     return `
     <h2 class="quiz__q">${L`First, pick your flavor.`}</h2>
-    <p class="quiz__hint">${L`Your field is your flavor. It sets the colour of your cup.`}</p>
-    <div class="options options--flavors">${FIELDS.map((f) => option('field', f, L`${fieldName(f)}, ${flavorName(f)}`, cup(flavor(f)[1], { cls: 'cup--option' }))).join('')}</div>`;
+    <p class="quiz__hint">${L`Your field is your flavor. It sets the colour of your cup. Doing two things? Pick a second one for a two-flavor cup.`}</p>
+    <div class="options options--flavors">${FIELDS.map((f) => {
+      const i = [q.field, q.field2].indexOf(f);
+      const tag = q.field2 ? [L`Main`, L`Second`][i] : '';
+      return `<button class="option ${i >= 0 ? 'is-on' : ''}" data-act="quiz-field" data-value="${f}" type="button" aria-pressed="${i >= 0}">${cup(flavor(f)[1], { cls: 'cup--option' })}<span>${esc(L`${fieldName(f)}, ${flavorName(f)}`)}${tag ? `<small>${tag}</small>` : ''}</span></button>`;
+    }).join('')}</div>
+    ${q.field ? `<p class="quiz__preview">${cupFor(q, 'cup--lg')}<span>${esc(drinkFor(q))}</span></p>` : ''}`;
   }
   if (q.step === 1) {
     return `
@@ -617,7 +632,7 @@ function viewMe() {
     ${cupFor(S.me, 'cup--lg')}
     <div>
       <p class="receipt__label">${L`Your usual`}</p>
-      <p class="receipt__item">1 × ${esc(drinkName(S.me.field))}</p>
+      <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
       <p class="receipt__meta">${L`For ${esc(S.me.alias)}. Sugar goes up in each chat the longer you talk.`}</p>
     </div>
   </section>
@@ -680,7 +695,7 @@ function viewExplore() {
   const top = topPicks(SEED_THOUGHTS.map((t) => P[t.by]), TOP_PICKS, dayKey()).map((p) => SEED_THOUGHTS.find((t) => t.by === p.id));
   const rest = SEED_THOUGHTS.filter((t) => !top.includes(t)).filter((t) => {
     const p = P[t.by];
-    return (!f.mode || t.mode === f.mode) && (!f.size || t.size === f.size) && (!f.city || p.city === f.city) && (!f.field || p.field === f.field);
+    return (!f.mode || t.mode === f.mode) && (!f.size || t.size === f.size) && (!f.city || p.city === f.city) && (!f.field || fieldsOf(p).includes(f.field));
   });
   const opt = (v, l, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`;
 
@@ -863,7 +878,7 @@ function viewDrop() {
       <header class="chat__head">
         <div>
           <h1>${L`Someone in ${esc(p.country)}`}</h1>
-          <p class="sub">${shared.length ? L`You both talk about ${esc(shared[0])}.` + (LANG === 'zh' ? '' : ' ') : ''}${L`Field: ${esc(fieldName(p.field))}. That is all you know.`}</p>
+          <p class="sub">${shared.length ? L`You both talk about ${esc(shared[0])}.` + (LANG === 'zh' ? '' : ' ') : ''}${L`Field: ${esc(fieldsLabel(p))}. That is all you know.`}</p>
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
@@ -940,7 +955,7 @@ function dropStart() {
   const me = S.me;
   const met = new Set(S.threads.map((t) => t.pid));
   // A different field and city first, a shared topic as a bonus. A little luck keeps it a surprise.
-  const score = (x) => (x.field !== me.field ? 2 : 0) + (x.city !== me.city ? 2 : 0) + (sharedTopics(x).length ? 1 : 0) + Math.random();
+  const score = (x) => (fieldsOf(x).some((f) => fieldsOf(me).includes(f)) ? 0 : 2) + (x.city !== me.city ? 2 : 0) + (sharedTopics(x).length ? 1 : 0) + Math.random();
   const pool = PEOPLE.filter((x) => !met.has(x.id));
   const p = [...(pool.length ? pool : PEOPLE)].sort((a, b) => score(b) - score(a))[0];
   Object.assign(D, { phase: 'live', pid: p.id, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
@@ -1129,7 +1144,7 @@ const explain = (html) => `<p class="explain"><i class="ph ph-info" aria-hidden=
 
 const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
-  ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup.'],
+  ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup. Two fields make a two-flavor cup.'],
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
   ['Explore', 'ph-compass', 'Browse open thoughts and questions, with top picks first. Reply with your view to start talking.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need and it goes to the people who fit, or apply to a Brew without showing your titles.'],
@@ -1291,9 +1306,10 @@ const forms = {
     const first = !S.me;
     if (first) {
       const q = U.quiz;
-      Object.assign(data, { field: q.field, stage: q.stage, interests: q.interests, meet: q.meet, city: q.city });
+      Object.assign(data, { field: q.field, field2: q.field2, stage: q.stage, interests: q.interests, meet: q.meet, city: q.city });
     } else {
       data.interests = new FormData(form).getAll('interests').slice(0, MAX_INTERESTS);
+      if (data.field2 === data.field) data.field2 = '';
     }
     S.me = data;
     save();
@@ -1442,6 +1458,16 @@ const acts = {
     render();
     // The meet question shares its screen with the city, so it waits for Next
     if (el.dataset.key !== 'meet') later(220, () => { if (q.step === step) { q.step += 1; render({ fresh: true }); } });
+  },
+  // First pick is the main field, second pick makes it a two-flavor cup. Tap again to remove.
+  'quiz-field'(el) {
+    const q = U.quiz;
+    const v = el.dataset.value;
+    if (q.field === v) { q.field = q.field2; q.field2 = ''; }
+    else if (q.field2 === v) q.field2 = '';
+    else if (!q.field) q.field = v;
+    else q.field2 = v;
+    render();
   },
   'quiz-interest'(el) {
     const list = U.quiz.interests;
