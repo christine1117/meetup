@@ -204,43 +204,124 @@ const SEED_POSTS = [
 ];
 
 /* ---------- Matching ----------
-   Matching is based on what people like to talk about: shared topics
-   first, then a different field for a fresh view. Explore and Brew show
-   top picks first; a new Brew is sent to the people who fit it best. */
+   Every pair gets a score from five things (see WEIGHTS). We score both
+   directions, "is this person good for you" and "are you good for them",
+   and keep the lower one, so a match has to work for both people.
+   Explore and Brew show the top picks first; a new Brew is sent to the
+   people who fit it best. */
 
+const INTERESTS = [
+  'AI', 'Climate', 'Cities', 'Community', 'Creators', 'Design', 'Education', 'Fintech', 'Food',
+  'Hardware', 'Health', 'Logistics', 'Manufacturing', 'Open data', 'Small business', 'User research', 'Writing',
+];
+const MAX_INTERESTS = 5;
+const STAGES = [
+  ['startup', 'Building a startup'],
+  ['side', 'Working on a side project'],
+  ['research', 'Doing research'],
+  ['study', 'Studying'],
+  ['job', 'Working at a company'],
+  ['exploring', 'Still figuring it out'],
+];
+const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
+
+// relevance: shared interests and the same stage. complement: a different field.
+// reliable: how often they reply. active: visited recently. fresh: a little daily luck.
+const WEIGHTS = { relevance: 0.4, complement: 0.2, reliable: 0.2, active: 0.1, fresh: 0.1 };
 const TOP_PICKS = 3;
 const BREW_TOP_PICKS = 2;
 const BREW_SEND_TO = 4;
+const SAME_FIELD_LIMIT = 2; // top picks never hold more than this many people from one field
 
+// Simulated people: interests, stage, how they like to meet, how often they reply, days since their last visit
+const PEOPLE_EXTRA = {
+  p1: { interests: ['Small business', 'User research', 'Design'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
+  p2: { interests: ['Cities', 'Open data', 'Climate'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
+  p3: { interests: ['Fintech', 'Small business', 'Community'], stage: 'startup', meet: 'online', replyRate: 0.85, activeDays: 1 },
+  p4: { interests: ['Writing', 'Manufacturing', 'Community'], stage: 'side', meet: 'online', replyRate: 0.6, activeDays: 3 },
+  p5: { interests: ['Climate', 'Health', 'Hardware'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
+  p6: { interests: ['Design', 'Creators', 'Small business'], stage: 'startup', meet: 'online', replyRate: 0.75, activeDays: 0 },
+  p7: { interests: ['AI', 'Health', 'User research'], stage: 'job', meet: 'online', replyRate: 0.95, activeDays: 0 },
+  p8: { interests: ['Food', 'Logistics', 'Small business'], stage: 'startup', meet: 'inperson', replyRate: 0.65, activeDays: 4 },
+};
 PEOPLE.forEach((p) => {
+  Object.assign(p, PEOPLE_EXTRA[p.id]);
+  p.topics = p.interests;
   p.thought = (SEED_THOUGHTS.find((t) => t.by === p.id) || {}).text;
 });
 
 const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const hashNum = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-const myTopics = () => String((S.me && S.me.topics) || '').split(/[,，、]/).map((x) => x.trim().toLowerCase()).filter(Boolean);
 
-// Topics you and this person both like to talk about
+// Older cards saved topics as free text, so fall back to that
+const myInterests = () => {
+  if (!S.me) return [];
+  if (Array.isArray(S.me.interests)) return S.me.interests;
+  return String(S.me.topics || '').split(/[,，、]/).map((x) => x.trim()).filter(Boolean);
+};
+
+// Interests you and this person share
 function sharedTopics(p) {
-  const mine = myTopics();
-  return p.topics.filter((t) => mine.some((m) => m.includes(t.toLowerCase()) || t.toLowerCase().includes(m)));
+  const mine = myInterests().map((x) => x.toLowerCase());
+  return p.interests.filter((t) => mine.includes(t.toLowerCase()));
 }
 
-// A little daily luck (the seed) keeps the order from being the same every day
-function pickScore(p, seed) {
-  return sharedTopics(p).length * 3 + (p.field !== S.me.field ? 1 : 0) + (S.me.city && p.city === S.me.city ? 1 : 0) + (hashNum(seed + p.id) % 100) / 100;
+// Share of chats where you wrote back after they wrote to you. Starts at 0.8 with no history.
+function myReplyRate() {
+  const theyWrote = S.threads.filter((t) => t.msgs.some((m) => m.from === 'them'));
+  if (!theyWrote.length) return 0.8;
+  const replied = theyWrote.filter((t) => {
+    const first = t.msgs.findIndex((m) => m.from === 'them');
+    return t.msgs.slice(first + 1).some((m) => m.from === 'me');
+  });
+  return replied.length / theyWrote.length;
 }
 
-// Who a new Brew is sent to: people whose field or topics show up in it
+// You, in the same shape as the simulated people
+const meAsPerson = () => ({
+  id: 'me', field: S.me.field, interests: myInterests(), stage: S.me.stage, meet: S.me.meet || 'both', replyRate: myReplyRate(), activeDays: 0,
+});
+
+const meetsFit = (a, b) => a === 'both' || b === 'both' || a === b;
+
+// How good `to` is for `from`, from 0 to 1
+function oneWay(from, to, seed) {
+  const shared = from.interests.filter((i) => to.interests.includes(i)).length;
+  const parts = {
+    relevance: Math.min(1, shared * 0.4 + (from.stage && from.stage === to.stage ? 0.2 : 0)),
+    complement: from.field !== to.field ? 1 : 0,
+    reliable: to.replyRate ?? 0.8,
+    active: Math.max(0, 1 - (to.activeDays || 0) / 7),
+    fresh: (hashNum(seed + [from.id, to.id].sort().join()) % 100) / 100,
+  };
+  const score = Object.keys(WEIGHTS).reduce((sum, k) => sum + WEIGHTS[k] * parts[k], 0);
+  // One wants online only and the other in person only: still possible, but less likely to happen
+  return meetsFit(from.meet, to.meet) ? score : score * 0.5;
+}
+
+// Both directions have to work, so the match score is the lower of the two
+function matchScore(p, seed) {
+  const me = meAsPerson();
+  return Math.min(oneWay(me, p, seed), oneWay(p, me, seed));
+}
+
+// Highest scores first, without letting one field take over
+function topPicks(people, n, seed) {
+  const ranked = [...people].sort((a, b) => matchScore(b, seed) - matchScore(a, seed));
+  const out = [];
+  ranked.forEach((p) => {
+    if (out.length < n && out.filter((x) => x.field === p.field).length < SAME_FIELD_LIMIT) out.push(p);
+  });
+  return out;
+}
+
+// Who a new Brew is sent to: people whose field or interests show up in it, reliable people first
 function brewMatches(item) {
   const text = `${item.title} ${item.need}`.toLowerCase();
-  const score = (p) => [p.field, ...p.topics].filter((w) => text.includes(w.toLowerCase())).length * 2
-    + (hashNum(item.id + p.id) % 100) / 100;
+  const score = (p) => [p.field, ...p.interests].filter((w) => text.includes(w.toLowerCase())).length * 2
+    + p.replyRate + (hashNum(item.id + p.id) % 100) / 100;
   return [...PEOPLE].sort((a, b) => score(b) - score(a)).slice(0, BREW_SEND_TO).map((p) => p.id);
 }
-
-// How well someone else's Brew fits you
-const brewFit = (b) => pickScore(P[b.by], dayKey() + b.id);
 
 /* ---------- State ---------- */
 
@@ -265,7 +346,11 @@ function save() {
 let S = load();
 
 // Screen state that does not need to be saved
-const U = { compose: null, target: null, booking: null, typing: {}, confirmReset: false, f: { mode: '', size: '', city: '', field: '' } };
+const U = {
+  compose: null, target: null, booking: null, typing: {}, confirmReset: false,
+  f: { mode: '', size: '', city: '', field: '' },
+  quiz: { step: 0, field: '', stage: '', interests: [], meet: '', city: '' },
+};
 const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
 let lastPath = null;
 
@@ -402,6 +487,15 @@ function scheduleIncoming(item, key) {
 
 /* ---------- Screen: profile ---------- */
 
+// Interest chips as checkboxes, for editing in My order
+const interestChecks = (picked) => `
+      <div class="field" role="group" aria-labelledby="interests-label">
+        <p class="field__label" id="interests-label">${L`Topics you could talk about for an hour`}</p>
+        <div class="checks">${INTERESTS.map((i) => `<label class="check"><input type="checkbox" name="interests" value="${esc(i)}" ${picked.includes(i) ? 'checked' : ''}><span>${esc(L(i))}</span></label>`).join('')}</div>
+        <p class="hint">${L`Pick up to ${MAX_INTERESTS}. We use these to find people worth talking to.`}</p>
+      </div>`;
+
+// The first-time form skips what the quick questions already asked
 function profileForm(me, first) {
   me = me || {};
   return `
@@ -409,12 +503,17 @@ function profileForm(me, first) {
     <fieldset class="panel">
       <legend><i class="ph ph-eye" aria-hidden="true"></i>${L`Visible from the start`}</legend>
       ${field('alias', L`Nickname`, me.alias, { req: true, hint: L`Not your real name.` })}
+      ${first ? '' : `
       <div class="row2">
         ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
         ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0], L`Your flavor is your field. It sets the colour of your cup.`)}
       </div>
+      <div class="row2">
+        ${select('stage', L`What you are doing these days`, STAGES.map(([v, l]) => [v, L(l)]), me.stage || 'exploring')}
+        ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
+      </div>
+      ${interestChecks(myInterests())}`}
       ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
-      ${field('topics', L`Topics I can talk deeply about`, me.topics, { hint: L`Separate with commas.` })}
       ${field('proof', L`Proof of work`, me.proof, { ph: L`Something you built or achieved` })}
     </fieldset>
     <fieldset class="panel panel--locked">
@@ -435,7 +534,54 @@ function profileForm(me, first) {
   </form>`;
 }
 
+/* ---------- Screen: onboarding ----------
+   A few quick questions, one per screen, then the order form.
+   Single-choice answers move on by themselves. */
+
+const QUIZ_STEPS = 4;
+
+function quizStep(q) {
+  const option = (key, value, label, art = '') => `
+    <button class="option ${q[key] === value ? 'is-on' : ''}" data-act="quiz-pick" data-key="${key}" data-value="${esc(value)}" type="button" aria-pressed="${q[key] === value}">${art}<span>${esc(label)}</span></button>`;
+
+  if (q.step === 0) {
+    return `
+    <h2 class="quiz__q">${L`First, pick your flavor.`}</h2>
+    <p class="quiz__hint">${L`Your field is your flavor. It sets the colour of your cup.`}</p>
+    <div class="options options--flavors">${FIELDS.map((f) => option('field', f, L`${fieldName(f)}, ${flavorName(f)}`, cup(flavor(f)[1], { cls: 'cup--option' }))).join('')}</div>`;
+  }
+  if (q.step === 1) {
+    return `
+    <h2 class="quiz__q">${L`What are you doing these days?`}</h2>
+    <p class="quiz__hint">${L`People at the same stage often get each other faster.`}</p>
+    <div class="options">${STAGES.map(([v, l]) => option('stage', v, L(l))).join('')}</div>`;
+  }
+  if (q.step === 2) {
+    return `
+    <h2 class="quiz__q">${L`Pick topics you could talk about for an hour.`}</h2>
+    <p class="quiz__hint">${L`Up to ${MAX_INTERESTS}. We use these to find people worth talking to.`}</p>
+    <div class="options options--chips">${INTERESTS.map((i) => {
+      const on = q.interests.includes(i);
+      return `<button class="option option--chip ${on ? 'is-on' : ''}" data-act="quiz-interest" data-value="${esc(i)}" type="button" aria-pressed="${on}">${esc(L(i))}</button>`;
+    }).join('')}</div>
+    <p class="meta">${L`${q.interests.length} of ${MAX_INTERESTS} picked`}</p>`;
+  }
+  if (q.step === 3) {
+    return `
+    <h2 class="quiz__q">${L`How do you like to meet?`}</h2>
+    <p class="quiz__hint">${L`You can always do both. This just helps us suggest the right people.`}</p>
+    <div class="options">${MEETS.map(([v, l]) => option('meet', v, L(l))).join('')}</div>
+    ${field('city', L`Which city are you in?`, q.city, { ph: L`e.g. Taipei` })}`;
+  }
+  return `
+    <h2 class="quiz__q">${L`Last step: fill in your order.`}</h2>
+    <p class="quiz__hint">${L`People see the top half. The bottom half stays sealed until you both pop the seal.`}</p>
+    ${profileForm(null, true)}`;
+}
+
 function viewOnboard() {
+  const q = U.quiz;
+  const canNext = [q.field, q.stage, q.interests.length, q.meet][q.step];
   return `
   <main class="onboard">
     <div class="onboard__top">
@@ -444,15 +590,21 @@ function viewOnboard() {
         <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
       </div>
     </div>
+    ${q.step === 0 ? `
     <div class="onboard__hero">
       <div>
         <h1 lang="en">${L`Boba chat, not coffee chat.`}</h1>
-        <p class="lead">${L`Meet the person before the résumé. Fill in your order to start. People see the top half. The bottom half stays sealed until you both pop the seal.`}</p>
+        <p class="lead">${L`Meet the person before the résumé. A few quick questions, then you are in.`}</p>
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
     </div>
-    <p class="onboard__about"><a href="#/about">${L`New here? Read what Half Sugar is and what the boba words mean.`}</a></p>
-    ${profileForm(null, true)}
+    <p class="onboard__about"><a href="#/about">${L`New here? Read what Half Sugar is and what the boba words mean.`}</a></p>` : ''}
+    <div class="progress" role="progressbar" aria-label="${esc(L`Setup progress`)}" aria-valuemin="1" aria-valuemax="${QUIZ_STEPS + 1}" aria-valuenow="${q.step + 1}"><span style="width:${((q.step + 1) / (QUIZ_STEPS + 1)) * 100}%"></span></div>
+    <section class="quiz">${quizStep(q)}</section>
+    <div class="quiz__nav">
+      ${q.step ? `<button class="btn btn--ghost" data-act="quiz-back" type="button"><i class="ph ph-arrow-left" aria-hidden="true"></i>${L`Back`}</button>` : '<span></span>'}
+      ${q.step < QUIZ_STEPS ? `<button class="btn btn--primary" data-act="quiz-next" type="button" ${canNext ? '' : 'disabled'}>${L`Next`}</button>` : ''}
+    </div>
   </main>`;
 }
 
@@ -524,9 +676,8 @@ function thoughtCard(t) {
 function viewExplore() {
   const f = U.f;
   const cities = [...new Set(PEOPLE.map((p) => p.city))];
-  // Top picks: thoughts from people who share your topics, with a little daily variety
-  const ranked = [...SEED_THOUGHTS].sort((a, b) => pickScore(P[b.by], dayKey()) - pickScore(P[a.by], dayKey()));
-  const top = ranked.slice(0, TOP_PICKS);
+  // Top picks: thoughts from the people who score highest with you today
+  const top = topPicks(SEED_THOUGHTS.map((t) => P[t.by]), TOP_PICKS, dayKey()).map((p) => SEED_THOUGHTS.find((t) => t.by === p.id));
   const rest = SEED_THOUGHTS.filter((t) => !top.includes(t)).filter((t) => {
     const p = P[t.by];
     return (!f.mode || t.mode === f.mode) && (!f.size || t.size === f.size) && (!f.city || p.city === f.city) && (!f.field || p.field === f.field);
@@ -610,9 +761,8 @@ function brewCard(b) {
 }
 
 function viewBuild() {
-  const ranked = [...SEED_POSTS].sort((a, b) => brewFit(b) - brewFit(a));
-  const forYou = ranked.slice(0, BREW_TOP_PICKS);
-  const rest = ranked.filter((b) => !forYou.includes(b));
+  const forYou = topPicks(SEED_POSTS.map((b) => P[b.by]), BREW_TOP_PICKS, dayKey() + 'brew').map((p) => SEED_POSTS.find((b) => b.by === p.id));
+  const rest = SEED_POSTS.filter((b) => !forYou.includes(b));
 
   return `
   <header class="head">
@@ -1139,6 +1289,12 @@ const forms = {
   profile(form, data) {
     if (!data.alias || !data.doing) { $('#profile-error', form).hidden = false; return; }
     const first = !S.me;
+    if (first) {
+      const q = U.quiz;
+      Object.assign(data, { field: q.field, stage: q.stage, interests: q.interests, meet: q.meet, city: q.city });
+    } else {
+      data.interests = new FormData(form).getAll('interests').slice(0, MAX_INTERESTS);
+    }
     S.me = data;
     save();
     if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast(L`Saved`); render(); }
@@ -1279,6 +1435,34 @@ const acts = {
   'drop-reset'() { D.phase = 'idle'; D.pid = null; D.msgs = []; render(); },
 
 
+  'quiz-pick'(el) {
+    const q = U.quiz;
+    const step = q.step;
+    q[el.dataset.key] = el.dataset.value;
+    render();
+    // The meet question shares its screen with the city, so it waits for Next
+    if (el.dataset.key !== 'meet') later(220, () => { if (q.step === step) { q.step += 1; render({ fresh: true }); } });
+  },
+  'quiz-interest'(el) {
+    const list = U.quiz.interests;
+    const i = list.indexOf(el.dataset.value);
+    if (i >= 0) list.splice(i, 1);
+    else if (list.length < MAX_INTERESTS) list.push(el.dataset.value);
+    render();
+  },
+  'quiz-next'() {
+    const city = document.getElementById('f-city');
+    if (U.quiz.step === 3 && city) U.quiz.city = city.value.trim();
+    U.quiz.step += 1;
+    render({ fresh: true });
+  },
+  'quiz-back'() {
+    const city = document.getElementById('f-city');
+    if (U.quiz.step === 3 && city) U.quiz.city = city.value.trim();
+    U.quiz.step = Math.max(0, U.quiz.step - 1);
+    render({ fresh: true });
+  },
+
   // Development shortcuts for chats. Remove before launch.
   'dev-time'(el) {
     const t = thread(el.dataset.id);
@@ -1301,7 +1485,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', doing: 'Testing Half Sugar', topics: 'Networking, Product', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', stage: 'side', meet: 'both', interests: ['Small business', 'User research', 'AI'], doing: 'Testing Half Sugar', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');

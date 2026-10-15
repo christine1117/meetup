@@ -1825,3 +1825,125 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
   width: 15px;
   height: 18px;
 }
+
+/* ---------- Onboarding questions ---------- */
+
+.progress {
+  height: 6px;
+  margin-top: 28px;
+  border-radius: var(--r-pill);
+  background: var(--sunk);
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--orange);
+  transition: width 0.4s var(--ease);
+}
+
+.quiz {
+  margin-top: 28px;
+}
+
+.quiz > * + * {
+  margin-top: 14px;
+}
+
+.quiz__q {
+  font-size: clamp(1.5rem, 3vw, 1.875rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.quiz__hint {
+  color: var(--muted);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.2s var(--ease);
+}
+
+.option:hover {
+  border-color: var(--ink);
+}
+
+.option:active {
+  transform: scale(0.98);
+}
+
+.option.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.option.is-on .cup {
+  color: var(--bg);
+}
+
+.options--flavors {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+}
+
+.cup--option {
+  width: 26px;
+  height: 30px;
+  flex: none;
+}
+
+.options--chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option--chip {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+}
+
+.quiz .field {
+  margin-top: 22px;
+}
+
+.quiz__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+@media (max-width: 520px) {
+  .options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .options--flavors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
