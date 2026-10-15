@@ -946,12 +946,14 @@ function viewBuild() {
 }
 
 /* ---------- Screen: Drop ----------
-   The schedule is a placeholder: every Friday 13:00 UTC, open for 10 minutes. */
+   The schedule is a placeholder: every Friday 13:00 UTC, open for 10 minutes.
+   Each chat also lasts 10 minutes, which is exactly half sugar (5% a minute). */
 
 const DROP_WEEKDAY_UTC = 5;
 const DROP_HOUR_UTC = 13;
 const DROP_WINDOW_MS = 10 * 60 * 1000;
-const DROP_LENGTH_MS = 8 * 60 * 1000;
+const DROP_MINUTES = 10;
+const DROP_LENGTH_MS = DROP_MINUTES * 60 * 1000;
 
 function nextDrop(now) {
   const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), DROP_HOUR_UTC));
@@ -1061,7 +1063,7 @@ function viewDrop() {
   </section>
   <ul class="rules">
     <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`We pour you someone from a different city and field.`}</p></div></li>
-    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`8 minutes`}</strong><p>${L`Text only. When time is up, it ends.`}</p></div></li>
+    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`${DROP_MINUTES} minutes`}</strong><p>${L`Text only. Ten minutes is half sugar, right when you choose whether to refill.`}</p></div></li>
     <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
   </ul>
   ${S.drops ? `<p class="meta">${S.drops === 1 ? L`You have had 1 mystery cup.` : L`You have had ${S.drops} mystery cups.`}</p>` : ''}`;
@@ -1075,7 +1077,7 @@ function dropStart() {
   const pool = PEOPLE.filter((x) => !met.has(x.id));
   const p = [...(pool.length ? pool : PEOPLE)].sort((a, b) => score(b) - score(a))[0];
   Object.assign(D, { phase: 'live', pid: p.id, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
-  D.msgs = [{ from: 'sys', text: 'Your first sip lasts 8 minutes. Start by asking what they are busy with.' }];
+  D.msgs = [{ from: 'sys', text: 'Your first sip lasts 10 minutes. Start by asking what they are busy with.' }];
   render({ fresh: true, focus: 'c-msg' });
   dropReply(1600);
 }

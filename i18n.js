@@ -213,13 +213,13 @@ const ZH = {
   'Pour me one': '來一杯',
   'Try a practice cup': '先試喝一杯',
   'No picking flavors': '口味不能挑',
-  '8 minutes': '8 分鐘',
-  'Text only. When time is up, it ends.': '純文字聊天，時間到即結束。',
+  '{0} minutes': '{0} 分鐘',
+  'Text only. Ten minutes is half sugar, right when you choose whether to refill.': '純文字聊天。聊滿 10 分鐘剛好半糖，正是決定要不要 Refill 的時候。',
   'Refill only if you both want one': '雙方同意才 Refill',
   'Otherwise the cup disappears.': '否則這杯就此消失。',
   'You have had 1 mystery cup.': '已喝過 1 杯 Mystery Cup',
   'You have had {0} mystery cups.': '已喝過 {0} 杯 Mystery Cup',
-  'Your first sip lasts 8 minutes. Start by asking what they are busy with.': '你們有 8 分鐘。不妨從「最近在忙什麼」開始。',
+  'Your first sip lasts 10 minutes. Start by asking what they are busy with.': '你們有 10 分鐘。不妨從「最近在忙什麼」開始。',
   'You met over a Mystery Cup and both chose a refill. The seal is popped.': '你們在 Mystery Cup 相遇，雙方都選了 Refill，身份已揭曉。',
 
   // Chats
