@@ -93,50 +93,7 @@ function sugarNotes(t, before) {
 
 // A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
 const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
-// Big cups (hero, Mystery Cup, empty states) get a shaded 3D look and lean toward the pointer
-const BIG_CUP = /cup--(hero|mystery|lg)/;
-
-function cup3d(color, o = {}) {
-  const id = 'c3' + uid();
-  const level = o.level ?? 0.62;
-  const top = 34;
-  const bottom = 146;
-  const surface = bottom - (bottom - top - 8) * level;
-  const halfAt = (y) => 44 - 14 * ((y - top) / (bottom - top)); // the cup narrows toward the bottom
-  const body = `M16 ${top} L30 ${bottom} A30 7 0 0 0 90 ${bottom} L104 ${top} Z`;
-  const pearls = [[40, 137], [54, 140], [68, 140], [82, 137], [47, 126], [61, 128], [75, 126], [54, 115], [68, 115]]
-    .filter(([, y]) => level > 0 && y > surface + 8);
-  const mid = ((surface + bottom) / 2).toFixed(1);
-  return `<span class="cup3d-wrap tilt ${o.cls || ''}" data-tilt-max="14" aria-hidden="true"><svg class="cup3d" viewBox="0 0 120 160">
-    <defs>
-      <clipPath id="${id}b"><path d="${body}"/></clipPath>
-      <linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".78"/></linearGradient>
-      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".2" stop-color="#fff" stop-opacity=".12"/>
-        <stop offset=".65" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/>
-      </linearGradient>
-      <radialGradient id="${id}p" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#9a6a4a"/><stop offset=".45" stop-color="#3b2518"/><stop offset="1" stop-color="#170d08"/></radialGradient>
-      <linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a3a28"/><stop offset=".5" stop-color="#2a1d16"/><stop offset="1" stop-color="#120a06"/></linearGradient>
-    </defs>
-    <ellipse cx="60" cy="152" rx="38" ry="5" fill="rgb(92 64 30 / .16)"/>
-    <g clip-path="url(#${id}b)">
-      ${level > 0 ? `<rect x="0" y="${surface}" width="120" height="160" fill="url(#${id}l)"/>` : ''}
-      ${level > 0 && o.color2 ? `<rect x="0" y="${surface}" width="120" height="${(mid - surface).toFixed(1)}" fill="${o.color2}"/>` : ''}
-      ${level > 0 ? `<ellipse cx="60" cy="${surface}" rx="${halfAt(surface)}" ry="${(halfAt(surface) * 0.2).toFixed(1)}" fill="#fff" fill-opacity=".3"/>` : ''}
-      ${pearls.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="url(#${id}p)"/>`).join('')}
-      <line x1="78" y1="0" x2="58" y2="132" stroke="url(#${id}s)" stroke-width="9" stroke-linecap="round"/>
-      <path d="${body}" fill="url(#${id}g)"/>
-    </g>
-    <line x1="78" y1="4" x2="73.6" y2="34" stroke="url(#${id}s)" stroke-width="9" stroke-linecap="round"/>
-    <path d="${body}" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-    <ellipse cx="60" cy="${top}" rx="44" ry="10" fill="#fff" fill-opacity=".25" stroke="currentColor" stroke-width="3"/>
-    <path d="M25 46 L34 130" stroke="#fff" stroke-opacity=".65" stroke-width="4" stroke-linecap="round"/>
-    ${o.mark ? `<text x="44" y="${mid}" text-anchor="middle" dominant-baseline="middle" font-size="30" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}
-  </svg></span>`;
-}
-
 function cup(color, o = {}) {
-  if (BIG_CUP.test(o.cls || '')) return cup3d(color, o);
   const id = 'cup' + uid();
   const level = o.level ?? 0.62;
   const y = (9 + (1 - level) * 18).toFixed(1);

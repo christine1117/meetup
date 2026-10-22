@@ -2592,62 +2592,12 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
   }
 }
 
-/* 3D cups */
-.cup3d-wrap {
-  display: inline-block;
-  flex: none;
-  height: auto;
-  aspect-ratio: auto;
-  color: var(--ink);
-  line-height: 0;
-  animation: none;
-}
-
-.cup3d {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-
-.cup3d-wrap.cup--hero {
-  width: clamp(96px, 16vw, 140px);
-}
-
-.cup3d-wrap.cup--mystery {
-  width: clamp(100px, 18vw, 150px);
-}
-
-.cup3d-wrap.cup--lg {
-  width: 72px;
-  height: auto;
-}
-
-.cup--hero .cup3d,
-.cup--mystery .cup3d {
-  animation: float 3.4s ease-in-out infinite alternate;
-}
-
-.quiz__preview .cup3d-wrap.cup--lg {
-  width: 48px;
-}
-
-.empty .cup3d-wrap {
-  display: block;
-  width: 72px;
-  margin-inline: auto;
-}
-
 /* Mystery Cup: the cup swirls while we match, then the chat flips open */
 .swirl {
   perspective: 600px;
 }
 
-.swirl .cup3d-wrap.cup--lg {
-  width: 96px;
-}
-
-.swirl .cup3d {
+.swirl .cup {
   transform-origin: 50% 85%;
   animation: swirl 1.1s ease-in-out infinite alternate;
 }
