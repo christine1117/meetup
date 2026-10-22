@@ -118,7 +118,7 @@ const APART = {
   pearlsR: '--dx:13px;--dy:1.5px;--r:8deg;--d:.18s',
 };
 // Cups that come apart get extra room around them for the pieces
-const EXPLODE = /cup--(hero|mystery|profile)/;
+const EXPLODE = /cup--(hero|profile)/;
 const WIDE_VIEW = '-11 -16 46 44';
 
 function cupArt(color, o = {}) {
@@ -701,7 +701,7 @@ let S = load();
 // Screen state that does not need to be saved
 const U = {
   compose: null, target: null, booking: null, typing: {}, confirmReset: false,
-  cat: 'all', dm: null, typingPost: null,
+  cat: 'all', dm: null, typingPost: null, openSec: {},
   draft: { kind: 'side', roles: [] },
   quiz: { step: 0, field: '', field2: '', stage: '', curious: [], share: [], meet: '', city: '' },
 };
@@ -1177,12 +1177,36 @@ function tagList(scope, key) {
 }
 
 // The first-time form skips what the quick questions already asked
+// In My order each half of the card folds into a short summary; tap Edit to open it
+function secStart(key, icon, title, summary) {
+  return `<details class="panel sec ${key === 'sealed' ? 'panel--locked' : ''}" data-sec="${key}" ${U.openSec[key] ? 'open' : ''}>
+      <summary class="sec__head">
+        <span class="sec__title"><i class="ph ${icon}" aria-hidden="true"></i>${title}</span>
+        <span class="sec__edit">${L`Edit`}</span>
+        <div class="sec__sum">${summary}</div>
+      </summary>
+      <div class="sec__body stack">`;
+}
+
+function publicSummary(me) {
+  const line = [me.alias, flavorsLabel(me), me.city].filter(Boolean).map(esc).join(' · ');
+  const tags = (label, list) => (list.length ? `<p class="meta">${label}: ${esc(list.join(', '))}</p>` : '');
+  return `<p><strong>${line}</strong></p><p>${esc(me.doing || '')}</p>${tags(L`Curious`, myCurious())}${tags(L`Can share`, myShare())}`;
+}
+
+function sealedSummary(me) {
+  const keys = [['name', L`name`], ['title', L`title`], ['school', L`school`], ['company', L`company`], ['linkedin', 'LinkedIn']];
+  const filled = keys.filter(([k]) => me[k]);
+  return `<p class="meta">${filled.length ? L`${filled.length} of 5 filled: ${filled.map(([, l]) => l).join(', ')}` : L`Nothing added yet.`}</p>`;
+}
+
 function profileForm(me, first) {
   me = me || {};
+  const fold = !first;
   return `
-  <form data-form="profile" class="stack" novalidate>
-    <fieldset class="panel">
-      <legend><i class="ph ph-eye" aria-hidden="true"></i>${L`Visible from the start`}</legend>
+  <form data-form="profile" class="stack profile-form ${fold ? 'is-folding' : ''}" novalidate>
+    ${fold ? secStart('public', 'ph-eye', L`Visible from the start`, publicSummary(me)) : `<fieldset class="panel">
+      <legend><i class="ph ph-eye" aria-hidden="true"></i>${L`Visible from the start`}</legend>`}
       ${field('alias', L`Nickname`, me.alias, { req: true, hint: L`Not your real name.` })}
       ${first ? '' : `
       <div class="row2">
@@ -1198,9 +1222,9 @@ function profileForm(me, first) {
       ${tagEditor('me', 'share', myShare(), L`Can share`)}`}
       ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
       ${field('fun', L`Fun fact`, me.fun ?? me.proof, { ph: L`Something people would not guess about you` })}
-    </fieldset>
-    <fieldset class="panel panel--locked">
-      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed until you both pop the seal`}</legend>
+    ${fold ? '</div></details>' : '</fieldset>'}
+    ${fold ? secStart('sealed', 'ph-lock-simple', L`Sealed until you both pop the seal`, sealedSummary(me)) : `<fieldset class="panel panel--locked">
+      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed until you both pop the seal`}</legend>`}
       <div class="row2">
         ${field('name', L`Real name`, me.name)}
         ${field('title', L`Job title`, me.title)}
@@ -1210,9 +1234,9 @@ function profileForm(me, first) {
         ${field('company', L`Company`, me.company)}
       </div>
       ${field('linkedin', 'LinkedIn', me.linkedin)}
-    </fieldset>
+    ${fold ? '</div></details>' : '</fieldset>'}
     <p class="error" id="profile-error" hidden>${L`Please add a nickname and what you're working on.`}</p>
-    <button class="btn btn--primary" type="submit">${first ? L`Start sipping` : L`Save my order`}</button>
+    <button class="btn btn--primary save-btn" type="submit">${first ? L`Start sipping` : L`Save my order`}</button>
   </form>`;
 }
 
@@ -2199,7 +2223,7 @@ const forms = {
     // Keep what the form does not hold, like your tags
     S.me = first ? data : { ...S.me, ...data };
     save();
-    if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast(L`Saved`); render(); }
+    if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { U.openSec = {}; toast(L`Saved`); render({ fresh: true }); }
   },
 
   thought(form, data) {
@@ -2574,6 +2598,12 @@ document.addEventListener('click', (event) => {
   const el = event.target.closest('[data-act]');
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
 });
+
+// Remember which My order sections are open
+document.addEventListener('toggle', (event) => {
+  const d = event.target;
+  if (d.matches && d.matches('details[data-sec]')) U.openSec[d.dataset.sec] = d.open;
+}, true);
 
 // Tap a big cup to pull it apart, tap again to put it back
 document.addEventListener('click', (event) => {

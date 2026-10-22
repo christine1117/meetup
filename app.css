@@ -3574,3 +3574,78 @@ body.modal-open {
 .pf__cup {
   padding-top: 0;
 }
+
+/* ---------- My order: folded sections ---------- */
+
+.sec {
+  display: block;
+  padding: 0;
+}
+
+.sec__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  padding: 18px 22px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.sec__head::-webkit-details-marker {
+  display: none;
+}
+
+.sec__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--orange-deep);
+  font-weight: 600;
+}
+
+.panel--locked .sec__title {
+  color: var(--muted);
+}
+
+.sec__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.sec__edit::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.2s;
+}
+
+.sec[open] .sec__edit::after {
+  transform: rotate(-135deg) translateY(-1px);
+}
+
+.sec__sum {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 2px;
+  font-size: 0.9375rem;
+}
+
+.sec[open] .sec__sum {
+  display: none;
+}
+
+.sec__body {
+  padding: 4px 22px 22px;
+}
+
+/* Save only shows while a section is open */
+.profile-form.is-folding:not(:has(details[open])) .save-btn {
+  display: none;
+}
