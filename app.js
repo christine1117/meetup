@@ -204,6 +204,7 @@ const CATEGORIES = [
   ['society', 'Society & cities'],
   ['creative', 'Writing & creative'],
   ['career', 'Work & career'],
+  ['other', 'Other'],
 ];
 const catName = (k) => L((CATEGORIES.find(([v]) => v === k) || CATEGORIES[1])[1]);
 
