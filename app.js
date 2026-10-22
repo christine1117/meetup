@@ -102,15 +102,16 @@ function sugarNotes(t, before) {
 // pearls fly out to the left and right. The tea and the cup stay together.
 // level goes from 0 (empty) to 1 (full). ids are toppings to put in the drink.
 const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
-const CUP_SHELL = 'M2.5 9.4 L4.5 25.1 Q12 27.3 19.5 25.1 L21.5 9.4 Z';
+const CUP_SHELL = 'M2.5 9.4 L4.5 25.1 Q12 27.3 19.5 25.1 L21.5 9.4'; // open at the top, so no line across the opening
 const CUP_IN = 'M3.2 10.4 L5.1 24.6 Q12 26.5 18.9 24.6 L20.8 10.4 Z';
 const CUP_DOME = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2'; // open at the bottom, so no line across the lid
 const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
 const CUP_PEARLS = [[8.6, 23.4, '#3b2518'], [11.9, 23.9, '#4a2c1c'], [15.3, 23.3, '#7d93a0'], [10.2, 21.4, '#5a3a28'], [13.7, 21.6, '#3b2518'], [7, 21.4, '#6f8796'], [17, 21.2, '#4a2c1c']];
 // Where each piece goes when the cup comes apart, and when it starts moving
 const APART = {
-  straw: '--dy:-14px;--d:0s',
-  lid: '--dy:-8px;--d:.05s',
+  straw: '--dy:-16px;--d:0s',
+  lid: '--dy:-10px;--d:.05s',
+  layer: '--dy:-5.5px;--d:.08s',
   topL: '--dx:-14px;--r:-10deg;--d:.12s',
   topR: '--dx:14px;--r:10deg;--d:.12s',
   pearlsL: '--dx:-13px;--dy:1.5px;--r:-8deg;--d:.18s',
@@ -153,18 +154,29 @@ function cupArt(color, o = {}) {
       <rect x="0" y="${teaTop}" width="24" height="20" fill="${o.color2 || color}"/>
       ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="20" fill="${color}"/>` : ''}
       ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1.3" stroke-opacity=".8" stroke-linecap="round"><path d="M6 11.5Q9 15 7 19T9 25"/><path d="M12.5 11Q15 14.5 12.8 18.5T14.6 24.5"/><path d="M17.8 11.8Q19.4 15 17.4 18.6"/></g>` : ''}
-      ${has('foam') ? `<rect x="0" y="${teaTop - 0.2}" width="24" height="2.2" fill="url(#${id}-foamL)"/>` : ''}
-      ${has('brulee') ? `<rect x="0" y="${teaTop - 0.3}" width="24" height="1.3" fill="url(#${id}-bruL)"/>` : ''}
       <rect x="0" y="${teaTop}" width="24" height="20" fill="url(#${id}-shade)"/>
       ${has('foam') || has('brulee') ? '' : `<ellipse cx="12" cy="${teaTop}" rx="${halfAt(teaTop).toFixed(2)}" ry=".75" fill="#fff" fill-opacity=".22"/>`}
     </g>` : ''}
+    ${part('layer', (() => {
+      // A round slice the shape of the cup at that height: side band plus a top oval
+      const disc = (y, thick, sideFill, topFill, extra = '') => {
+        const hw = halfAt(y);
+        return `<path d="M${(12 - hw).toFixed(2)} ${y} v${thick} a${hw.toFixed(2)} .9 0 0 0 ${(2 * hw).toFixed(2)} 0 v-${thick} Z" fill="${sideFill}" stroke="#3b2518" stroke-opacity=".18" stroke-width=".2"/><ellipse cx="12" cy="${y}" rx="${hw.toFixed(2)}" ry=".9" fill="${topFill}" stroke="#3b2518" stroke-opacity=".18" stroke-width=".2"/>${extra}`;
+      };
+      const foamY = teaTop;
+      const bruY = has('foam') ? teaTop - 1.2 : teaTop;
+      return (fill > 0.5 && has('foam') ? disc(foamY, 2, `url(#${id}-foamL)`, '#fffaf0') : '')
+        + (fill > 0.5 && has('brulee') ? disc(bruY, 1.2, `url(#${id}-bruL)`, `url(#${id}-caramel)`, `<g fill="#5e2c0c" fill-opacity=".5"><ellipse cx="9.5" cy="${bruY}" rx=".7" ry=".2"/><ellipse cx="14.2" cy="${bruY + 0.2}" rx=".5" ry=".15"/><ellipse cx="12" cy="${bruY - 0.3}" rx=".4" ry=".12"/></g>`) : '');
+    })())}
     ${part('pearlsL', side(pearls, true))}
     ${part('pearlsR', side(pearls, false))}
     ${part('topL', side(placed, true))}
     ${part('topR', side(placed, false))}
     ${part('straw', `<path d="${CUP_STRAW}" fill="#e2492a" stroke="${big ? '#a3301b' : '#2a1d16'}" stroke-width="${line * 0.7}" stroke-linejoin="round"/><path d="M14.9 -3.6 12.6 18.5" stroke="#fff" stroke-opacity=".45" stroke-width=".35" stroke-linecap="round"/>`)}
-    <path d="${CUP_SHELL}" fill="#fff" fill-opacity=".16" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
-    <ellipse cx="12" cy="9.4" rx="9.5" ry="1.1" fill="none" stroke="${ink}" stroke-width="${line * 0.8}"/>
+    <path d="${CUP_SHELL} Z" fill="#fff" fill-opacity=".16"/>
+    <path d="${CUP_SHELL}" fill="none" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
+    <path d="M2.5 9.4 A9.5 1.1 0 0 1 21.5 9.4" fill="none" stroke="${ink}" stroke-width="${line * 0.8}"/>
+    <path d="M2.5 9.4 A9.5 1.1 0 0 0 21.5 9.4" fill="none" stroke="${ink}" stroke-opacity=".35" stroke-width="${line * 0.6}"/>
     <path d="M4 11.4 5.6 23.8" stroke="#fff" stroke-opacity=".75" stroke-width=".6" stroke-linecap="round"/>
     <rect x="9.6" y="11.8" width="4.8" height="6" rx=".5" fill="#c8352b"/>
     ${big ? `<rect x="10" y="12.2" width="4" height="5.2" rx=".3" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".14"/>` : ''}
