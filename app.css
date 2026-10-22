@@ -2169,3 +2169,10 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
   color: var(--muted);
   text-align: center;
 }
+
+.inline-link {
+  color: var(--orange-deep);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

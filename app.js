@@ -492,7 +492,7 @@ function viewAlgorithm() {
   return `
   <section class="panel algo">
     <h2>${L`How your picks are chosen`}</h2>
-    <p class="hint">${L`Each person gets a score from these factors, checked from both sides. The weights start here and shift toward what leads to good chats once ${LEARN_AFTER} chats have finished (now ${finished}).`}</p>
+    <p class="hint">${L`Scored from both sides. Weights adjust after ${LEARN_AFTER} finished chats (now ${finished}).`}</p>
     <ul class="algo__weights">
       ${Object.entries(weights()).map(([k, w]) => `<li><span>${names[k]}</span><strong>${Math.round(w * 100)}%</strong></li>`).join('')}
     </ul>
@@ -683,7 +683,7 @@ const interestChecks = (picked) => `
       <div class="field" role="group" aria-labelledby="interests-label">
         <p class="field__label" id="interests-label">${L`Topics you could talk about for an hour`}</p>
         <div class="checks">${INTERESTS.map((i) => `<label class="check"><input type="checkbox" name="interests" value="${esc(i)}" ${picked.includes(i) ? 'checked' : ''}><span>${esc(L(i))}</span></label>`).join('')}</div>
-        <p class="hint">${L`Pick up to ${MAX_INTERESTS}. We use these to find people worth talking to.`}</p>
+        <p class="hint">${L`Up to ${MAX_INTERESTS}.`}</p>
       </div>`;
 
 // The first-time form skips what the quick questions already asked
@@ -696,8 +696,8 @@ function profileForm(me, first) {
       ${field('alias', L`Nickname`, me.alias, { req: true, hint: L`Not your real name.` })}
       ${first ? '' : `
       <div class="row2">
-        ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0], L`Your flavor is your field. It sets the colour of your cup.`)}
-        ${select('field2', L`Second field (optional)`, [['', L`None`], ...FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`])], me.field2 || '', L`Doing two things? It makes a two-flavor cup.`)}
+        ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0])}
+        ${select('field2', L`Second field (optional)`, [['', L`None`], ...FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`])], me.field2 || '')}
       </div>
       ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
       <div class="row2">
@@ -710,7 +710,6 @@ function profileForm(me, first) {
     </fieldset>
     <fieldset class="panel panel--locked">
       <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed until you both pop the seal`}</legend>
-      ${explain(L`“Pop the seal” means showing your real profile. It only happens when both people agree.`)}
       <div class="row2">
         ${field('name', L`Real name`, me.name)}
         ${field('title', L`Job title`, me.title)}
@@ -739,7 +738,7 @@ function quizStep(q) {
   if (q.step === 0) {
     return `
     <h2 class="quiz__q">${L`First, pick your flavor.`}</h2>
-    <p class="quiz__hint">${L`Your field is your flavor. It sets the colour of your cup. Doing two things? Pick a second one for a two-flavor cup.`}</p>
+    <p class="quiz__hint">${L`Your field is your flavor. Two fields? Pick a second one.`}</p>
     <div class="options options--flavors">${FIELDS.map((f) => {
       const i = [q.field, q.field2].indexOf(f);
       const tag = q.field2 ? [L`Main`, L`Second`][i] : '';
@@ -750,13 +749,12 @@ function quizStep(q) {
   if (q.step === 1) {
     return `
     <h2 class="quiz__q">${L`What are you doing these days?`}</h2>
-    <p class="quiz__hint">${L`People at the same stage often get each other faster.`}</p>
     <div class="options">${STAGES.map(([v, l]) => option('stage', v, L(l))).join('')}</div>`;
   }
   if (q.step === 2) {
     return `
     <h2 class="quiz__q">${L`Pick topics you could talk about for an hour.`}</h2>
-    <p class="quiz__hint">${L`Up to ${MAX_INTERESTS}. We use these to find people worth talking to.`}</p>
+    <p class="quiz__hint">${L`Up to ${MAX_INTERESTS}.`}</p>
     <div class="options options--chips">${INTERESTS.map((i) => {
       const on = q.interests.includes(i);
       return `<button class="option option--chip ${on ? 'is-on' : ''}" data-act="quiz-interest" data-value="${esc(i)}" type="button" aria-pressed="${on}">${esc(L(i))}</button>`;
@@ -766,13 +764,11 @@ function quizStep(q) {
   if (q.step === 3) {
     return `
     <h2 class="quiz__q">${L`How do you like to meet?`}</h2>
-    <p class="quiz__hint">${L`You can always do both. This just helps us suggest the right people.`}</p>
     <div class="options">${MEETS.map(([v, l]) => option('meet', v, L(l))).join('')}</div>
     ${field('city', L`Which city are you in?`, q.city, { ph: L`e.g. Taipei` })}`;
   }
   return `
     <h2 class="quiz__q">${L`Last step: fill in your order.`}</h2>
-    <p class="quiz__hint">${L`People see the top half. The bottom half stays sealed until you both pop the seal.`}</p>
     ${profileForm(null, true)}`;
 }
 
@@ -808,16 +804,16 @@ function viewOnboard() {
 function viewMe() {
   return `
   <header class="head">
-    <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p>${explain(L`Your order is your profile. It shows what you are working on, never your titles.` + ` <a href="#/about">${L`What is Half Sugar?`}</a>`)}</div>
+    <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
   </header>
   <section class="receipt">
     ${cupFor(S.me, 'cup--lg')}
     <div>
       <p class="receipt__label">${L`Your usual`}</p>
       <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
-      <p class="receipt__meta">${L`For ${esc(S.me.alias)}. Sugar goes up in each chat the longer you talk.`}</p>
+      <p class="receipt__meta">${L`For ${esc(S.me.alias)}.`}</p>
       <p class="receipt__meta">${S.threads.some((t) => t.msgs.some((m) => m.from === 'them'))
-        ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats. Replying helps your picks.`
+        ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats.`
         : L`Your reply rate shows up after your first chats.`}</p>
     </div>
   </section>
@@ -825,7 +821,8 @@ function viewMe() {
   ${viewAlgorithm()}
   <section class="panel note">
     <h2>${L`Demo mode`}</h2>
-    <p>${L`This is not connected to a server yet. Your data stays in this browser, the other people are simulated, and their replies are pre-written. Bookings and notifications are not really sent.`}</p>
+    <p><a class="inline-link" href="#/about">${L`What is Half Sugar?`}</a></p>
+    <p>${L`Not connected to a server yet. Your data stays in this browser, and the other people are simulated.`}</p>
     ${U.confirmReset
       ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
       : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear all data`}</button>`}
@@ -928,7 +925,7 @@ function viewExplore() {
 
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`A forum by topic. Comment in public, or message someone privately. Everyone stays anonymous until you both pop the seal.`)}</div>
+    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p></div>
     <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`New post`}</button>
   </header>
 
@@ -978,7 +975,6 @@ function viewPost(id) {
 
   <section class="comments">
     <h2>${commentCount(comments.length)}</h2>
-    ${explain(L`Comments are public, but everyone stays anonymous. Want to go deeper? Message them privately.`)}
     <ul class="comments__list">
       ${comments.map((c) => `
       <li class="comment">
@@ -1037,7 +1033,7 @@ function viewBuild() {
 
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p>${explain(L`Brew means building something together. Post what you need and we send it to the people who fit. Or apply to a Brew without showing your titles.`)}</div>
+    <div><h1 lang="en">${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p>${explain(L`Post what you need. We send it to people who fit.`)}</div>
     <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Start a brew`}</button>
   </header>
 
@@ -1156,7 +1152,7 @@ function viewDrop() {
     return `
     <section class="drop-stage">
       <h1>${L`Cup's empty. Want a refill?`}</h1>
-      <p class="sub">${L`Refill means you keep talking and your real profiles are revealed. It only happens if you both choose it. If either of you says no, this cup disappears.`}</p>
+      <p class="sub">${L`Both choose Refill to keep talking and see who you met. Otherwise, this cup disappears.`}</p>
       ${D.phase === 'waiting'
         ? `<p class="waiting"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>${L`Waiting for them to decide`}</p>`
         : `<div class="btnrow btnrow--center">
@@ -1189,7 +1185,7 @@ function viewDrop() {
   const localTime = nextDrop(now).toLocaleString(LANG === 'zh' ? 'zh-TW' : 'en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' });
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p>${explain(L`A Mystery Cup is a surprise match. Once a week, everyone joins at the same time and gets paired with someone from a different city and field.`)}</div>
+    <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p></div>
   </header>
   <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
@@ -1202,8 +1198,8 @@ function viewDrop() {
     </div>
   </section>
   <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`We pour you someone from a different city and field.`}</p></div></li>
-    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`${DROP_MINUTES} minutes`}</strong><p>${L`Text only. Ten minutes is half sugar, right when you choose whether to refill.`}</p></div></li>
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`Someone from a different field and city.`}</p></div></li>
+    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`${DROP_MINUTES} minutes`}</strong><p>${L`Text only. That gets you to half sugar.`}</p></div></li>
     <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
   </ul>
   ${S.drops ? `<p class="meta">${S.drops === 1 ? L`You have had 1 mystery cup.` : L`You have had ${S.drops} mystery cups.`}</p>` : ''}`;
@@ -1275,7 +1271,7 @@ function viewChats() {
   const list = [...S.threads].sort((a, b) => isCold(a) - isCold(b) || b.at - a.at);
   return `
   <header class="head">
-    <div><h1>${L`Chats`}</h1><p class="sub">${L`Every chat starts with a first sip.`}</p>${explain(L`Sugar goes up the longer you talk. At half sugar (50%) you can pop the seal. A chat goes cold and closes if nobody replies for 3 days.`)}</div>
+    <div><h1>${L`Chats`}</h1><p class="sub">${L`Every chat starts with a first sip.`}</p>${explain(L`At 50% sugar you can pop the seal. No reply for 3 days and a chat closes.`)}</div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
@@ -1332,9 +1328,7 @@ function viewThread(t) {
       </div>` : ''}
     </header>
 
-    ${explain(both
-      ? L`You both popped the seal, so real names and profiles are visible. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days.`
-      : L`Names are still hidden. Sugar goes up the longer you talk: 10 minutes of chatting is half sugar (50%), and then you can pop the seal if you both agree. The chat closes if nobody replies for ${CLOSE_AFTER_DAYS} days. “Boba run” means meeting in person.`)}
+    ${both ? '' : explain(L`Names stay hidden until 50% sugar, about 10 minutes of chat.`)}
 
     <details class="who">
       <summary>${both ? L`Their full card` : L`Their card`}</summary>
@@ -1352,7 +1346,6 @@ function viewThread(t) {
     ${U.booking === t.id ? `
     <form class="panel stack" data-form="book" data-id="${t.id}" novalidate>
       <h2>${L`Go on a boba run`}</h2>
-      ${explain(L`A boba run means meeting in person, at a boba shop or a café.`)}
       <div class="row2">
         ${select('kind', L`Type`, [['Boba shop, 1-on-1', L`Boba shop, 1-on-1`], ['Café', L`Café`], ['Small dinner table', L`Small dinner table`]], 'Boba shop, 1-on-1')}
         ${field('area', L`Area`, S.me.city || '', { req: true, ph: L`e.g. Taipei, Da'an` })}
@@ -1361,7 +1354,7 @@ function viewThread(t) {
         ${field('date', L`Date`, '', { type: 'date', req: true, min: today })}
         ${select('time', L`Time`, ['12:00', '15:00', '19:00'], '15:00')}
       </div>
-      <p class="hint">${L`Demo mode: this is saved in the chat, but no table is really booked.`}</p>
+      <p class="hint">${L`Demo: no real booking is made.`}</p>
       <p class="error" id="book-error" hidden>${L`Please add an area and a date.`}</p>
       <div class="btnrow">
         <button class="btn btn--dark btn--sm" type="submit">${L`Send invite`}</button>
