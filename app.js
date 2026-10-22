@@ -1042,7 +1042,7 @@ function profileModal(pid) {
       </dl>` : `<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Name, school and company stay sealed until you both pop the seal.`}</p>`}
       <div class="pf__actions">
         ${me
-          ? `<a class="btn btn--dark btn--sm" href="#/me">${L`Edit my order`}</a>`
+          ? ''
           : t ? `<a class="btn btn--dark btn--sm" href="#/chats/${t.id}">${L`Open chat`}</a>`
           : `<form class="stack" data-form="hi" data-pid="${pid}" novalidate>
               <label class="sr" for="c-hi">${L`Say hi`}</label>
