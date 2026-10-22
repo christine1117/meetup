@@ -1173,9 +1173,7 @@ function brewCard(b) {
         : !open.length ? ''
         : U.target === b.id
           ? `<form class="stack reply" data-form="apply" data-id="${b.id}" novalidate>
-              ${open.length > 1
-                ? select('role', L`Which role`, open.map((r) => [r.name, r.name]), open[0].name)
-                : `<input type="hidden" name="role" value="${esc(open[0].name)}">`}
+              ${select('role', L`Apply for`, open.map((r) => [r.name, r.name]), open[0].name)}
               ${field('reply', L`Why you are a fit`, '', { area: true, rows: 3, req: true, ph: L`Say what you would bring. They cannot see your titles` })}
               <div class="btnrow">
                 <button class="btn btn--dark btn--sm" type="submit">${L`Send anonymously`}</button>
