@@ -826,7 +826,13 @@ function rollBoxes(tier) {
 }
 
 const myToppings = () => Object.keys(S.toppings || {}).filter((k) => TOPPING[k] && S.toppings[k] > 0);
-const toppingsOf = (pid) => (pid === 'me' ? myToppings() : (P[pid].toppings || []));
+// Your cup shows up to 5 toppings, and you choose which. Until you choose, the first 5 you own.
+const MAX_SHOWN = 5;
+const shownToppings = () => {
+  const own = myToppings();
+  return Array.isArray(S.shown) ? S.shown.filter((k) => own.includes(k)) : own.slice(0, MAX_SHOWN);
+};
+const toppingsOf = (pid) => (pid === 'me' ? shownToppings() : (P[pid].toppings || []));
 
 // Pieces that float in the drink, drawn at a spot (x, y) in the 24 x 28 cup
 const PIECE = {
@@ -1169,13 +1175,21 @@ function viewMe() {
     <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
   </header>
   <section class="receipt mydrink">
-    <button class="mydrink__cup" data-act="profile" data-pid="me" type="button" aria-label="${esc(L`See how others see your profile`)}">${drinkCup(S.me, myToppings(), 'cup--profile')}</button>
+    <button class="mydrink__cup" data-act="profile" data-pid="me" type="button" aria-label="${esc(L`See how others see your profile`)}">${drinkCup(S.me, shownToppings(), 'cup--profile')}</button>
     <div class="mydrink__info">
       <p class="receipt__label">${L`Your usual`}</p>
       <div class="order-line">
         <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
-        ${myToppings().map((k) => toppingChip(k, S.toppings[k])).join('')}
+        ${shownToppings().map((k) => toppingChip(k, S.toppings[k])).join('')}
       </div>
+      ${myToppings().length ? `
+      <div class="pick-toppings">
+        <p class="receipt__meta">${L`In your cup ${shownToppings().length}/${MAX_SHOWN}. Tap to add or take out.`}</p>
+        <div class="pf__toppings">${myToppings().map((k) => {
+          const on = shownToppings().includes(k);
+          return `<button class="tchip tchip--${TOPPING[k].tier} tchip-btn ${on ? 'is-on' : ''}" data-act="topping-toggle" data-id="${k}" type="button" aria-pressed="${on}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${S.toppings[k] > 1 ? `<b>×${S.toppings[k]}</b>` : ''}<i class="ph ${on ? 'ph-check' : 'ph-plus'}" aria-hidden="true"></i></button>`;
+        }).join('')}</div>
+      </div>` : ''}
       <p class="receipt__meta">${S.threads.some((t) => t.msgs.some((m) => m.from === 'them'))
         ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats.`
         : L`Your reply rate shows up after your first chats.`}</p>
@@ -2265,6 +2279,15 @@ const acts = {
     renderModal();
   },
   'modal-close'() { closeModal(); },
+  'topping-toggle'(el) {
+    const k = el.dataset.id;
+    const list = shownToppings();
+    if (list.includes(k)) S.shown = list.filter((x) => x !== k);
+    else if (list.length >= MAX_SHOWN) { toast(L`Your cup holds ${MAX_SHOWN}. Take one out first.`); return; }
+    else S.shown = [...list, k];
+    save();
+    render();
+  },
   'box-next'() { openNextBox(); },
   'box-pick'(el) {
     const m = U.modal;
@@ -2275,7 +2298,10 @@ const acts = {
     later(REDUCED_MOTION ? 0 : 750, () => {
       if (U.modal !== m) return;
       const k = m.contents[m.picked];
+      S.shown = shownToppings();
       S.toppings[k] = (S.toppings[k] || 0) + 1;
+      // A new topping goes into your cup if there is room
+      if (!S.shown.includes(k) && S.shown.length < MAX_SHOWN) S.shown.push(k);
       S.boxes = S.boxes.filter((b) => b.id !== m.box.id);
       m.phase = 'open';
       save();
