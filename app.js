@@ -96,16 +96,25 @@ function sugarNotes(t, before) {
   }
 }
 
-// The boba cup, drawn like a sticker: a paper cup seen a little from above, a
-// speckled foam top, a short black straw, a white label band, and a clear window
-// showing the tea and pearls. A grey and white border goes around it all.
+// The boba cup: a clear plastic cup with a dome lid, a red straw, brown sugar
+// swirls in the tea, pearls at the bottom, and a red seal label.
+// Big cups are built in layers (straw, lid, tea, cup, pearls) that can pull
+// apart like a puzzle: on a loop on the first page, on hover or tap elsewhere.
 // level goes from 0 (empty) to 1 (full). ids are toppings to put in the drink.
 const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
-const CUP_BODY = 'M2.4 6.4 L5 25.4 A7 1.6 0 0 0 19 25.4 L21.6 6.4 Z';
-const CUP_WINDOW = 'M3.95 12.7 Q12 13.5 20.05 12.7 L18.25 24.5 A6.25 1.25 0 0 1 5.75 24.5 Z';
-const STRAW = 'M5.3 .6 h2.6 v6.2 h-2.6 Z';
-const CUP_PEARLS = [[8.6, 22.3, '#4a2614'], [11.9, 23.1, '#6b3a1f'], [15.3, 22.2, '#3f1f10'], [10.3, 19.8, '#7a4524'], [13.8, 20.2, '#4f2a16'], [16.4, 19.5, '#8a5a3a'], [7.6, 19.4, '#5e3219']];
-const SPECKS = [[6, 5.6], [8.4, 6.9], [10.2, 5.1], [12.6, 6.4], [14.8, 5.4], [16.9, 6.8], [18.6, 5.9], [11.2, 7.6], [15.6, 7.6], [8, 4.8], [13.5, 4.6], [17.5, 4.9], [9.6, 7.9], [19.2, 7], [5.2, 6.8]];
+const CUP_SHELL = 'M2.5 9.4 L4.5 25.1 Q12 27.3 19.5 25.1 L21.5 9.4 Z';
+const CUP_IN = 'M3.2 10.4 L5.1 24.6 Q12 26.5 18.9 24.6 L20.8 10.4 Z';
+const CUP_LID = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2 Z';
+const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
+const CUP_PEARLS = [[8.5, 23.7, '#3b2518'], [11.9, 24.3, '#4a2c1c'], [15.3, 23.6, '#7d93a0'], [10.2, 21.7, '#5a3a28'], [13.7, 21.9, '#3b2518'], [6.9, 21.7, '#6f8796'], [17, 21.5, '#4a2c1c']];
+// Where each layer goes when the cup comes apart, and when it starts moving
+const APART = {
+  straw: '--dx:4px;--dy:-11px;--r:12deg;--d:0s',
+  lid: '--dy:-6.5px;--d:.06s',
+  tea: '--dy:-2px;--d:.12s',
+  shell: '--dy:2.5px;--d:.16s',
+  pearls: '--dy:6.5px;--d:.22s',
+};
 
 function cupArt(color, o = {}) {
   const id = 'cp' + uid();
@@ -114,57 +123,53 @@ function cupArt(color, o = {}) {
   const big = BIG_CUP.test(o.cls || '');
   const meter = /cup--chip/.test(o.cls || '');
   const level = o.level ?? 0.62;
-  // Cups look full unless they are empty or a sugar meter
-  const fill = meter ? level : level > 0 ? 1 : 0;
-  const top = fill >= 0.98;
-  const drinkY = (24.8 - 12.4 * fill).toFixed(2);
-  const mid = ((+drinkY + 24.8) / 2).toFixed(1);
-  const tea = o.color2 || color;
-  const topColor = has('brulee') ? '#c98a3c' : has('foam') ? '#fbf5e8' : tea;
+  const fill = meter ? level : level > 0 ? 1 : 0; // cups look full unless empty or a sugar meter
+  const teaTop = +(24.9 - 14.1 * fill).toFixed(2);
+  const mid = ((teaTop + 25) / 2).toFixed(1);
+  const line = big ? 0.38 : 0.75;
+  const ink = big ? '#9a948a' : '#2a1d16';
+  const part = (name, body) => `<g class="part p-${name}" style="${APART[name]}">${body}</g>`;
   const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
     const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
     return PIECE[k](id, x, y, PIECE_SIZE, n);
   }).join('')).join('');
-  const outline = big ? 1.9 : 2.6;
   return `
     ${toppingDefs(id)}
     <defs>
-      <clipPath id="${id}-w"><path d="${CUP_WINDOW}"/></clipPath>
-      <linearGradient id="${id}-paper" x1="0" x2="1"><stop offset="0" stop-color="#e9e6e0"/><stop offset=".18" stop-color="#ffffff"/><stop offset=".8" stop-color="#fbfaf7"/><stop offset="1" stop-color="#dcd8d0"/></linearGradient>
-      <linearGradient id="${id}-tea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3b2518" stop-opacity=".18"/></linearGradient>
+      <clipPath id="${id}-in"><path d="${CUP_IN}"/></clipPath>
+      <linearGradient id="${id}-shade" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".3" stop-color="#fff" stop-opacity="0"/><stop offset=".75" stop-color="#2a1d16" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".22"/></linearGradient>
+      <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient>
     </defs>
-    <g stroke-linejoin="round" stroke-linecap="round">
-      <g fill="#fff" stroke="#8b8b8b" stroke-width="${outline}"><path d="${CUP_BODY}"/><ellipse cx="12" cy="6.4" rx="9.6" ry="2.4"/><path d="${STRAW}"/></g>
-      <g fill="#fff" stroke="#fff" stroke-width="${(outline * 0.55).toFixed(2)}"><path d="${CUP_BODY}"/><ellipse cx="12" cy="6.4" rx="9.6" ry="2.4"/><path d="${STRAW}"/></g>
-    </g>
-    <path d="${CUP_BODY}" fill="url(#${id}-paper)" stroke="#6f6c66" stroke-width=".45" stroke-linejoin="round"/>
-    <path d="${CUP_WINDOW}" fill="#f1ece3" stroke="#a9a49b" stroke-width=".3"/>
-    <g clip-path="url(#${id}-w)">
-      ${fill > 0 ? `
-      <rect x="0" y="${drinkY}" width="24" height="28" fill="${tea}"/>
-      ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
-      <rect x="0" y="${drinkY}" width="24" height="28" fill="url(#${id}-tea)"/>
-      <g fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".55"><path d="M6 15.6q3-1.4 6 0t6 0"/><path d="M7.3 18.6q2.2 1.3 4.6.1"/><path d="M13 17.2q2.2-.9 4.2.4"/></g>` : ''}
-      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1" stroke-opacity=".8"><path d="M5 13q-.4 3 .6 5.5t.5 5"/><path d="M19 13q.4 3-.6 5.5t-.5 5"/><path d="M12 13.6q1 2.6 0 5"/></g>` : ''}
+    ${big ? '<ellipse cx="12" cy="26.6" rx="8" ry="1" fill="#3b2518" fill-opacity=".14"/>' : ''}
+    ${part('tea', fill > 0 ? `<g clip-path="url(#${id}-in)">
+      <rect x="0" y="${teaTop}" width="24" height="20" fill="${o.color2 || color}"/>
+      ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="20" fill="${color}"/>` : ''}
+      ${fill > 0.5 ? `<g fill="none" stroke="#6b3a1c" stroke-opacity=".3" stroke-width="1.4" stroke-linecap="round"><path d="M6 11.5Q9 15 7 19T9 25"/><path d="M12.5 11Q15 14.5 12.8 18.5T14.6 24.5"/><path d="M17.8 11.8Q19.4 15 17.4 18.6"/></g>` : ''}
+      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1.2" stroke-opacity=".85" stroke-linecap="round"><path d="M4.6 12q-.4 3 .6 5.5t.5 5"/><path d="M19.4 12q.4 3-.6 5.5t-.5 5"/></g>` : ''}
       ${pieces}
-      ${fill > 0.3 ? CUP_PEARLS.map(([x, y, c], i) => `<circle cx="${x}" cy="${y}" r="1.45" fill="${c}" fill-opacity="${i > 4 ? 0.78 : 1}"/><circle cx="${x - 0.45}" cy="${y - 0.5}" r=".38" fill="#fff" fill-opacity=".35"/>`).join('') : ''}
-      <path d="M5.1 14 5.9 23.4" stroke="#fff" stroke-opacity=".7" stroke-width=".6"/>
-    </g>
-    <g fill="none" stroke="#b9b5ad" stroke-width=".35" stroke-linecap="round"><path d="M3.3 8.2 5.6 24.6"/><path d="M20.7 8.2 18.4 24.6"/></g>
-    <ellipse cx="12" cy="6.4" rx="9.6" ry="2.4" fill="${top ? topColor : '#e9e3d8'}" stroke="#6f6c66" stroke-width=".45"/>
-    ${top ? `<ellipse cx="12" cy="6.6" rx="8.6" ry="1.8" fill="#fff" fill-opacity=".14"/>
-    <g fill="${has('brulee') ? '#6e3410' : has('foam') ? '#d9c39b' : '#7a4a2a'}" fill-opacity="${has('foam') ? 0.6 : 0.35}">${SPECKS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".22"/>`).join('')}</g>` : '<ellipse cx="12" cy="6.9" rx="8.4" ry="1.7" fill="#d8d0c2"/>'}
-    <path d="${STRAW}" fill="#1e1c1b"/>
-    <ellipse cx="6.6" cy=".6" rx="1.3" ry=".45" fill="#3a3735"/>
-    <ellipse cx="6.6" cy=".62" rx=".8" ry=".24" fill="#000"/>
-    <path d="M6 1.6v4.4" stroke="#fff" stroke-opacity=".55" stroke-width=".35" stroke-linecap="round"/>
-    ${o.mark
-      ? `<text x="12" y="11.3" text-anchor="middle" font-family="Outfit, sans-serif" font-size="4.6" font-weight="600" fill="#2a1d16">${o.mark}</text>`
-      : big ? `<text x="12" y="10.4" text-anchor="middle" font-family="Outfit, sans-serif" font-size="2.35" font-weight="600" letter-spacing=".08" fill="#2a1d16">HALF SUGAR</text><text x="12" y="12" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="700" letter-spacing=".12" fill="#7a2f1c">BOBA CHAT</text>` : ''}`;
+      ${has('foam') ? `<rect x="0" y="${teaTop - 0.2}" width="24" height="2.2" fill="url(#${id}-foamL)"/>` : ''}
+      ${has('brulee') ? `<rect x="0" y="${teaTop - 0.3}" width="24" height="1.3" fill="url(#${id}-bruL)"/>` : ''}
+      <rect x="0" y="${teaTop}" width="24" height="20" fill="url(#${id}-shade)"/>
+    </g>` : '')}
+    ${part('pearls', fill > 0.3 ? `<g clip-path="url(#${id}-in)">${CUP_PEARLS.map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="1.5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.5" fill="url(#${id}-pearl)"/>`).join('')}</g>` : '')}
+    ${part('straw', `<path d="${CUP_STRAW}" fill="#e2492a" stroke="${big ? '#a3301b' : '#2a1d16'}" stroke-width="${line * 0.7}" stroke-linejoin="round"/><path d="M14.9 -3.6 12.6 18.5" stroke="#fff" stroke-opacity=".45" stroke-width=".35" stroke-linecap="round"/>`)}
+    ${part('shell', `<path d="${CUP_SHELL}" fill="#fff" fill-opacity=".16" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
+      <ellipse cx="12" cy="9.4" rx="9.5" ry="1.1" fill="none" stroke="${ink}" stroke-width="${line * 0.8}"/>
+      <path d="M4 11.4 5.6 23.8" stroke="#fff" stroke-opacity=".75" stroke-width=".6" stroke-linecap="round"/>
+      <rect x="9.6" y="11.8" width="4.8" height="6" rx=".5" fill="#c8352b"/>
+      ${big ? `<rect x="10" y="12.2" width="4" height="5.2" rx=".3" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".14"/>` : ''}
+      ${o.mark
+        ? `<text x="12" y="16.7" text-anchor="middle" font-family="Outfit, sans-serif" font-size="4" font-weight="700" fill="#fff">${o.mark}</text>`
+        : big ? `<text x="12" y="14.6" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">半</text><text x="12" y="17.1" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">糖</text>
+          <text x="12" y="19.6" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="600" letter-spacing=".32" fill="#2a1d16" fill-opacity=".8">HALF SUGAR</text>` : ''}`)}
+    ${part('lid', `<path d="${CUP_LID}" fill="#fff" fill-opacity=".35" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
+      <path d="M5 7.4Q5.6 3.4 10.4 2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width=".55" stroke-linecap="round"/>
+      <ellipse cx="12" cy="9.2" rx="10" ry="1.25" fill="#fff" fill-opacity=".55" stroke="${ink}" stroke-width="${line}"/>`)}`;
 }
 
 function cup(color, o = {}) {
-  return `<svg class="cup ${o.cls || ''}" viewBox="-1.5 -1 27 29" aria-hidden="true">${cupArt(color, o)}</svg>`;
+  const big = BIG_CUP.test(o.cls || '');
+  return `<svg class="cup ${big ? 'cup-x' : ''} ${o.cls || ''}" viewBox="-2 -6 28 34" aria-hidden="true">${cupArt(color, o)}</svg>`;
 }
 const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
@@ -975,12 +980,12 @@ const LAYER_ICON = {
     ${glint('M-.55 -.3 Q-.35 -.38 -.12 -.38')}`,
 };
 
-const PIECE_SLOTS = [[7.4, 14.6], [12, 14.1], [16.6, 14.7], [9.6, 16.8], [14.4, 16.6], [17, 17.9], [6.9, 17.4], [11.9, 17.9], [10.4, 15.1], [15.6, 20.4]];
+const PIECE_SLOTS = [[6.6, 12.6], [12, 11], [17.4, 12.6], [7, 15.4], [17, 15.4], [7.4, 18.3], [16.6, 18.3], [8.8, 11.6], [15.2, 11.6], [18.1, 20.2]];
 const PIECE_SIZE = 1.15;
 
 // Your base drink with your toppings in it
 function drinkCup(p, ids = [], cls = '') {
-  return `<svg class="cup drink ${cls}" viewBox="-1.5 -1 27 29" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
+  return `<svg class="cup drink ${BIG_CUP.test(cls) ? 'cup-x' : ''} ${cls}" viewBox="-2 -6 28 34" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
 }
 
 // A topping on its own, for chips and gift boxes
@@ -2545,6 +2550,12 @@ const acts = {
 document.addEventListener('click', (event) => {
   const el = event.target.closest('[data-act]');
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
+});
+
+// Tap a big cup to pull it apart, tap again to put it back
+document.addEventListener('click', (event) => {
+  const c = event.target.closest('.cup-x');
+  if (c && !c.closest('button, a')) c.classList.toggle('is-apart');
 });
 
 // Enter in a tag box adds the tag instead of sending the form

@@ -714,14 +714,14 @@ textarea:focus-visible {
 .cup--hero {
   width: clamp(88px, 16vw, 128px);
   height: auto;
-  aspect-ratio: 27 / 29;
+  aspect-ratio: 28 / 34;
   animation: float 3.2s ease-in-out infinite alternate;
 }
 
 .cup--mystery {
   width: clamp(92px, 18vw, 136px);
   height: auto;
-  aspect-ratio: 27 / 29;
+  aspect-ratio: 28 / 34;
   animation: float 3.2s ease-in-out infinite alternate;
 }
 
@@ -2850,7 +2850,7 @@ details.algo > summary {
 .cup--profile {
   width: clamp(104px, 18vw, 140px);
   height: auto;
-  aspect-ratio: 27 / 29;
+  aspect-ratio: 28 / 34;
 }
 
 .mydrink__info > * + * {
@@ -3410,3 +3410,47 @@ body.modal-open {
 .gifts .gift__top { fill: #f08a4d; }
 .gifts .gift__ribbon,
 .gifts .gift__bow { fill: #f5cf6e; }
+
+/* ---------- Puzzle cup: layers that pull apart ---------- */
+
+.cup--lg {
+  height: auto;
+  aspect-ratio: 28 / 34;
+}
+
+.cup--hero {
+  width: clamp(110px, 18vw, 156px);
+  margin-block: 24px 10px;
+}
+
+.cup .part {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transition: transform 0.7s var(--ease);
+  transition-delay: var(--d, 0s);
+}
+
+.cup-x {
+  cursor: pointer;
+}
+
+.cup-x:hover .part,
+.cup-x.is-apart .part {
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--r, 0deg));
+}
+
+/* The first-page cup comes apart and back together on its own */
+.cup--hero .part {
+  animation: puzzle 5.2s var(--ease) infinite;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes puzzle {
+  0%, 28%, 100% { transform: none; }
+  44%, 74% { transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--r, 0deg)); }
+}
+
+.pf__cup,
+.mydrink__cup {
+  padding-top: 14px;
+}
