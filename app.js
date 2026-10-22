@@ -834,64 +834,119 @@ const shownToppings = () => {
 };
 const toppingsOf = (pid) => (pid === 'me' ? shownToppings() : (P[pid].toppings || []));
 
-// Toppings are drawn with light from the top left: glossy spheres, jelly cubes
-// with three shaded faces, and a soft shadow underneath.
-// Each SVG gets its own set of gradients (prefixed with an id) so they never clash.
-const SPHERE_MAT = {
-  taro: ['#ece0f7', '#a985d0', '#664890'],
-  orange: ['#ffe0bd', '#f2a35f', '#b0602a'],
-  golden: ['#fff7cf', '#f1c84b', '#a3721a'],
-  sakura: ['#fff2f6', '#f5b3c8', '#c9668b'],
-  redbean: ['#d77266', '#922f29', '#4f1310'],
-  crystal: ['#ffffff', '#f5eedf', '#cdbd9f'],
-  mochi: ['#ffffff', '#f6efe4', '#d3c4aa'],
-  foam: ['#ffffff', '#fbf4e6', '#ddcaa6'],
-};
-
+// Toppings are small illustrations in the same style as the cup: a thin
+// dark-brown outline, soft colour with one gentle shade, and a short white
+// highlight. Each is drawn around (x, y) at size s; one unit is about the
+// topping's half-width. Every SVG gets its own gradient ids so they never clash.
 function toppingDefs(id) {
-  const radial = (name, [a, b, c]) => `<radialGradient id="${id}-${name}" cx=".34" cy=".3" r=".78"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
+  const lin = (name, a, b, angle = '0 0 1 1') => {
+    const [x1, y1, x2, y2] = angle.split(' ');
+    return `<linearGradient id="${id}-${name}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+  };
+  const rad = (name, a, b, c) => `<radialGradient id="${id}-${name}" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="${a}"/><stop offset=".6" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
   return `<defs>
-    ${Object.entries(SPHERE_MAT).map(([name, c]) => radial(name, c)).join('')}
-    <linearGradient id="${id}-pud" x1="0" x2="1"><stop offset="0" stop-color="#d79b33"/><stop offset=".4" stop-color="#f8dd88"/><stop offset="1" stop-color="#c88a28"/></linearGradient>
-    <radialGradient id="${id}-burnt" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#eab26a"/><stop offset=".6" stop-color="#a8622a"/><stop offset="1" stop-color="#5e2f0f"/></radialGradient>
-    <linearGradient id="${id}-syrup" x1="0" x2="1"><stop offset="0" stop-color="#a5622f"/><stop offset=".5" stop-color="#6d3a17"/><stop offset="1" stop-color="#3f1f0a"/></linearGradient>
-    <linearGradient id="${id}-foamL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#efe0c2"/></linearGradient>
-    <linearGradient id="${id}-bruL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a4a17"/><stop offset=".35" stop-color="#d99a45"/><stop offset="1" stop-color="#f3d38e"/></linearGradient>
+    ${lin('coco', '#ffffff', '#ebe1cb')}
+    ${lin('aloe', '#eef8dc', '#b4d68b')}
+    ${lin('grass', '#57463a', '#241a13')}
+    ${lin('galaxy', '#8a7ae6', '#33267a')}
+    ${lin('bean', '#a8392f', '#5e1813')}
+    ${lin('flan', '#fae29a', '#e3a93f', '0 0 1 0')}
+    ${lin('taro', '#cdb6e6', '#9572c0')}
+    ${lin('sweet', '#ffc48a', '#e98a3d')}
+    ${lin('mochi', '#ffffff', '#efe4d0', '0 0 0 1')}
+    ${lin('dish', '#ffffff', '#ece3d2', '0 0 1 0')}
+    ${lin('syrup', '#b9732f', '#5c2c0e')}
+    ${lin('foamL', '#ffffff', '#f0e1c2', '0 0 0 1')}
+    ${lin('bruL', '#7a3c10', '#f0cd84', '0 0 0 1')}
+    ${rad('crystal', '#ffffff', '#f3ecdf', '#d7c8ab')}
+    ${rad('gold', '#fff4bf', '#ecbd43', '#a8761b')}
+    ${rad('caramel', '#e9a85b', '#b8692a', '#7a3c10')}
+    ${rad('foam', '#ffffff', '#fbf3e3', '#e6d4b2')}
+    ${rad('drop', '#ffffff', '#fdeef2', '#f3cddb')}
   </defs>`;
 }
 
-const shadow = (x, y, s) => `<ellipse cx="${x}" cy="${y + 0.92 * s}" rx="${0.7 * s}" ry="${0.16 * s}" fill="#3b2518" fill-opacity=".18"/>`;
-const shine = (x, y, r) => `<ellipse cx="${x - r * 0.34}" cy="${y - r * 0.38}" rx="${r * 0.3}" ry="${r * 0.17}" fill="#fff" fill-opacity=".85" transform="rotate(-28 ${x - r * 0.34} ${y - r * 0.38})"/>`;
-const sphere = (id, mat, x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}-${mat})"${mat === 'crystal' ? ` fill-opacity=".82" stroke="#fff" stroke-opacity=".9" stroke-width="${r * 0.08}"` : ''}/>${shine(x, y, r)}`;
+const INK = '#2a1d16';
+const ink = (s) => `stroke="${INK}" stroke-width="${(0.075 * s).toFixed(3)}" stroke-linejoin="round" stroke-linecap="round"`;
+const glint = (d) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".11" stroke-linecap="round"/>`;
+const shadow = (x, y, s) => `<ellipse cx="${x}" cy="${y + 0.9 * s}" rx="${0.68 * s}" ry="${0.13 * s}" fill="#3b2518" fill-opacity=".14"/>`;
 
-// A small cube seen from above: top, left and right faces in three tones
-function cube(x, y, s, [top, left, right], opacity = 1) {
-  const pt = (px, py) => `${(x + px * s).toFixed(2)},${(y + py * s).toFixed(2)}`;
-  return `<g fill-opacity="${opacity}" stroke="#2a1d16" stroke-opacity=".12" stroke-width="${0.04 * s}" stroke-linejoin="round">
-    <polygon points="${pt(0, -0.9)} ${pt(0.8, -0.5)} ${pt(0, -0.1)} ${pt(-0.8, -0.5)}" fill="${top}"/>
-    <polygon points="${pt(-0.8, -0.5)} ${pt(0, -0.1)} ${pt(0, 0.8)} ${pt(-0.8, 0.4)}" fill="${left}"/>
-    <polygon points="${pt(0.8, -0.5)} ${pt(0, -0.1)} ${pt(0, 0.8)} ${pt(0.8, 0.4)}" fill="${right}"/>
-  </g><path d="M${pt(-0.55, -0.48)} L${pt(-0.05, -0.75)}" stroke="#fff" stroke-opacity=".7" stroke-width="${0.08 * s}" stroke-linecap="round"/>`;
-}
+// Everything inside a topping is drawn at unit size, then moved and scaled
+const at = (x, y, s, body) => `<g transform="translate(${x} ${y}) scale(${s})">${body}</g>`;
 
-// Pieces that float in the drink. (id, x, y, size, n) where n alternates colours
+// A soft rounded jelly cube with a lighter core you can see into
+const jelly = (fill, core, coreOpacity, opacity = 1, tilt = -10) => `
+  <g transform="rotate(${tilt})" fill-opacity="${opacity}">
+    <rect x="-.75" y="-.72" width="1.5" height="1.44" rx=".34" fill="${fill}" ${ink(1)}/>
+    <rect x="-.42" y="-.38" width=".84" height=".76" rx=".2" fill="${core}" fill-opacity="${coreOpacity}"/>
+    ${glint('M-.52 -.3 Q-.5 -.52 -.28 -.54')}
+  </g>`;
+
 const PIECE = {
-  coconut: (id, x, y, s) => cube(x, y, s, ['#ffffff', '#efe6d3', '#d6c8ad']),
-  aloe: (id, x, y, s) => cube(x, y, s, ['#f0f9e2', '#cfe7b3', '#a3c880'], 0.92),
-  grass: (id, x, y, s) => cube(x, y, s, ['#6e5c4a', '#3f3229', '#231912']),
-  galaxy: (id, x, y, s) => `${cube(x, y, s, ['#8070e3', '#4d3d9e', '#2d2270'])}<circle cx="${x - 0.3 * s}" cy="${y + 0.2 * s}" r="${0.07 * s}" fill="#fff"/><circle cx="${x + 0.35 * s}" cy="${y + 0.05 * s}" r="${0.05 * s}" fill="#fff"/><circle cx="${x + 0.1 * s}" cy="${y - 0.5 * s}" r="${0.06 * s}" fill="#fff"/>`,
-  redbean: (id, x, y, s) => [[-0.38, 0.18], [0.42, 0.25], [0.04, -0.32]].map(([dx, dy]) => sphere(id, 'redbean', x + dx * s, y + dy * s, 0.44 * s)).join(''),
-  pudding: (id, x, y, s) => `
-    <path d="M${x - 0.75 * s} ${y - 0.3 * s} L${x - 0.85 * s} ${y + 0.55 * s} A${0.85 * s} ${0.26 * s} 0 0 0 ${x + 0.85 * s} ${y + 0.55 * s} L${x + 0.75 * s} ${y - 0.3 * s} Z" fill="url(#${id}-pud)"/>
-    <ellipse cx="${x}" cy="${y - 0.3 * s}" rx="${0.75 * s}" ry="${0.23 * s}" fill="#9a5a20"/>
-    <path d="M${x - 0.75 * s} ${y - 0.3 * s} q${0.2 * s} ${0.35 * s} ${0.4 * s} 0 q${0.2 * s} ${0.45 * s} ${0.4 * s} 0" fill="#9a5a20"/>
-    <ellipse cx="${x - 0.25 * s}" cy="${y - 0.36 * s}" rx="${0.22 * s}" ry="${0.06 * s}" fill="#fff" fill-opacity=".6"/>`,
-  crystal: (id, x, y, s) => sphere(id, 'crystal', x, y, 0.82 * s),
-  taroball: (id, x, y, s, n) => sphere(id, n % 2 ? 'orange' : 'taro', x, y, 0.78 * s),
-  mochi: (id, x, y, s) => `<ellipse cx="${x}" cy="${y}" rx="${0.95 * s}" ry="${0.72 * s}" fill="url(#${id}-mochi)"/>${shine(x, y, 0.8 * s)}`,
-  golden: (id, x, y, s) => `${sphere(id, 'golden', x, y, 0.88 * s)}<path d="M${x + 0.55 * s} ${y - 0.95 * s} l${0.08 * s} ${0.22 * s} ${0.22 * s} ${0.08 * s} ${-0.22 * s} ${0.08 * s} ${-0.08 * s} ${0.22 * s} ${-0.08 * s} ${-0.22 * s} ${-0.22 * s} ${-0.08 * s} ${0.22 * s} ${-0.08 * s}z" fill="#fffbe6"/>`,
-  sakura: (id, x, y, s) => `${sphere(id, 'sakura', x, y, 0.84 * s)}<g fill="#fff" fill-opacity=".9">${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(x + 0.06 * s + Math.cos((a * Math.PI) / 180) * 0.2 * s).toFixed(2)}" cy="${(y + 0.12 * s + Math.sin((a * Math.PI) / 180) * 0.2 * s).toFixed(2)}" r="${0.12 * s}"/>`).join('')}</g><circle cx="${x + 0.06 * s}" cy="${y + 0.12 * s}" r="${0.08 * s}" fill="#e3799d"/>`,
+  coconut: (id, x, y, s) => at(x, y, s, jelly(`url(#${id}-coco)`, '#fff', 0.7, 0.97, -12)),
+  aloe: (id, x, y, s) => at(x, y, s, `${jelly(`url(#${id}-aloe)`, '#f6fcec', 0.65, 0.95, 8)}<circle cx=".25" cy=".22" r=".08" fill="#fff" fill-opacity=".8"/>`),
+  grass: (id, x, y, s) => at(x, y, s, jelly(`url(#${id}-grass)`, '#7a6553', 0.35, 1, -6)),
+  galaxy: (id, x, y, s) => at(x, y, s, `${jelly(`url(#${id}-galaxy)`, '#b9adf5', 0.25, 1, 10)}
+    <circle cx="-.2" cy=".25" r=".06" fill="#fff"/><circle cx=".3" cy="-.05" r=".05" fill="#fff"/>
+    <path d="M.12 -.4l.05.13.13.05-.13.05-.05.13-.05-.13-.13-.05.13-.05z" fill="#fff"/>`),
+  // Kidney-shaped beans with a little pale line where they joined the pod
+  redbean: (id, x, y, s) => at(x, y, s, [[-0.36, 0.22, -25], [0.4, 0.28, 30], [0.02, -0.34, 5]].map(([bx, by, r]) => `
+    <g transform="translate(${bx} ${by}) rotate(${r})">
+      <path d="M-.42 -.05 Q-.42 -.3 -.12 -.3 Q.05 -.3 .12 -.22 Q.2 -.3 .3 -.28 Q.46 -.24 .44 0 Q.42 .28 0 .28 Q-.42 .28 -.42 -.05 Z" fill="url(#${id}-bean)" ${ink(1)}/>
+      <path d="M.02 -.2 Q.08 -.14 .15 -.17" fill="none" stroke="#f2dccd" stroke-width=".07" stroke-linecap="round"/>
+      ${glint('M-.3 -.06 Q-.28 -.18 -.15 -.2')}
+    </g>`).join('')),
+  // Flan with caramel on top, dripping a little down the sides
+  pudding: (id, x, y, s) => at(x, y, s, `
+    <path d="M-.58 -.38 L.58 -.38 L.82 .5 Q0 .74 -.82 .5 Z" fill="url(#${id}-flan)" ${ink(1)}/>
+    <path d="M-.58 -.38 L.58 -.38 L.62 -.22 Q.5 -.18 .46 -.05 Q.4 .04 .36 -.12 Q.2 -.2 .05 -.16 Q-.05 .08 -.15 -.16 Q-.35 -.18 -.45 -.12 Q-.52 .02 -.58 -.2 Z" fill="#8f4b17"/>
+    <ellipse cx="0" cy="-.38" rx=".58" ry=".16" fill="url(#${id}-caramel)" ${ink(1)}/>
+    ${glint('M-.55 .05 L-.62 .38')}`),
+  crystal: (id, x, y, s) => at(x, y, s, `
+    <circle r=".76" fill="url(#${id}-crystal)" fill-opacity=".9" ${ink(1)}/>
+    <circle cx=".1" cy=".12" r=".42" fill="#fff" fill-opacity=".35"/>
+    ${glint('M-.45 -.15 Q-.42 -.45 -.12 -.52')}`),
+  // Chewy little pillows: purple taro and orange sweet potato
+  taroball: (id, x, y, s, n) => at(x, y, s, `
+    <g transform="rotate(${n % 2 ? 18 : -14})">
+      <rect x="-.68" y="-.46" width="1.36" height=".92" rx=".44" fill="url(#${id}-${n % 2 ? 'sweet' : 'taro'})" ${ink(1)}/>
+      ${glint('M-.4 -.22 Q-.2 -.32 .05 -.3')}
+    </g>`),
+  mochi: (id, x, y, s) => at(x, y, s, `
+    <path d="M-.86 .2 Q-.9 -.55 0 -.58 Q.9 -.55 .86 .2 Q.8 .52 0 .52 Q-.8 .52 -.86 .2 Z" fill="url(#${id}-mochi)" ${ink(1)}/>
+    <g fill="#e9dcc4"><circle cx="-.3" cy="-.15" r=".05"/><circle cx=".2" cy="-.3" r=".04"/><circle cx=".42" cy=".05" r=".05"/><circle cx="-.05" cy=".18" r=".04"/></g>
+    ${glint('M-.55 -.22 Q-.45 -.42 -.2 -.45')}`),
+  golden: (id, x, y, s) => at(x, y, s, `
+    <circle r=".78" fill="url(#${id}-gold)" ${ink(1)}/>
+    ${glint('M-.45 -.18 Q-.4 -.45 -.12 -.5')}
+    <path d="M.62 -.92l.08.22.22.08-.22.08-.08.22-.08-.22-.22-.08.22-.08z" fill="#fff6c8" stroke="${INK}" stroke-width=".04" stroke-linejoin="round"/>`),
+  // A clear drop of jelly with a sakura flower inside
+  sakura: (id, x, y, s) => at(x, y, s, `
+    <path d="M-.86 .42 Q-.92 -.82 0 -.82 Q.92 -.82 .86 .42 Q0 .66 -.86 .42 Z" fill="url(#${id}-drop)" fill-opacity=".9" ${ink(1)}/>
+    <g transform="translate(0 -.06)">${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="0" cy="-.2" rx=".12" ry=".2" fill="#f29abb" transform="rotate(${a})"/>`).join('')}<circle r=".08" fill="#fff0a3"/></g>
+    ${glint('M-.55 -.1 Q-.5 -.52 -.2 -.62')}`),
 };
+
+// Toppings that are not floating pieces get their own picture for chips and gift boxes
+const LAYER_ICON = {
+  // A swirled dollop of cream cheese foam
+  foam: (id) => `
+    <path d="M-.92 .5 C-1 .05 -.62 -.12 -.38 -.15 C-.42 -.55 -.05 -.8 .18 -.95 C.14 -.6 .58 -.52 .52 -.16 C.85 -.12 1 .2 .9 .5 Q0 .72 -.92 .5 Z" fill="url(#${id}-foamL)" ${ink(1)}/>
+    <path d="M-.5 .12 Q0 .3 .55 .1 M-.25 -.18 Q.1 -.05 .4 -.2" fill="none" stroke="#dcc6a0" stroke-width=".07" stroke-linecap="round"/>
+    ${glint('M-.65 .25 Q-.7 0 -.45 -.08')}`,
+  // Brown sugar syrup dripping down
+  tiger: (id) => `
+    <path d="M-.92 -.75 H.92 V-.42 Q.78 -.36 .74 -.05 Q.7 .5 .52 .5 Q.34 .5 .34 0 Q.3 -.24 .1 -.24 Q-.1 -.24 -.12 .3 Q-.16 .9 -.38 .9 Q-.6 .9 -.6 .3 Q-.62 -.3 -.92 -.36 Z" fill="url(#${id}-syrup)" ${ink(1)}/>
+    ${glint('M-.42 .1 L-.44 .55')}${glint('M.48 -.05 L.47 .22')}`,
+  // A white ramekin with a torched sugar top
+  brulee: (id) => `
+    <path d="M-.94 -.2 L-.84 .52 Q0 .74 .84 .52 L.94 -.2 Z" fill="url(#${id}-dish)" ${ink(1)}/>
+    <g stroke="#ddd2bf" stroke-width=".06">${[-0.6, -0.3, 0, 0.3, 0.6].map((dx) => `<path d="M${dx} 0 L${dx * 0.92} .55"/>`).join('')}</g>
+    <ellipse cx="0" cy="-.2" rx=".94" ry=".28" fill="url(#${id}-caramel)" ${ink(1)}/>
+    <g fill="#5e2c0c" fill-opacity=".55"><ellipse cx="-.3" cy="-.22" rx=".14" ry=".05"/><ellipse cx=".35" cy="-.16" rx=".1" ry=".04"/><ellipse cx=".05" cy="-.3" rx=".08" ry=".03"/></g>
+    ${glint('M-.55 -.3 Q-.35 -.38 -.12 -.38')}`,
+};
+
 const PIECE_SLOTS = [[7.2, 14.9], [12.6, 14.5], [16.9, 15.1], [9.4, 17.4], [14.7, 17.2], [17.1, 19.5], [7, 19.7], [11.6, 19.9], [12.1, 16.5], [15.9, 21.3]];
 const PIECE_SIZE = 1.15;
 
@@ -929,14 +984,8 @@ function drinkCup(p, ids = [], cls = '') {
 // A topping on its own, for chips and gift boxes
 function toppingIcon(k) {
   const id = 'ti' + uid();
-  const art = PIECE[k]
-    ? `${shadow(0, k === 'mochi' ? -0.15 : 0, 1)}${PIECE[k](id, 0, k === 'redbean' ? -0.05 : 0, 1, 0)}`
-    : {
-      foam: `${shadow(0, 0.1, 1.1)}<ellipse cx="0" cy=".45" rx="1" ry=".45" fill="url(#${id}-foam)"/>${sphere(id, 'foam', -0.45, 0.15, 0.5)}${sphere(id, 'foam', 0.45, 0.2, 0.48)}${sphere(id, 'foam', 0, -0.25, 0.6)}`,
-      brulee: `${shadow(0, 0.05, 1.1)}<path d="M-1 -.25 L-1 .55 A1 .3 0 0 0 1 .55 L1 -.25 Z" fill="url(#${id}-pud)"/><ellipse cx="0" cy="-.25" rx="1" ry=".3" fill="url(#${id}-burnt)"/><ellipse cx="-.35" cy="-.32" rx=".25" ry=".06" fill="#fff" fill-opacity=".55"/>`,
-      tiger: `<g fill="none" stroke-linecap="round"><path d="M-.6 -1q-.5 .6 0 1.1t0 1" stroke="url(#${id}-syrup)" stroke-width=".38"/><path d="M.15 -1q.5 .6 0 1.1t0 1" stroke="url(#${id}-syrup)" stroke-width=".38"/><path d="M.85 -.8q-.35 .5 0 .9" stroke="url(#${id}-syrup)" stroke-width=".3"/><path d="M-.68 -.85q-.3 .4-.08 .7" stroke="#fff" stroke-opacity=".6" stroke-width=".08"/></g>`,
-    }[k];
-  return `<svg class="ti" viewBox="-1.3 -1.3 2.6 2.6" aria-hidden="true">${toppingDefs(id)}${art}</svg>`;
+  const art = PIECE[k] ? PIECE[k](id, 0, 0, 1, 0) : LAYER_ICON[k](id);
+  return `<svg class="ti" viewBox="-1.25 -1.25 2.5 2.5" aria-hidden="true">${toppingDefs(id)}${shadow(0, 0.02, 1)}${art}</svg>`;
 }
 
 const toppingChip = (k, count = 1) => `<span class="tchip tchip--${TOPPING[k].tier}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${count > 1 ? `<b>×${count}</b>` : ''}</span>`;
