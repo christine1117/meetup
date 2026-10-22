@@ -1172,8 +1172,10 @@ function viewMe() {
     <button class="mydrink__cup" data-act="profile" data-pid="me" type="button" aria-label="${esc(L`See how others see your profile`)}">${drinkCup(S.me, myToppings(), 'cup--profile')}</button>
     <div class="mydrink__info">
       <p class="receipt__label">${L`Your usual`}</p>
-      <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
-      ${myToppings().length ? `<div class="pf__toppings">${myToppings().map((k) => toppingChip(k, S.toppings[k])).join('')}</div>` : `<p class="receipt__meta">${L`No toppings yet. Reach half sugar in a chat to earn one.`}</p>`}
+      <div class="order-line">
+        <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
+        ${myToppings().map((k) => toppingChip(k, S.toppings[k])).join('')}
+      </div>
       <p class="receipt__meta">${S.threads.some((t) => t.msgs.some((m) => m.from === 'them'))
         ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats.`
         : L`Your reply rate shows up after your first chats.`}</p>
@@ -1182,23 +1184,6 @@ function viewMe() {
         <button class="btn btn--ghost btn--sm" data-act="profile" data-pid="me" type="button">${L`See my profile`}</button>
       </div>
     </div>
-  </section>
-  <section class="panel collection">
-    <h2>${L`Toppings`}<span class="meta">${L`${myToppings().length} of ${TOPPINGS.length} collected`}</span></h2>
-    ${['small', 'premium', 'secret'].map((tier) => `
-    <div class="collection__group">
-      <p class="collection__how"><span class="tier-tag tier-tag--${tier}">${L(TIER_NAME[tier])}</span>${L(TIER_HOW[tier])}</p>
-      <ul class="tiles">${TOPPINGS.filter((x) => x.tier === tier).map((x) => {
-        const n = (S.toppings || {})[x.id] || 0;
-        const hidden = !n && tier === 'secret';
-        return `<li class="tile ${n ? 'is-owned' : ''}">
-          <span class="tile__art">${hidden ? '<i class="ph ph-question" aria-hidden="true"></i>' : toppingIcon(x.id)}</span>
-          <span class="tile__name">${hidden ? L`Secret` : esc(L(x.name))}</span>
-          ${n > 1 ? `<span class="tile__count">×${n}</span>` : ''}
-          ${n ? '' : '<i class="ph ph-lock-simple tile__lock" aria-hidden="true"></i>'}
-        </li>`;
-      }).join('')}</ul>
-    </div>`).join('')}
   </section>
   ${profileForm(S.me, false)}
   ${viewAlgorithm()}

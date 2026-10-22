@@ -3316,3 +3316,15 @@ body.modal-open {
   color: var(--muted);
   font-weight: 500;
 }
+
+/* Your drink and its toppings on one line */
+.order-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.order-line .receipt__item {
+  margin-right: 4px;
+}
