@@ -514,7 +514,12 @@ const blank = () => ({ me: null, myThoughts: [], myPosts: [], threads: [], drops
 
 function load() {
   try {
-    return Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
+    const saved = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
+    // Old or damaged data: keep lists as lists and drop chats with people who no longer exist
+    ['myThoughts', 'myPosts', 'threads'].forEach((k) => { if (!Array.isArray(saved[k])) saved[k] = []; });
+    if (saved.me && typeof saved.me !== 'object') saved.me = null;
+    saved.threads = saved.threads.filter((t) => t && P[t.pid] && Array.isArray(t.msgs));
+    return saved;
   } catch {
     return blank();
   }
@@ -1513,7 +1518,24 @@ function shell(route, body) {
   </div>`;
 }
 
+// Draw the page. If something breaks (often old saved data), show a way out instead of a blank screen.
 function render(opt = {}) {
+  try {
+    draw(opt);
+  } catch (err) {
+    console.error(err);
+    app.innerHTML = `
+    <main class="onboard">
+      <p class="logo">${LOGO}</p>
+      <h1>${L`Something went wrong.`}</h1>
+      <p class="lead">${L`Your saved data may come from an older version. Clearing it usually fixes this.`}</p>
+      <p class="hint">${esc(err && err.message)}</p>
+      <button class="btn btn--primary" data-act="reset-yes" type="button">${L`Clear data and restart`}</button>
+    </main>`;
+  }
+}
+
+function draw(opt = {}) {
   const route = parseRoute();
   const path = location.hash;
   const same = path === lastPath && !opt.fresh;
@@ -1848,13 +1870,18 @@ setInterval(() => {
 
 /* ---------- Start ---------- */
 
-// After a reload, pick the unfinished simulations back up
-S.threads.forEach((t) => {
-  if (t.status === 'pending') scheduleAccept(t);
-  if (t.reveal.me && !t.reveal.them) later(2600, () => resolveReveal(t));
-});
-learnWeights();
-S.myThoughts.forEach((item) => scheduleIncoming(item, 'thought'));
-S.myPosts.forEach((item) => scheduleIncoming(item, 'post'));
+// After a reload, pick the unfinished simulations back up.
+// If old data trips this up, still draw the page.
+try {
+  S.threads.forEach((t) => {
+    if (t.status === 'pending') scheduleAccept(t);
+    if (t.reveal && t.reveal.me && !t.reveal.them) later(2600, () => resolveReveal(t));
+  });
+  learnWeights();
+  S.myThoughts.forEach((item) => scheduleIncoming(item, 'thought'));
+  S.myPosts.forEach((item) => scheduleIncoming(item, 'post'));
+} catch (err) {
+  console.error(err);
+}
 
 render();

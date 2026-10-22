@@ -2162,3 +2162,10 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
 .comment-form textarea {
   min-height: 52px;
 }
+
+/* Shown until the app has drawn the first screen */
+.boot {
+  padding: 48px 24px;
+  color: var(--muted);
+  text-align: center;
+}
