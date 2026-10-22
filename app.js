@@ -288,37 +288,37 @@ const SEED_POSTS = [
   {
     id: 'b5', by: 'p5', kind: 'hackathon', event: 'Taipei Climate Hackathon', deadline: '2026-11-28',
     title: 'Joining a climate hackathon with our indoor air data. Need two more people.',
-    roles: [{ name: 'Frontend developer', filled: false }, { name: 'Designer', filled: false }, { name: 'Data analyst', filled: true }],
+    roles: [{ name: 'Frontend developer', desc: 'Turn our air data into a simple map people can read in 30 seconds.', filled: false }, { name: 'Designer', desc: 'Make the demo and slides clear on a projector.', filled: false }, { name: 'Data analyst', desc: 'Clean the readings and find the three most surprising numbers.', filled: true }],
     offer: 'Real sensor data from 23 homes', duration: 'Two weekends',
   },
   {
     id: 'b1', by: 'p1', kind: 'side',
     title: 'Building a checker for second-hand cameras.',
-    roles: [{ name: 'Hardware sourcing expert', filled: false }, { name: 'Inspection process expert', filled: true }],
+    roles: [{ name: 'Hardware sourcing expert', desc: 'Know where camera parts come from and what a fair price looks like.', filled: false }, { name: 'Inspection process expert', desc: 'Design a 10-minute check that sellers can follow.', filled: true }],
     offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project',
   },
   {
     id: 'b2', by: 'p7', kind: 'startup',
     title: 'Making clinic software that nurses do not hate.',
-    roles: [{ name: 'Designer', filled: false }],
+    roles: [{ name: 'Designer', desc: 'Design screens a nurse can use with one hand during a busy shift.', filled: false }],
     offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint',
   },
   {
     id: 'b6', by: 'p4', kind: 'competition', event: 'Asia Story Prize', deadline: '2026-12-15',
     title: 'Entering a nonfiction prize with a story about one factory family.',
-    roles: [{ name: 'Photographer', filled: false }, { name: 'Editor', filled: true }],
+    roles: [{ name: 'Photographer', desc: 'Spend two days in the factory and photograph the family at work.', filled: false }, { name: 'Editor', desc: 'Tighten the story to 5,000 words.', filled: true }],
     duration: 'Six weeks',
   },
   {
     id: 'b3', by: 'p3', kind: 'startup',
     title: 'Need someone to challenge my pricing before I launch in a second city.',
-    roles: [{ name: 'Pricing reviewer', filled: false }],
+    roles: [{ name: 'Pricing reviewer', desc: 'Look at our numbers and tell us what you would charge, and why.', filled: false }],
     offer: 'Real numbers from 1,300 users', duration: 'One or two calls',
   },
   {
     id: 'b4', by: 'p8', kind: 'startup',
     title: 'Building a produce ordering system for restaurants.',
-    roles: [{ name: 'Backend developer', filled: true }, { name: 'Chat bot developer', filled: false }],
+    roles: [{ name: 'Backend developer', desc: 'Build the back office where orders come in.', filled: true }, { name: 'Chat bot developer', desc: 'Let restaurants order through a chat app in a few taps.', filled: false }],
     offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible',
   },
 ];
@@ -1142,7 +1142,9 @@ function rolesList(b, mine) {
       <ul class="roles">${roles.map((r, i) => `
         <li class="role ${r.filled ? 'is-filled' : ''}">
           <i class="ph ${r.filled ? 'ph-check-circle' : 'ph-circle'}" aria-hidden="true"></i>
-          <span class="role__name">${esc(r.name)}</span>
+          ${r.desc
+            ? `<details class="role__more"><summary class="role__name">${esc(r.name)}</summary><p>${esc(r.desc)}</p></details>`
+            : `<span class="role__name">${esc(r.name)}</span>`}
           ${mine
             ? `<button class="btn btn--ghost btn--sm" data-act="role-toggle" data-id="${b.id}" data-i="${i}" type="button">${r.filled ? L`Reopen` : L`Mark filled`}</button>`
             : r.filled ? `<span class="role__tag">${L`Filled`}</span>` : ''}
@@ -1174,6 +1176,7 @@ function brewCard(b) {
         : U.target === b.id
           ? `<form class="stack reply" data-form="apply" data-id="${b.id}" novalidate>
               ${select('role', L`Apply for`, open.map((r) => [r.name, r.name]), open[0].name)}
+              <p class="hint role-hint">${esc(open[0].desc || '')}</p>
               ${field('reply', L`Why you are a fit`, '', { area: true, rows: 3, req: true, ph: L`Say what you would bring. They cannot see your titles` })}
               <div class="btnrow">
                 <button class="btn btn--dark btn--sm" type="submit">${L`Send anonymously`}</button>
@@ -1184,14 +1187,21 @@ function brewCard(b) {
     </article>`;
 }
 
-// Roles for a new Brew: type one, or tap a suggestion
+// Roles for a new Brew: type one or tap a suggestion, then describe it if you like
 function roleEditor() {
   const roles = U.draft.roles;
-  const left = ROLE_SUGGESTIONS.filter((x) => !roles.some((r) => normTag(r) === normTag(x)));
+  const left = ROLE_SUGGESTIONS.filter((x) => !roles.some((r) => normTag(r.name) === normTag(x)));
   return `
     <div class="field tags" role="group" aria-labelledby="roles-label">
       <p class="field__label" id="roles-label">${L`Roles you need`}</p>
-      ${roles.length ? `<ul class="tags__list">${roles.map((r) => `<li class="tag-chip">${esc(r)}<button type="button" data-act="role-remove" data-value="${esc(r)}" aria-label="${esc(L`Remove ${r}`)}"><i class="ph ph-x" aria-hidden="true"></i></button></li>`).join('')}</ul>` : ''}
+      ${roles.length ? `<ul class="role-drafts">${roles.map((r, i) => `
+        <li class="role-draft">
+          <div class="role-draft__head">
+            <strong>${esc(r.name)}</strong>
+            <button class="icon-btn" type="button" data-act="role-remove" data-i="${i}" aria-label="${esc(L`Remove ${r.name}`)}"><i class="ph ph-x" aria-hidden="true"></i></button>
+          </div>
+          <textarea id="rd-${i}" data-role-desc="${i}" rows="2" aria-label="${esc(L`What the ${r.name} will do`)}" placeholder="${esc(L`What will they do? (optional)`)}">${esc(r.desc)}</textarea>
+        </li>`).join('')}</ul>` : ''}
       ${roles.length < MAX_ROLES ? `
       <div class="tags__add">
         <input id="c-role" data-role-input autocomplete="off" aria-label="${esc(L`Roles you need`)}" placeholder="${esc(L`Type a role and press Enter`)}">
@@ -1199,6 +1209,14 @@ function roleEditor() {
       </div>
       <div class="tags__suggest">${left.map((x) => `<button class="cat cat--sm" data-act="role-add" data-value="${esc(x)}" type="button">+ ${esc(x)}</button>`).join('')}</div>` : ''}
     </div>`;
+}
+
+// Keep what was typed in the description boxes before the form is drawn again
+function syncRoleDescs() {
+  document.querySelectorAll('[data-role-desc]').forEach((box) => {
+    const role = U.draft.roles[Number(box.dataset.roleDesc)];
+    if (role) role.desc = box.value;
+  });
 }
 
 function viewBuild() {
@@ -1786,12 +1804,13 @@ const forms = {
 
   post(form, data) {
     if (!data.title) { $('#f-title', form).focus(); return; }
+    syncRoleDescs();
     if (!U.draft.roles.length) { $('#post-error', form).hidden = false; $('#c-role', form).focus(); return; }
     const withEvent = hasEvent(data.kind);
     const item = {
       id: uid(), title: data.title, kind: data.kind,
       event: withEvent ? data.event : '', deadline: withEvent ? data.deadline : '',
-      roles: U.draft.roles.map((name) => ({ name, filled: false })),
+      roles: U.draft.roles.map((r) => ({ name: r.name, desc: r.desc.trim(), filled: false })),
       offer: data.offer, duration: data.duration, responses: [], seen: [],
     };
     item.sentTo = brewMatches(item);
@@ -1980,17 +1999,18 @@ const acts = {
     render({ focus: `c-tag-${key}` });
   },
   'role-add'(el) {
+    syncRoleDescs();
     const input = document.getElementById('c-role');
     const raw = el.dataset.value || (input ? input.value : '');
     raw.split(/[,，、]/).map((t) => t.trim()).filter(Boolean).forEach((t) => {
-      if (U.draft.roles.length < MAX_ROLES && !U.draft.roles.some((r) => normTag(r) === normTag(t))) U.draft.roles.push(t);
+      if (U.draft.roles.length < MAX_ROLES && !U.draft.roles.some((r) => normTag(r.name) === normTag(t))) U.draft.roles.push({ name: t, desc: '' });
     });
     if (input) input.value = '';
     render({ focus: 'c-role' });
   },
   'role-remove'(el) {
-    const i = U.draft.roles.indexOf(el.dataset.value);
-    if (i >= 0) U.draft.roles.splice(i, 1);
+    syncRoleDescs();
+    U.draft.roles.splice(Number(el.dataset.i), 1);
     render();
   },
   // The author ticks a role off when it is filled, or opens it again
@@ -2081,6 +2101,14 @@ document.addEventListener('keydown', (event) => {
 
 // Competitions and hackathons ask which one it is
 document.addEventListener('change', (event) => {
+  if (event.target.id === 'f-role') {
+    const form = event.target.closest('form');
+    const b = SEED_POSTS.find((x) => x.id === form.dataset.id);
+    const role = b && rolesOf(b).find((r) => r.name === event.target.value);
+    const hint = $('.role-hint', form);
+    if (hint) hint.textContent = (role && role.desc) || '';
+    return;
+  }
   if (event.target.id !== 'f-kind') return;
   U.draft.kind = event.target.value;
   const box = $('.event-fields');

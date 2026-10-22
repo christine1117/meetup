@@ -2351,3 +2351,97 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
 .brew.is-complete .post-title {
   color: var(--muted);
 }
+
+/* ---------- Role descriptions ---------- */
+
+.role__more {
+  flex: 1;
+  min-width: 0;
+}
+
+.role__more summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.role__more summary::-webkit-details-marker {
+  display: none;
+}
+
+.role__more summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: 2px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.2s;
+}
+
+.role__more[open] summary::after {
+  transform: rotate(-135deg) translateY(-1px);
+}
+
+.role__more p {
+  margin-top: 4px;
+  padding-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.role {
+  align-items: flex-start;
+  padding-block: 9px;
+}
+
+.role > i {
+  margin-top: 1px;
+}
+
+.role-drafts {
+  display: grid;
+  gap: 8px;
+}
+
+.role-draft {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-input);
+  background: var(--bg);
+}
+
+.role-draft__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.role-draft textarea {
+  min-height: 0;
+  font-size: 0.9375rem;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
