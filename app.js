@@ -96,21 +96,57 @@ function sugarNotes(t, before) {
   }
 }
 
-// A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
+// The boba cup, drawn like the toppings: a thin outline, see-through glass with a
+// highlight, milk tea that is lighter at the top, glossy pearls and a straw.
+// level goes from 0 (empty) to 1 (full). ids are toppings to put in the drink.
 const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
-function cup(color, o = {}) {
-  const id = 'cup' + uid();
+const CUP_PEARLS = [[8.7, 24.4], [12, 25], [15.3, 24.4], [10.4, 21.6], [13.6, 21.6]];
+const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
+
+function cupArt(color, o = {}) {
+  const id = 'cp' + uid();
   const level = o.level ?? 0.62;
-  const y = (9 + (1 - level) * 18).toFixed(1);
-  return `<svg class="cup ${o.cls || ''}" viewBox="0 0 24 28" aria-hidden="true">
-    <defs><clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath></defs>
-    <rect x="0" y="${y}" width="24" height="28" fill="${o.color2 || color}" clip-path="url(#${id})"/>
-    ${o.color2 ? `<rect x="0" y="${((+y + 27) / 2).toFixed(1)}" width="24" height="28" fill="${color}" clip-path="url(#${id})"/>` : ''}
-    ${level > 0 ? `<g fill="var(--pearl)" clip-path="url(#${id})"><circle cx="8.7" cy="24.4" r="1.6"/><circle cx="12" cy="25" r="1.6"/><circle cx="15.3" cy="24.4" r="1.6"/><circle cx="10.4" cy="21.6" r="1.6"/><circle cx="13.6" cy="21.6" r="1.6"/></g>` : ''}
-    <path d="M14.6 1.4 11.8 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-    ${o.mark ? `<text x="8.6" y="18.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}
-  </svg>`;
+  const ids = o.ids || [];
+  const has = (k) => ids.includes(k);
+  const sw = BIG_CUP.test(o.cls || '') ? 0.95 : 1.35; // tiny cups need a bolder line
+  const surface = +(9 + (1 - level) * 18).toFixed(2);
+  const mid = ((surface + 27) / 2).toFixed(1);
+  const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
+    const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
+    return PIECE[k](id, x, y, PIECE_SIZE, n);
+  }).join('')).join('');
+  const foamTop = has('brulee') ? surface - 1.8 : surface - 2.2;
+  const bruleeY = (has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1);
+  return `
+    ${toppingDefs(id)}
+    <defs>
+      <clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath>
+      <linearGradient id="${id}-tea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".16"/></linearGradient>
+      <linearGradient id="${id}-glass" x1="0" x2="1"><stop offset="0" stop-color="#2a1d16" stop-opacity=".1"/><stop offset=".22" stop-color="#fff" stop-opacity="0"/><stop offset=".78" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".14"/></linearGradient>
+      <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#80593f"/><stop offset=".55" stop-color="#3b2518"/><stop offset="1" stop-color="#1a0f08"/></radialGradient>
+    </defs>
+    <g clip-path="url(#${id})">
+      <rect width="24" height="28" fill="#fffdf8" fill-opacity=".6"/>
+      ${level > 0 ? `
+      <rect x="0" y="${surface}" width="24" height="28" fill="${o.color2 || color}"/>
+      ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
+      <rect x="0" y="${surface}" width="24" height="28" fill="url(#${id}-tea)"/>
+      <path d="M0 ${surface + 0.25}h24" stroke="#fff" stroke-opacity=".45" stroke-width=".5"/>` : ''}
+      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1" stroke-opacity=".8" stroke-linecap="round"><path d="M6.6 12.6q-.9 3 .2 6t.4 6"/><path d="M17.4 12.6q.9 3-.2 6t-.4 6"/><path d="M12 13.4q1.1 3 0 6"/></g>` : ''}
+      ${pieces}
+      ${level > 0 ? CUP_PEARLS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.55" fill="url(#${id}-pearl)" stroke="${INK}" stroke-width="${(sw * 0.32).toFixed(2)}"/><path d="M${x - 0.8} ${y - 0.2}q.15-.6.75-.75" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".35" stroke-linecap="round"/>`).join('') : ''}
+      ${has('foam') ? `<path d="M0 ${foamTop}h24v${(surface + 1 - foamTop).toFixed(1)}q-2 .7-4 0t-4 0-4 0-4 0-4 0-4 0z" fill="url(#${id}-foamL)"/>${[5, 8.5, 12, 15.5, 19].map((cx, i) => `<circle cx="${cx}" cy="${(foamTop + 0.15 + (i % 2) * 0.2).toFixed(2)}" r="1.05" fill="url(#${id}-foam)"/>`).join('')}` : ''}
+      ${has('brulee') ? `<rect x="0" y="${bruleeY}" width="24" height="1.7" fill="url(#${id}-bruL)"/>` : ''}
+      <rect width="24" height="28" fill="url(#${id}-glass)"/>
+      <path d="M6.2 11.2 7.3 24.6" stroke="#fff" stroke-opacity=".8" stroke-width=".75" stroke-linecap="round"/>
+    </g>
+    <path d="M13.8 1.3 15.4 1.5 12.6 21.1 11 20.9Z" fill="var(--orange)" stroke="currentColor" stroke-width="${(sw * 0.6).toFixed(2)}" stroke-linejoin="round"/>
+    <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>
+    ${o.mark ? `<text x="8.6" y="18.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}`;
+}
+
+function cup(color, o = {}) {
+  return `<svg class="cup ${o.cls || ''}" viewBox="0 0 24 28" aria-hidden="true">${cupArt(color, o)}</svg>`;
 }
 const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
@@ -588,32 +624,6 @@ function learnWeights() {
   S.weights = w;
 }
 
-// The scorecard and weights, shown in My order
-function viewAlgorithm() {
-  const chats = S.threads.filter((t) => t.match);
-  const count = (k) => chats.filter((t) => outcomeOf(t)[k]).length;
-  const finished = chats.filter((t) => outcomeOf(t).half || isCold(t)).length;
-  const pct = (n) => (chats.length ? Math.round((n / chats.length) * 100) : 0);
-  const names = { relevance: L`Relevance`, complement: L`Different fields`, reliable: L`Replies`, active: L`Recently active`, nearby: L`Same city`, fresh: L`Daily luck` };
-  return `
-  <details class="panel algo">
-    <summary><h2>${L`How your picks are chosen`}</h2></summary>
-    <p class="hint">${L`Scored from both sides. Weights adjust after ${LEARN_AFTER} finished chats (now ${finished}).`}</p>
-    <ul class="algo__weights">
-      ${Object.entries(weights()).map(([k, w]) => `<li><span>${names[k]}</span><strong>${Math.round(w * 100)}%</strong></li>`).join('')}
-    </ul>
-    <h3>${L`Scorecard`}</h3>
-    <ul class="algo__funnel">
-      <li><span>${L`Chats started`}</span><strong>${chats.length}</strong></li>
-      <li><span>${L`Both replied`}</span><strong>${count('replied')} (${pct(count('replied'))}%)</strong></li>
-      <li><span>${L`Reached half sugar`}</span><strong>${count('half')} (${pct(count('half'))}%)</strong></li>
-      <li><span>${L`Popped the seal`}</span><strong>${count('popped')} (${pct(count('popped'))}%)</strong></li>
-      <li><span>${L`Boba runs`}</span><strong>${count('bobaRun')} (${pct(count('bobaRun'))}%)</strong></li>
-    </ul>
-    ${S.weights ? `<button class="btn btn--ghost btn--sm" data-act="reset-weights" type="button">${L`Reset weights`}</button>` : ''}
-  </details>`;
-}
-
 /* ---------- State ---------- */
 
 const blank = () => ({ me: null, myThoughts: [], myPosts: [], threads: [], drops: 0, toppings: {}, boxes: [] });
@@ -952,33 +962,7 @@ const PIECE_SIZE = 1.15;
 
 // Your base drink with your toppings in it
 function drinkCup(p, ids = [], cls = '') {
-  const id = 'dk' + uid();
-  const surface = 12.2;
-  const has = (k) => ids.includes(k);
-  const color = flavor(p.field)[1];
-  const color2 = p.field2 ? flavor(p.field2)[1] : '';
-  const mid = ((surface + 27) / 2).toFixed(1);
-  const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
-    const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
-    return PIECE[k](id, x, y, PIECE_SIZE, n);
-  }).join('')).join('');
-  const foamTop = has('brulee') ? surface - 1.8 : surface - 2.2;
-  const bruleeY = (has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1);
-  return `<svg class="cup drink ${cls}" viewBox="0 0 24 28" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">
-    ${toppingDefs(id)}
-    <defs><clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath></defs>
-    <g clip-path="url(#${id})">
-      <rect x="0" y="${surface}" width="24" height="28" fill="${color2 || color}"/>
-      ${color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
-      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1" stroke-opacity=".75" stroke-linecap="round"><path d="M6.6 12.6q-.9 3 .2 6t.4 6"/><path d="M17.4 12.6q.9 3-.2 6t-.4 6"/><path d="M12 13.4q1.1 3 0 6"/></g>` : ''}
-      ${pieces}
-      <g fill="var(--pearl)"><circle cx="8.7" cy="24.4" r="1.6"/><circle cx="12" cy="25" r="1.6"/><circle cx="15.3" cy="24.4" r="1.6"/><circle cx="10.4" cy="21.6" r="1.6"/><circle cx="13.6" cy="21.6" r="1.6"/></g>
-      ${has('foam') ? `<path d="M0 ${foamTop}h24v${(surface + 1 - foamTop).toFixed(1)}q-2 .7-4 0t-4 0-4 0-4 0-4 0-4 0z" fill="url(#${id}-foamL)"/>${[5, 8.5, 12, 15.5, 19].map((cx, i) => `<circle cx="${cx}" cy="${(foamTop + 0.15 + (i % 2) * 0.2).toFixed(2)}" r="1.05" fill="url(#${id}-foam)"/>`).join('')}` : ''}
-      ${has('brulee') ? `<rect x="0" y="${bruleeY}" width="24" height="1.7" fill="url(#${id}-bruL)"/>` : ''}
-    </g>
-    <path d="M14.6 1.4 11.8 21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-    <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-  </svg>`;
+  return `<svg class="cup drink ${cls}" viewBox="0 0 24 28" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
 }
 
 // A topping on its own, for chips and gift boxes
@@ -1287,9 +1271,6 @@ function viewMe() {
           return `<button class="tchip tchip--${TOPPING[k].tier} tchip-btn ${on ? 'is-on' : ''}" data-act="topping-toggle" data-id="${k}" type="button" aria-pressed="${on}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${S.toppings[k] > 1 ? `<b>×${S.toppings[k]}</b>` : ''}<i class="ph ${on ? 'ph-check' : 'ph-plus'}" aria-hidden="true"></i></button>`;
         }).join('')}</div>
       </div>` : ''}
-      <p class="receipt__meta">${S.threads.some((t) => t.msgs.some((m) => m.from === 'them'))
-        ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats.`
-        : L`Your reply rate shows up after your first chats.`}</p>
       <div class="btnrow">
         ${(S.boxes || []).length ? `<button class="btn btn--primary btn--sm gift-cta" data-act="box-next" type="button"><i class="ph ph-gift" aria-hidden="true"></i>${L`Open gift box (${S.boxes.length})`}</button>` : ''}
         <button class="btn btn--ghost btn--sm" data-act="profile" data-pid="me" type="button">${L`See my profile`}</button>
@@ -1297,7 +1278,6 @@ function viewMe() {
     </div>
   </section>
   ${profileForm(S.me, false)}
-  ${viewAlgorithm()}
   <section class="panel note">
     <h2>${L`Demo mode`}</h2>
     <p><a class="inline-link" href="#/about">${L`What is Half Sugar?`}</a></p>
@@ -2532,7 +2512,6 @@ const acts = {
     render({ fresh: true });
   },
 
-  'reset-weights'() { delete S.weights; save(); render(); },
 
   reset() { U.confirmReset = true; render(); },
   'reset-no'() { U.confirmReset = false; render(); },
