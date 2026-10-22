@@ -3454,3 +3454,42 @@ body.modal-open {
 .mydrink__cup {
   padding-top: 14px;
 }
+
+/* Exploded view: the whole cup shrinks a little so the separated layers still fit */
+.cup .asm {
+  transform-box: view-box;
+  transform-origin: 12px 13px;
+  transition: transform 0.7s var(--ease);
+}
+
+.cup .cup-shadow {
+  transition: opacity 0.4s;
+}
+
+.cup-x:hover .asm,
+.cup-x.is-apart .asm {
+  transform: scale(0.6);
+}
+
+.cup-x:hover .cup-shadow,
+.cup-x.is-apart .cup-shadow {
+  opacity: 0;
+}
+
+.cup--hero .asm {
+  animation: puzzle-shrink 5.2s var(--ease) infinite;
+}
+
+.cup--hero .cup-shadow {
+  animation: puzzle-shadow 5.2s var(--ease) infinite;
+}
+
+@keyframes puzzle-shrink {
+  0%, 28%, 100% { transform: none; }
+  44%, 74% { transform: scale(0.6); }
+}
+
+@keyframes puzzle-shadow {
+  0%, 28%, 100% { opacity: 1; }
+  44%, 74% { opacity: 0; }
+}

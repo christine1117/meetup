@@ -109,11 +109,11 @@ const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
 const CUP_PEARLS = [[8.5, 23.7, '#3b2518'], [11.9, 24.3, '#4a2c1c'], [15.3, 23.6, '#7d93a0'], [10.2, 21.7, '#5a3a28'], [13.7, 21.9, '#3b2518'], [6.9, 21.7, '#6f8796'], [17, 21.5, '#4a2c1c']];
 // Where each layer goes when the cup comes apart, and when it starts moving
 const APART = {
-  straw: '--dx:4px;--dy:-11px;--r:12deg;--d:0s',
-  lid: '--dy:-6.5px;--d:.06s',
-  tea: '--dy:-2px;--d:.12s',
-  shell: '--dy:2.5px;--d:.16s',
-  pearls: '--dy:6.5px;--d:.22s',
+  straw: '--dx:15px;--dy:6px;--r:-7deg;--d:0s',
+  lid: '--dy:-15.7px;--d:.04s',
+  tea: '--dy:-13.6px;--d:.1s',
+  shell: '--dy:4.5px;--d:.14s',
+  pearls: '--dy:14.3px;--d:.2s',
 };
 
 function cupArt(color, o = {}) {
@@ -140,7 +140,8 @@ function cupArt(color, o = {}) {
       <linearGradient id="${id}-shade" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".3" stop-color="#fff" stop-opacity="0"/><stop offset=".75" stop-color="#2a1d16" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".22"/></linearGradient>
       <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient>
     </defs>
-    ${big ? '<ellipse cx="12" cy="26.6" rx="8" ry="1" fill="#3b2518" fill-opacity=".14"/>' : ''}
+    ${big ? '<ellipse class="cup-shadow" cx="12" cy="26.6" rx="8" ry="1" fill="#3b2518" fill-opacity=".14"/>' : ''}
+    <g class="asm">
     ${part('tea', fill > 0 ? `<g clip-path="url(#${id}-in)">
       <rect x="0" y="${teaTop}" width="24" height="20" fill="${o.color2 || color}"/>
       ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="20" fill="${color}"/>` : ''}
@@ -164,7 +165,8 @@ function cupArt(color, o = {}) {
           <text x="12" y="19.6" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="600" letter-spacing=".32" fill="#2a1d16" fill-opacity=".8">HALF SUGAR</text>` : ''}`)}
     ${part('lid', `<path d="${CUP_LID}" fill="#fff" fill-opacity=".35" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
       <path d="M5 7.4Q5.6 3.4 10.4 2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width=".55" stroke-linecap="round"/>
-      <ellipse cx="12" cy="9.2" rx="10" ry="1.25" fill="#fff" fill-opacity=".55" stroke="${ink}" stroke-width="${line}"/>`)}`;
+      <ellipse cx="12" cy="9.2" rx="10" ry="1.25" fill="#fff" fill-opacity=".55" stroke="${ink}" stroke-width="${line}"/>`)}
+    </g>`;
 }
 
 function cup(color, o = {}) {
@@ -900,7 +902,7 @@ function toppingDefs(id) {
 }
 
 const INK = '#2a1d16';
-const ink = (s) => `stroke="${INK}" stroke-width="${(0.075 * s).toFixed(3)}" stroke-linejoin="round" stroke-linecap="round"`;
+const ink = (s) => `stroke="#3b2518" stroke-opacity=".12" stroke-width="${(0.06 * s).toFixed(3)}" stroke-linejoin="round" stroke-linecap="round"`;
 const glint = (d) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".11" stroke-linecap="round"/>`;
 const shadow = (x, y, s) => `<ellipse cx="${x}" cy="${y + 0.9 * s}" rx="${0.68 * s}" ry="${0.13 * s}" fill="#3b2518" fill-opacity=".14"/>`;
 
@@ -952,7 +954,7 @@ const PIECE = {
   golden: (id, x, y, s) => at(x, y, s, `
     <circle r=".78" fill="url(#${id}-gold)" ${ink(1)}/>
     ${glint('M-.45 -.18 Q-.4 -.45 -.12 -.5')}
-    <path d="M.62 -.92l.08.22.22.08-.22.08-.08.22-.08-.22-.22-.08.22-.08z" fill="#fff6c8" stroke="${INK}" stroke-width=".04" stroke-linejoin="round"/>`),
+    <path d="M.62 -.92l.08.22.22.08-.22.08-.08.22-.08-.22-.22-.08.22-.08z" fill="#fff6c8"/>`),
   // A clear drop of jelly with a sakura flower inside
   sakura: (id, x, y, s) => at(x, y, s, `
     <path d="M-.86 .42 Q-.92 -.82 0 -.82 Q.92 -.82 .86 .42 Q0 .66 -.86 .42 Z" fill="url(#${id}-drop)" fill-opacity=".9" ${ink(1)}/>
