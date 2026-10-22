@@ -714,14 +714,14 @@ textarea:focus-visible {
 .cup--hero {
   width: clamp(88px, 16vw, 128px);
   height: auto;
-  aspect-ratio: 24 / 28;
+  aspect-ratio: 27 / 29;
   animation: float 3.2s ease-in-out infinite alternate;
 }
 
 .cup--mystery {
   width: clamp(92px, 18vw, 136px);
   height: auto;
-  aspect-ratio: 24 / 28;
+  aspect-ratio: 27 / 29;
   animation: float 3.2s ease-in-out infinite alternate;
 }
 
@@ -2850,7 +2850,7 @@ details.algo > summary {
 .cup--profile {
   width: clamp(104px, 18vw, 140px);
   height: auto;
-  aspect-ratio: 24 / 28;
+  aspect-ratio: 27 / 29;
 }
 
 .mydrink__info > * + * {

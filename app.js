@@ -96,57 +96,75 @@ function sugarNotes(t, before) {
   }
 }
 
-// The boba cup, drawn like the toppings: a thin outline, see-through glass with a
-// highlight, milk tea that is lighter at the top, glossy pearls and a straw.
+// The boba cup, drawn like a sticker: a paper cup seen a little from above, a
+// speckled foam top, a short black straw, a white label band, and a clear window
+// showing the tea and pearls. A grey and white border goes around it all.
 // level goes from 0 (empty) to 1 (full). ids are toppings to put in the drink.
-const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
-const CUP_PEARLS = [[8.7, 24.4], [12, 25], [15.3, 24.4], [10.4, 21.6], [13.6, 21.6]];
 const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
+const CUP_BODY = 'M2.4 6.4 L5 25.4 A7 1.6 0 0 0 19 25.4 L21.6 6.4 Z';
+const CUP_WINDOW = 'M3.95 12.7 Q12 13.5 20.05 12.7 L18.25 24.5 A6.25 1.25 0 0 1 5.75 24.5 Z';
+const STRAW = 'M5.3 .6 h2.6 v6.2 h-2.6 Z';
+const CUP_PEARLS = [[8.6, 22.3, '#4a2614'], [11.9, 23.1, '#6b3a1f'], [15.3, 22.2, '#3f1f10'], [10.3, 19.8, '#7a4524'], [13.8, 20.2, '#4f2a16'], [16.4, 19.5, '#8a5a3a'], [7.6, 19.4, '#5e3219']];
+const SPECKS = [[6, 5.6], [8.4, 6.9], [10.2, 5.1], [12.6, 6.4], [14.8, 5.4], [16.9, 6.8], [18.6, 5.9], [11.2, 7.6], [15.6, 7.6], [8, 4.8], [13.5, 4.6], [17.5, 4.9], [9.6, 7.9], [19.2, 7], [5.2, 6.8]];
 
 function cupArt(color, o = {}) {
   const id = 'cp' + uid();
-  const level = o.level ?? 0.62;
   const ids = o.ids || [];
   const has = (k) => ids.includes(k);
-  const sw = BIG_CUP.test(o.cls || '') ? 0.95 : 1.35; // tiny cups need a bolder line
-  const surface = +(9 + (1 - level) * 18).toFixed(2);
-  const mid = ((surface + 27) / 2).toFixed(1);
+  const big = BIG_CUP.test(o.cls || '');
+  const meter = /cup--chip/.test(o.cls || '');
+  const level = o.level ?? 0.62;
+  // Cups look full unless they are empty or a sugar meter
+  const fill = meter ? level : level > 0 ? 1 : 0;
+  const top = fill >= 0.98;
+  const drinkY = (24.8 - 12.4 * fill).toFixed(2);
+  const mid = ((+drinkY + 24.8) / 2).toFixed(1);
+  const tea = o.color2 || color;
+  const topColor = has('brulee') ? '#c98a3c' : has('foam') ? '#fbf5e8' : tea;
   const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
     const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
     return PIECE[k](id, x, y, PIECE_SIZE, n);
   }).join('')).join('');
-  const foamTop = has('brulee') ? surface - 1.8 : surface - 2.2;
-  const bruleeY = (has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1);
+  const outline = big ? 1.9 : 2.6;
   return `
     ${toppingDefs(id)}
     <defs>
-      <clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath>
-      <linearGradient id="${id}-tea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".16"/></linearGradient>
-      <linearGradient id="${id}-glass" x1="0" x2="1"><stop offset="0" stop-color="#2a1d16" stop-opacity=".1"/><stop offset=".22" stop-color="#fff" stop-opacity="0"/><stop offset=".78" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".14"/></linearGradient>
-      <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#80593f"/><stop offset=".55" stop-color="#3b2518"/><stop offset="1" stop-color="#1a0f08"/></radialGradient>
+      <clipPath id="${id}-w"><path d="${CUP_WINDOW}"/></clipPath>
+      <linearGradient id="${id}-paper" x1="0" x2="1"><stop offset="0" stop-color="#e9e6e0"/><stop offset=".18" stop-color="#ffffff"/><stop offset=".8" stop-color="#fbfaf7"/><stop offset="1" stop-color="#dcd8d0"/></linearGradient>
+      <linearGradient id="${id}-tea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".25"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3b2518" stop-opacity=".18"/></linearGradient>
     </defs>
-    <g clip-path="url(#${id})">
-      <rect width="24" height="28" fill="#fffdf8" fill-opacity=".6"/>
-      ${level > 0 ? `
-      <rect x="0" y="${surface}" width="24" height="28" fill="${o.color2 || color}"/>
-      ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
-      <rect x="0" y="${surface}" width="24" height="28" fill="url(#${id}-tea)"/>
-      <path d="M0 ${surface + 0.25}h24" stroke="#fff" stroke-opacity=".45" stroke-width=".5"/>` : ''}
-      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1" stroke-opacity=".8" stroke-linecap="round"><path d="M6.6 12.6q-.9 3 .2 6t.4 6"/><path d="M17.4 12.6q.9 3-.2 6t-.4 6"/><path d="M12 13.4q1.1 3 0 6"/></g>` : ''}
-      ${pieces}
-      ${level > 0 ? CUP_PEARLS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.55" fill="url(#${id}-pearl)" stroke="${INK}" stroke-width="${(sw * 0.32).toFixed(2)}"/><path d="M${x - 0.8} ${y - 0.2}q.15-.6.75-.75" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".35" stroke-linecap="round"/>`).join('') : ''}
-      ${has('foam') ? `<path d="M0 ${foamTop}h24v${(surface + 1 - foamTop).toFixed(1)}q-2 .7-4 0t-4 0-4 0-4 0-4 0-4 0z" fill="url(#${id}-foamL)"/>${[5, 8.5, 12, 15.5, 19].map((cx, i) => `<circle cx="${cx}" cy="${(foamTop + 0.15 + (i % 2) * 0.2).toFixed(2)}" r="1.05" fill="url(#${id}-foam)"/>`).join('')}` : ''}
-      ${has('brulee') ? `<rect x="0" y="${bruleeY}" width="24" height="1.7" fill="url(#${id}-bruL)"/>` : ''}
-      <rect width="24" height="28" fill="url(#${id}-glass)"/>
-      <path d="M6.2 11.2 7.3 24.6" stroke="#fff" stroke-opacity=".8" stroke-width=".75" stroke-linecap="round"/>
+    <g stroke-linejoin="round" stroke-linecap="round">
+      <g fill="#fff" stroke="#8b8b8b" stroke-width="${outline}"><path d="${CUP_BODY}"/><ellipse cx="12" cy="6.4" rx="9.6" ry="2.4"/><path d="${STRAW}"/></g>
+      <g fill="#fff" stroke="#fff" stroke-width="${(outline * 0.55).toFixed(2)}"><path d="${CUP_BODY}"/><ellipse cx="12" cy="6.4" rx="9.6" ry="2.4"/><path d="${STRAW}"/></g>
     </g>
-    <path d="M13.8 1.3 15.4 1.5 12.6 21.1 11 20.9Z" fill="var(--orange)" stroke="currentColor" stroke-width="${(sw * 0.6).toFixed(2)}" stroke-linejoin="round"/>
-    <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"/>
-    ${o.mark ? `<text x="8.6" y="18.4" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}`;
+    <path d="${CUP_BODY}" fill="url(#${id}-paper)" stroke="#6f6c66" stroke-width=".45" stroke-linejoin="round"/>
+    <path d="${CUP_WINDOW}" fill="#f1ece3" stroke="#a9a49b" stroke-width=".3"/>
+    <g clip-path="url(#${id}-w)">
+      ${fill > 0 ? `
+      <rect x="0" y="${drinkY}" width="24" height="28" fill="${tea}"/>
+      ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
+      <rect x="0" y="${drinkY}" width="24" height="28" fill="url(#${id}-tea)"/>
+      <g fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".55"><path d="M6 15.6q3-1.4 6 0t6 0"/><path d="M7.3 18.6q2.2 1.3 4.6.1"/><path d="M13 17.2q2.2-.9 4.2.4"/></g>` : ''}
+      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1" stroke-opacity=".8"><path d="M5 13q-.4 3 .6 5.5t.5 5"/><path d="M19 13q.4 3-.6 5.5t-.5 5"/><path d="M12 13.6q1 2.6 0 5"/></g>` : ''}
+      ${pieces}
+      ${fill > 0.3 ? CUP_PEARLS.map(([x, y, c], i) => `<circle cx="${x}" cy="${y}" r="1.45" fill="${c}" fill-opacity="${i > 4 ? 0.78 : 1}"/><circle cx="${x - 0.45}" cy="${y - 0.5}" r=".38" fill="#fff" fill-opacity=".35"/>`).join('') : ''}
+      <path d="M5.1 14 5.9 23.4" stroke="#fff" stroke-opacity=".7" stroke-width=".6"/>
+    </g>
+    <g fill="none" stroke="#b9b5ad" stroke-width=".35" stroke-linecap="round"><path d="M3.3 8.2 5.6 24.6"/><path d="M20.7 8.2 18.4 24.6"/></g>
+    <ellipse cx="12" cy="6.4" rx="9.6" ry="2.4" fill="${top ? topColor : '#e9e3d8'}" stroke="#6f6c66" stroke-width=".45"/>
+    ${top ? `<ellipse cx="12" cy="6.6" rx="8.6" ry="1.8" fill="#fff" fill-opacity=".14"/>
+    <g fill="${has('brulee') ? '#6e3410' : has('foam') ? '#d9c39b' : '#7a4a2a'}" fill-opacity="${has('foam') ? 0.6 : 0.35}">${SPECKS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".22"/>`).join('')}</g>` : '<ellipse cx="12" cy="6.9" rx="8.4" ry="1.7" fill="#d8d0c2"/>'}
+    <path d="${STRAW}" fill="#1e1c1b"/>
+    <ellipse cx="6.6" cy=".6" rx="1.3" ry=".45" fill="#3a3735"/>
+    <ellipse cx="6.6" cy=".62" rx=".8" ry=".24" fill="#000"/>
+    <path d="M6 1.6v4.4" stroke="#fff" stroke-opacity=".55" stroke-width=".35" stroke-linecap="round"/>
+    ${o.mark
+      ? `<text x="12" y="11.3" text-anchor="middle" font-family="Outfit, sans-serif" font-size="4.6" font-weight="600" fill="#2a1d16">${o.mark}</text>`
+      : big ? `<text x="12" y="10.4" text-anchor="middle" font-family="Outfit, sans-serif" font-size="2.35" font-weight="600" letter-spacing=".08" fill="#2a1d16">HALF SUGAR</text><text x="12" y="12" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="700" letter-spacing=".12" fill="#7a2f1c">BOBA CHAT</text>` : ''}`;
 }
 
 function cup(color, o = {}) {
-  return `<svg class="cup ${o.cls || ''}" viewBox="0 0 24 28" aria-hidden="true">${cupArt(color, o)}</svg>`;
+  return `<svg class="cup ${o.cls || ''}" viewBox="-1.5 -1 27 29" aria-hidden="true">${cupArt(color, o)}</svg>`;
 }
 const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
@@ -957,12 +975,12 @@ const LAYER_ICON = {
     ${glint('M-.55 -.3 Q-.35 -.38 -.12 -.38')}`,
 };
 
-const PIECE_SLOTS = [[7.2, 14.9], [12.6, 14.5], [16.9, 15.1], [9.4, 17.4], [14.7, 17.2], [17.1, 19.5], [7, 19.7], [11.6, 19.9], [12.1, 16.5], [15.9, 21.3]];
+const PIECE_SLOTS = [[7.4, 14.6], [12, 14.1], [16.6, 14.7], [9.6, 16.8], [14.4, 16.6], [17, 17.9], [6.9, 17.4], [11.9, 17.9], [10.4, 15.1], [15.6, 20.4]];
 const PIECE_SIZE = 1.15;
 
 // Your base drink with your toppings in it
 function drinkCup(p, ids = [], cls = '') {
-  return `<svg class="cup drink ${cls}" viewBox="0 0 24 28" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
+  return `<svg class="cup drink ${cls}" viewBox="-1.5 -1 27 29" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
 }
 
 // A topping on its own, for chips and gift boxes
