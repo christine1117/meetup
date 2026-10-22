@@ -2002,6 +2002,13 @@ function viewAbout() {
       <ul class="flavors">
         ${FIELDS.map((f) => `<li><span class="flavor" style="--flavor:${flavor(f)[1]}">${esc(flavorName(f))}</span>${esc(fieldName(f))}</li>`).join('')}
       </ul>
+      <h3 class="flavors__title">${L`Toppings`}</h3>
+      ${['small', 'premium'].map((tier) => `
+      <div class="about-tops">
+        <p class="collection__how"><span class="tier-tag tier-tag--${tier}">${L(TIER_NAME[tier])}</span>${L(TIER_HOW[tier])}</p>
+        <div class="pf__toppings">${TOPPINGS.filter((x) => x.tier === tier).map((x) => toppingChip(x.id)).join('')}</div>
+      </div>`).join('')}
+      <p class="about-tops collection__how"><span class="tier-tag tier-tag--secret">${L`Secret toppings`}</span>${L`A few rare ones hide in gift boxes. Keep sipping to find them.`}</p>
     </section>
 
     <section class="about__belief">

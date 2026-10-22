@@ -3392,3 +3392,15 @@ body.modal-open {
 .gift.is-other .gift__prize {
   opacity: 0.9;
 }
+
+.about-tops {
+  margin-top: 10px;
+}
+
+.about-tops .pf__toppings {
+  margin-top: 8px;
+}
+
+.about__block > p.about-tops {
+  font-size: 0.875rem;
+}
