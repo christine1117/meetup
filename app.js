@@ -96,28 +96,29 @@ function sugarNotes(t, before) {
   }
 }
 
-// The boba cup: a clear plastic cup with a dome lid, a red straw, brown sugar
-// swirls in the tea, pearls at the bottom, and a red seal label.
-// Big cups are built in layers (straw, lid, tea, cup, pearls) that can pull
-// apart like a puzzle: on a loop on the first page, on hover or tap elsewhere.
+// The boba cup: a clear plastic cup with a dome lid, a red straw, pearls at the
+// bottom, and a red seal label.
+// Big cups can come apart: the straw and lid lift up, and the toppings and
+// pearls fly out to the left and right. The tea and the cup stay together.
 // level goes from 0 (empty) to 1 (full). ids are toppings to put in the drink.
 const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
 const CUP_SHELL = 'M2.5 9.4 L4.5 25.1 Q12 27.3 19.5 25.1 L21.5 9.4 Z';
 const CUP_IN = 'M3.2 10.4 L5.1 24.6 Q12 26.5 18.9 24.6 L20.8 10.4 Z';
-const CUP_LID = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2 Z';
+const CUP_DOME = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2'; // open at the bottom, so no line across the lid
 const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
-const CUP_PEARLS = [[8.5, 23.7, '#3b2518'], [11.9, 24.3, '#4a2c1c'], [15.3, 23.6, '#7d93a0'], [10.2, 21.7, '#5a3a28'], [13.7, 21.9, '#3b2518'], [6.9, 21.7, '#6f8796'], [17, 21.5, '#4a2c1c']];
-// Where each layer goes when the cup comes apart, and when it starts moving
-// Spread left and right: tea and straw to the left, lid and pearls to the right
+const CUP_PEARLS = [[8.6, 23.4, '#3b2518'], [11.9, 23.9, '#4a2c1c'], [15.3, 23.3, '#7d93a0'], [10.2, 21.4, '#5a3a28'], [13.7, 21.6, '#3b2518'], [7, 21.4, '#6f8796'], [17, 21.2, '#4a2c1c']];
+// Where each piece goes when the cup comes apart, and when it starts moving
 const APART = {
-  straw: '--dx:-20px;--dy:-6.5px;--r:84deg;--d:0s',
-  lid: '--dx:20px;--dy:-1px;--d:.05s',
-  tea: '--dx:-20px;--d:.1s',
-  shell: '--d:0s',
-  pearls: '--dx:20px;--dy:2.5px;--d:.16s',
+  straw: '--dy:-14px;--d:0s',
+  lid: '--dy:-8px;--d:.05s',
+  topL: '--dx:-14px;--r:-10deg;--d:.12s',
+  topR: '--dx:14px;--r:10deg;--d:.12s',
+  pearlsL: '--dx:-13px;--dy:1.5px;--r:-8deg;--d:.18s',
+  pearlsR: '--dx:13px;--dy:1.5px;--r:8deg;--d:.18s',
 };
-// Only these cups come apart; they get a wide canvas so the pieces have room
-const EXPLODE = /cup--(hero|mystery)/;
+// Cups that come apart get extra room around them for the pieces
+const EXPLODE = /cup--(hero|mystery|profile)/;
+const WIDE_VIEW = '-11 -16 46 44';
 
 function cupArt(color, o = {}) {
   const id = 'cp' + uid();
@@ -129,13 +130,17 @@ function cupArt(color, o = {}) {
   const fill = meter ? level : level > 0 ? 1 : 0; // cups look full unless empty or a sugar meter
   const teaTop = +(24.9 - 14.1 * fill).toFixed(2);
   const mid = ((teaTop + 25) / 2).toFixed(1);
+  const halfAt = (y) => 9.3 - 1.9 * ((y - 10.4) / 14.2); // the cup is narrower lower down
   const line = big ? 0.38 : 0.75;
   const ink = big ? '#9a948a' : '#2a1d16';
-  const part = (name, body) => `<g class="part p-${name}" style="${APART[name]}">${body}</g>`;
-  const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
+  const part = (name, body) => (body ? `<g class="part p-${name}" style="${APART[name] || ''}">${body}</g>` : '');
+  // Floating toppings, split into the left and right halves of the cup
+  const placed = ids.filter((k) => PIECE[k]).flatMap((k, i) => [0, 1].map((n) => {
     const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
-    return PIECE[k](id, x, y, PIECE_SIZE, n);
-  }).join('')).join('');
+    return { x, svg: PIECE[k](id, x, y, PIECE_SIZE, n) };
+  }));
+  const side = (list, left) => list.filter((p) => (left ? p.x < 12 : p.x >= 12)).map((p) => p.svg).join('');
+  const pearls = fill > 0.3 ? CUP_PEARLS.map(([x, y, c]) => ({ x, svg: `<circle cx="${x}" cy="${y}" r="1.5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.5" fill="url(#${id}-pearl)"/>` })) : [];
   return `
     ${toppingDefs(id)}
     <defs>
@@ -143,37 +148,39 @@ function cupArt(color, o = {}) {
       <linearGradient id="${id}-shade" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".3" stop-color="#fff" stop-opacity="0"/><stop offset=".75" stop-color="#2a1d16" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".22"/></linearGradient>
       <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient>
     </defs>
-    ${big ? '<ellipse class="cup-shadow" cx="12" cy="26.6" rx="8" ry="1" fill="#3b2518" fill-opacity=".14"/>' : ''}
-    <g class="asm">
-    ${part('tea', fill > 0 ? `<g clip-path="url(#${id}-in)">
+    ${big ? '<ellipse cx="12" cy="26.6" rx="8" ry="1" fill="#3b2518" fill-opacity=".14"/>' : ''}
+    ${fill > 0 ? `<g clip-path="url(#${id}-in)">
       <rect x="0" y="${teaTop}" width="24" height="20" fill="${o.color2 || color}"/>
       ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="20" fill="${color}"/>` : ''}
       ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1.3" stroke-opacity=".8" stroke-linecap="round"><path d="M6 11.5Q9 15 7 19T9 25"/><path d="M12.5 11Q15 14.5 12.8 18.5T14.6 24.5"/><path d="M17.8 11.8Q19.4 15 17.4 18.6"/></g>` : ''}
-      ${pieces}
       ${has('foam') ? `<rect x="0" y="${teaTop - 0.2}" width="24" height="2.2" fill="url(#${id}-foamL)"/>` : ''}
       ${has('brulee') ? `<rect x="0" y="${teaTop - 0.3}" width="24" height="1.3" fill="url(#${id}-bruL)"/>` : ''}
       <rect x="0" y="${teaTop}" width="24" height="20" fill="url(#${id}-shade)"/>
-    </g>` : '')}
-    ${part('pearls', fill > 0.3 ? `<g clip-path="url(#${id}-in)">${CUP_PEARLS.map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="1.5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.5" fill="url(#${id}-pearl)"/>`).join('')}</g>` : '')}
+      ${has('foam') || has('brulee') ? '' : `<ellipse cx="12" cy="${teaTop}" rx="${halfAt(teaTop).toFixed(2)}" ry=".75" fill="#fff" fill-opacity=".22"/>`}
+    </g>` : ''}
+    ${part('pearlsL', side(pearls, true))}
+    ${part('pearlsR', side(pearls, false))}
+    ${part('topL', side(placed, true))}
+    ${part('topR', side(placed, false))}
     ${part('straw', `<path d="${CUP_STRAW}" fill="#e2492a" stroke="${big ? '#a3301b' : '#2a1d16'}" stroke-width="${line * 0.7}" stroke-linejoin="round"/><path d="M14.9 -3.6 12.6 18.5" stroke="#fff" stroke-opacity=".45" stroke-width=".35" stroke-linecap="round"/>`)}
-    ${part('shell', `<path d="${CUP_SHELL}" fill="#fff" fill-opacity=".16" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
-      <ellipse cx="12" cy="9.4" rx="9.5" ry="1.1" fill="none" stroke="${ink}" stroke-width="${line * 0.8}"/>
-      <path d="M4 11.4 5.6 23.8" stroke="#fff" stroke-opacity=".75" stroke-width=".6" stroke-linecap="round"/>
-      <rect x="9.6" y="11.8" width="4.8" height="6" rx=".5" fill="#c8352b"/>
-      ${big ? `<rect x="10" y="12.2" width="4" height="5.2" rx=".3" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".14"/>` : ''}
-      ${o.mark
-        ? `<text x="12" y="16.7" text-anchor="middle" font-family="Outfit, sans-serif" font-size="4" font-weight="700" fill="#fff">${o.mark}</text>`
-        : big ? `<text x="12" y="14.6" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">半</text><text x="12" y="17.1" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">糖</text>
-          <text x="12" y="19.6" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="600" letter-spacing=".32" fill="#2a1d16" fill-opacity=".8">HALF SUGAR</text>` : ''}`)}
-    ${part('lid', `<path d="${CUP_LID}" fill="#fff" fill-opacity=".35" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
+    <path d="${CUP_SHELL}" fill="#fff" fill-opacity=".16" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
+    <ellipse cx="12" cy="9.4" rx="9.5" ry="1.1" fill="none" stroke="${ink}" stroke-width="${line * 0.8}"/>
+    <path d="M4 11.4 5.6 23.8" stroke="#fff" stroke-opacity=".75" stroke-width=".6" stroke-linecap="round"/>
+    <rect x="9.6" y="11.8" width="4.8" height="6" rx=".5" fill="#c8352b"/>
+    ${big ? `<rect x="10" y="12.2" width="4" height="5.2" rx=".3" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".14"/>` : ''}
+    ${o.mark
+      ? `<text x="12" y="16.7" text-anchor="middle" font-family="Outfit, sans-serif" font-size="4" font-weight="700" fill="#fff">${o.mark}</text>`
+      : big ? `<text x="12" y="14.6" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">半</text><text x="12" y="17.1" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">糖</text>
+        <text x="12" y="19.6" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="600" letter-spacing=".32" fill="#2a1d16" fill-opacity=".8">HALF SUGAR</text>` : ''}
+    ${part('lid', `<path d="${CUP_DOME} Z" fill="#fff" fill-opacity=".35"/>
+      <path d="${CUP_DOME}" fill="none" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
       <path d="M5 7.4Q5.6 3.4 10.4 2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width=".55" stroke-linecap="round"/>
-      <ellipse cx="12" cy="9.2" rx="10" ry="1.25" fill="#fff" fill-opacity=".55" stroke="${ink}" stroke-width="${line}"/>`)}
-    </g>`;
+      <ellipse cx="12" cy="9.2" rx="10" ry="1.25" fill="#fff" fill-opacity=".55" stroke="${ink}" stroke-width="${line}"/>`)}`;
 }
 
 function cup(color, o = {}) {
   const x = EXPLODE.test(o.cls || '');
-  return `<svg class="cup ${x ? 'cup-x' : ''} ${o.cls || ''}" viewBox="${x ? '-20 -6 64 34' : '-2 -6 28 34'}" aria-hidden="true">${cupArt(color, o)}</svg>`;
+  return `<svg class="cup ${x ? 'cup-x' : ''} ${o.cls || ''}" viewBox="${x ? WIDE_VIEW : '-2 -6 28 34'}" aria-hidden="true">${cupArt(color, o)}</svg>`;
 }
 const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
@@ -989,7 +996,7 @@ const PIECE_SIZE = 1.15;
 
 // Your base drink with your toppings in it
 function drinkCup(p, ids = [], cls = '') {
-  return `<svg class="cup drink ${cls}" viewBox="-2 -6 28 34" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
+  return `<svg class="cup drink ${EXPLODE.test(cls) ? 'cup-x' : ''} ${cls}" viewBox="${EXPLODE.test(cls) ? WIDE_VIEW : '-2 -6 28 34'}" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
 }
 
 // A topping on its own, for chips and gift boxes
@@ -1283,7 +1290,7 @@ function viewMe() {
     <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
   </header>
   <section class="receipt mydrink">
-    <button class="mydrink__cup" data-act="profile" data-pid="me" type="button" aria-label="${esc(L`See how others see your profile`)}">${drinkCup(S.me, shownToppings(), 'cup--profile')}</button>
+    <div class="mydrink__cup">${drinkCup(S.me, shownToppings(), 'cup--profile')}</div>
     <div class="mydrink__info">
       <p class="receipt__label">${L`Your usual`}</p>
       <div class="order-line">

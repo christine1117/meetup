@@ -3543,3 +3543,34 @@ body.modal-open {
 .cup-x.cup--mystery {
   width: min(100%, 380px);
 }
+
+/* ---------- Cup comes apart: straw and lid up, toppings and pearls to the sides ---------- */
+
+.cup-x.cup--hero,
+.cup-x.cup--mystery,
+.cup-x.cup--profile {
+  aspect-ratio: 46 / 44;
+  height: auto;
+}
+
+.onboard__hero > .cup--hero,
+.about__hero > .cup--hero {
+  width: min(100%, 280px);
+}
+
+.cup-x.cup--mystery {
+  width: min(100%, 280px);
+}
+
+.mydrink__cup .cup-x {
+  width: clamp(190px, 26vw, 240px);
+}
+
+.pf__cup .cup-x {
+  width: 190px;
+}
+
+.mydrink__cup,
+.pf__cup {
+  padding-top: 0;
+}
