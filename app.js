@@ -286,11 +286,26 @@ const SEED_POSTS = [
       finished, the weights move toward what actually led to good chats
       (reaching half sugar). */
 
-const INTERESTS = [
-  'AI', 'Climate', 'Cities', 'Community', 'Creators', 'Design', 'Education', 'Fintech', 'Food',
-  'Hardware', 'Health', 'Logistics', 'Manufacturing', 'Open data', 'Small business', 'User research', 'Writing',
+// What people are curious about, and what they can share. Free tags, with suggestions to tap.
+const TAG_SUGGESTIONS = [
+  'AI products', 'AI in supply chains', 'Supply chains', 'Semiconductors', 'Chip packaging', 'Hardware',
+  'Pricing', 'Fundraising', 'Sales', 'Marketing', 'Branding', 'Product design', 'User research', 'Data analysis',
+  'Fintech', 'Health tech', 'Climate tech', 'Open data', 'Education', 'Writing', 'Community building',
+  'Small business', 'Side projects', 'Hiring', 'Job interviews', 'Career change', 'Studying abroad', 'Working abroad',
 ];
-const MAX_INTERESTS = 5;
+const MAX_TAGS = 6;
+
+// Compare tags loosely: case, spacing and a plural "s" do not matter,
+// and a longer tag counts if it contains a shorter one ("supply chain" in "AI in supply chains")
+const normTag = (t) => String(t).toLowerCase().replace(/\s+/g, ' ').trim().replace(/s\b/g, '');
+const tagsMatch = (a, b) => {
+  const x = normTag(a);
+  const y = normTag(b);
+  return x === y || (x.length > 3 && y.includes(x)) || (y.length > 3 && x.includes(y));
+};
+// The tags in `wants` that someone's `has` list covers
+const overlapTags = (wants, has) => (wants || []).filter((w) => (has || []).some((h) => tagsMatch(w, h)));
+
 const STAGES = [
   ['startup', 'Building a startup'],
   ['side', 'Working on a side project'],
@@ -301,7 +316,7 @@ const STAGES = [
 ];
 const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
 
-// relevance: shared interests, the same stage, and shared words in what you work on.
+// relevance: they can share what you are curious about, shared curiosity, the same stage, shared work words.
 // complement: different fields. reliable: how often they reply. active: visited recently.
 // nearby: the same city. fresh: a little daily luck so picks change from day to day.
 const DEFAULT_WEIGHTS = { relevance: 0.35, complement: 0.2, reliable: 0.2, active: 0.1, nearby: 0.1, fresh: 0.05 };
@@ -316,50 +331,73 @@ const LEARN_AFTER = 20;     // finished chats needed before the weights start to
 const LEARN_STEP = 0.05;    // how much weight moves each time
 const MIN_WEIGHT = 0.05;    // no factor ever drops below this
 
-// Simulated people: interests, stage, how they like to meet, a starting reply rate, days since their last visit
+// Simulated people: curiosities, what they can share, stage, how they like to meet,
+// a starting reply rate, and days since their last visit
 const PEOPLE_EXTRA = {
-  p1: { field2: 'Engineering', interests: ['Small business', 'User research', 'Design'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
-  p2: { interests: ['Cities', 'Open data', 'Climate'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
-  p3: { interests: ['Fintech', 'Small business', 'Community'], stage: 'startup', meet: 'online', replyRate: 0.85, activeDays: 1 },
-  p4: { interests: ['Writing', 'Manufacturing', 'Community'], stage: 'side', meet: 'online', replyRate: 0.6, activeDays: 3 },
-  p5: { field2: 'Engineering', interests: ['Climate', 'Health', 'Hardware'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
-  p6: { interests: ['Design', 'Creators', 'Small business'], stage: 'startup', meet: 'online', replyRate: 0.75, activeDays: 0 },
-  p7: { interests: ['AI', 'Health', 'User research'], stage: 'job', meet: 'online', replyRate: 0.95, activeDays: 0 },
-  p8: { interests: ['Food', 'Logistics', 'Small business'], stage: 'startup', meet: 'inperson', replyRate: 0.65, activeDays: 4 },
+  p1: { field2: 'Engineering', curious: ['Pricing', 'Sales', 'Small business'], share: ['Product design', 'User research', 'Side projects'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
+  p2: { curious: ['Climate tech', 'Community building', 'Fundraising'], share: ['Open data', 'Data analysis', 'Working abroad'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
+  p3: { curious: ['Product design', 'Hiring', 'AI products'], share: ['Fintech', 'Small business', 'Fundraising'], stage: 'startup', meet: 'online', replyRate: 0.85, activeDays: 1 },
+  p4: { curious: ['Community building', 'Pricing', 'Supply chains'], share: ['Writing', 'Branding', 'Studying abroad'], stage: 'side', meet: 'online', replyRate: 0.6, activeDays: 3 },
+  p5: { field2: 'Engineering', curious: ['Product design', 'Health tech', 'Career change'], share: ['Data analysis', 'Hardware', 'Studying abroad'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
+  p6: { curious: ['Fintech', 'Sales', 'Side projects'], share: ['Branding', 'Product design', 'Working abroad'], stage: 'startup', meet: 'online', replyRate: 0.75, activeDays: 0 },
+  p7: { curious: ['User research', 'Health tech', 'Semiconductors'], share: ['AI products', 'Job interviews', 'Hardware'], stage: 'job', meet: 'online', replyRate: 0.95, activeDays: 0 },
+  p8: { curious: ['AI in supply chains', 'Side projects', 'Hiring'], share: ['Supply chains', 'Sales', 'Small business'], stage: 'startup', meet: 'inperson', replyRate: 0.65, activeDays: 4 },
 };
 PEOPLE.forEach((p) => {
   Object.assign(p, PEOPLE_EXTRA[p.id]);
-  p.topics = p.interests;
   p.thought = (SEED_THOUGHTS.find((t) => t.by === p.id) || {}).text;
 });
 
 const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const hashNum = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
-// Older cards saved topics as free text, so fall back to that
-const myInterests = () => {
+// Your tags. Older cards had broad topics, which count as things you are curious about.
+const myCurious = () => {
   if (!S.me) return [];
+  if (Array.isArray(S.me.curious)) return S.me.curious;
   if (Array.isArray(S.me.interests)) return S.me.interests;
   return String(S.me.topics || '').split(/[,，、]/).map((x) => x.trim()).filter(Boolean);
 };
+const myShare = () => (S.me && Array.isArray(S.me.share) ? S.me.share : []);
 
-// Interests you and this person share
-function sharedTopics(p) {
-  const mine = myInterests().map((x) => x.toLowerCase());
-  return p.interests.filter((t) => mine.includes(t.toLowerCase()));
-}
-
-// Mystery Cup anchor: the one thing you share. A shared interest first,
-// otherwise a word that shows up in what you both work on.
+// Mystery Cup anchor, best first.
+// swap: each can share what the other is curious about. theyShare / youShare: one direction.
+// both: curious about the same thing. work: a word from what you both work on.
 function anchorOf(p) {
-  const topic = sharedTopics(p)[0];
-  if (topic) return topic;
+  const learn = overlapTags(myCurious(), p.share); // they can share it with you
+  const teach = overlapTags(myShare(), p.curious); // your tag that they are curious about
+  if (learn.length && teach.length) return { kind: 'swap', a: learn[0], b: teach[0], weight: 14 };
+  if (learn.length) return { kind: 'theyShare', a: learn[0], weight: 10 };
+  if (teach.length) return { kind: 'youShare', a: teach[0], weight: 10 };
+  const both = overlapTags(myCurious(), p.curious);
+  if (both.length) return { kind: 'both', a: both[0], weight: 8 };
   const mine = meAsPerson().words;
-  return [...asCandidate(p).words].find((w) => mine.has(w)) || '';
+  const word = [...asCandidate(p).words].find((w) => mine.has(w));
+  return word ? { kind: 'work', a: word, weight: 5 } : null;
 }
+
+function anchorLabel(x) {
+  if (x.kind === 'swap') return L`Swap: they know ${x.a}, you know ${x.b}`;
+  if (x.kind === 'theyShare') return L`They can share: ${x.a}`;
+  if (x.kind === 'youShare') return L`You can share: ${x.a}`;
+  if (x.kind === 'both') return L`Both curious: ${x.a}`;
+  return L`In common: ${x.a}`;
+}
+
+// The first note in a Mystery Cup chat, built around the anchor (stored as English keys for translation)
+const ANCHOR_OPENERS = {
+  swap: 'You can trade: they know {0}, you know {1}. Start with whichever you are more curious about.',
+  theyShare: 'They can share about {0}, which you are curious about. Ask where they would start.',
+  youShare: 'They are curious about {0}, and you can share it. Ask what they want to know.',
+  both: 'You are both curious about {0}. Start there: what got you interested?',
+  work: 'You both care about {0}. Start there: how does it show up in your work?',
+};
 
 // The meaningful words in what someone works on. A real version would use AI to compare meaning.
-const STOP_WORDS = new Set(['about', 'after', 'also', 'because', 'from', 'have', 'into', 'just', 'like', 'more', 'that', 'their', 'them', 'they', 'this', 'what', 'when', 'with', 'your', 'tool', 'people', 'someone', 'something', 'looking', 'building', 'working', 'every', 'cannot', 'should']);
+const STOP_WORDS = new Set(['about', 'after', 'also', 'because', 'from', 'have', 'into', 'just', 'like', 'more', 'that', 'their', 'them', 'they', 'this', 'what', 'when', 'with', 'your', 'tool', 'people', 'someone', 'something', 'looking', 'building', 'working', 'every', 'cannot', 'should',
+  'running', 'using', 'making', 'getting', 'doing', 'trying', 'small', 'team', 'worth', 'would',
+  'could', 'there', 'which', 'where', 'other', 'only', 'even', 'much', 'many', 'some', 'first',
+  'really', 'think', 'know', 'want', 'need', 'find', 'make', 'take', 'thing', 'way', 'new']);
 const wordsOf = (text) => new Set((String(text || '').toLowerCase().match(/[a-z]{4,}/g) || [])
   .map((w) => w.replace(/s$/, ''))
   .filter((w) => w.length > 3 && !STOP_WORDS.has(w)));
@@ -394,7 +432,7 @@ function activeDaysOf(p) {
 // Everyone, you included, in the same shape for scoring
 const asCandidate = (p) => ({ ...p, replyRate: replyRateOf(p), activeDays: activeDaysOf(p), words: wordsOf(`${p.doing} ${p.thought || ''}`) });
 const meAsPerson = () => ({
-  id: 'me', field: S.me.field, field2: S.me.field2, interests: myInterests(), stage: S.me.stage,
+  id: 'me', field: S.me.field, field2: S.me.field2, curious: myCurious(), share: myShare(), stage: S.me.stage,
   meet: S.me.meet || 'both', city: S.me.city, replyRate: myReplyRate(), activeDays: 0,
   words: wordsOf([S.me.doing, ...S.myThoughts.map((t) => t.text), ...S.myPosts.map((b) => `${b.title} ${b.need}`)].join(' ')),
 });
@@ -404,11 +442,12 @@ const sameCity = (a, b) => !!a && !!b && a.trim().toLowerCase() === b.trim().toL
 
 // Each factor from 0 to 1, for how good `to` is for `from`
 function scoreParts(from, to, seed) {
-  const shared = from.interests.filter((i) => to.interests.includes(i)).length;
+  const offers = overlapTags(from.curious, to.share).length; // `to` can share what `from` is curious about
+  const sameCuriosity = overlapTags(from.curious, to.curious).length;
   const sharedWords = [...from.words].filter((w) => to.words.has(w)).length;
   const overlap = fieldsOf(from).filter((f) => fieldsOf(to).includes(f)).length;
   return {
-    relevance: Math.min(1, shared * 0.3 + Math.min(2, sharedWords) * 0.15 + (from.stage && from.stage === to.stage ? 0.2 : 0)),
+    relevance: Math.min(1, offers * 0.35 + sameCuriosity * 0.15 + Math.min(2, sharedWords) * 0.1 + (from.stage && from.stage === to.stage ? 0.15 : 0)),
     // No field in common is best; sharing one of two fields still counts half
     complement: overlap === 0 ? 1 : overlap < Math.max(fieldsOf(from).length, fieldsOf(to).length) ? 0.5 : 0,
     reliable: to.replyRate ?? 0.8,
@@ -446,10 +485,11 @@ function topPicks(people, n, seed) {
   return out;
 }
 
-// Who a new Brew is sent to: people whose field or interests show up in it, reliable people first
+// Who a new Brew is sent to: people who can share what it needs, reliable people first
 function brewMatches(item) {
   const text = `${item.title} ${item.need}`.toLowerCase();
-  const score = (p) => [p.field, p.field2, ...p.interests].filter((w) => w && text.includes(w.toLowerCase())).length * 2
+  const score = (p) => p.share.filter((t) => text.includes(normTag(t))).length * 3
+    + [p.field, p.field2].filter((w) => w && text.includes(w.toLowerCase())).length
     + replyRateOf(p) + (hashNum(item.id + p.id) % 100) / 100;
   return [...PEOPLE].sort((a, b) => score(b) - score(a)).slice(0, BREW_SEND_TO).map((p) => p.id);
 }
@@ -548,7 +588,7 @@ let S = load();
 const U = {
   compose: null, target: null, booking: null, typing: {}, confirmReset: false,
   cat: 'all', dm: null, typingPost: null,
-  quiz: { step: 0, field: '', field2: '', stage: '', interests: [], meet: '', city: '' },
+  quiz: { step: 0, field: '', field2: '', stage: '', curious: [], share: [], meet: '', city: '' },
 };
 const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
 let lastPath = null;
@@ -588,6 +628,8 @@ const brief = (p) => `
     <div><dt>${L`Flavor`}</dt><dd>${esc(drinkFor(p))} (${esc(fieldsLabel(p))})</dd></div>
     <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
     ${p.proof ? `<div><dt>${L`Proof of work`}</dt><dd>${esc(p.proof)}</dd></div>` : ''}
+    ${p.curious ? `<div><dt>${L`Curious about`}</dt><dd>${esc(p.curious.join(', '))}</dd></div>` : ''}
+    ${p.share ? `<div><dt>${L`Can share`}</dt><dd>${esc(p.share.join(', '))}</dd></div>` : ''}
   </dl>`;
 
 const byline = (p) => `
@@ -687,13 +729,28 @@ function scheduleIncoming(item, key) {
 
 /* ---------- Screen: profile ---------- */
 
-// Interest chips as checkboxes, for editing in My order
-const interestChecks = (picked) => `
-      <div class="field" role="group" aria-labelledby="interests-label">
-        <p class="field__label" id="interests-label">${L`Topics you could talk about for an hour`}</p>
-        <div class="checks">${INTERESTS.map((i) => `<label class="check"><input type="checkbox" name="interests" value="${esc(i)}" ${picked.includes(i) ? 'checked' : ''}><span>${esc(L(i))}</span></label>`).join('')}</div>
-        <p class="hint">${L`Up to ${MAX_INTERESTS}.`}</p>
+// Type tags (Enter or a comma adds one) or tap a suggestion. scope is 'quiz' or 'me'.
+function tagEditor(scope, key, list, label) {
+  const left = TAG_SUGGESTIONS.filter((x) => !list.some((t) => normTag(t) === normTag(x))).slice(0, scope === 'me' ? 8 : 14);
+  return `
+      <div class="field tags" role="group" aria-labelledby="${key}-label">
+        <p class="field__label" id="${key}-label">${label}</p>
+        ${list.length ? `<ul class="tags__list">${list.map((t) => `<li class="tag-chip">${esc(t)}<button type="button" data-act="tag-remove" data-scope="${scope}" data-key="${key}" data-value="${esc(t)}" aria-label="${esc(L`Remove ${t}`)}"><i class="ph ph-x" aria-hidden="true"></i></button></li>`).join('')}</ul>` : ''}
+        ${list.length < MAX_TAGS ? `
+        <div class="tags__add">
+          <input id="c-tag-${key}" data-tag-input data-scope="${scope}" data-key="${key}" autocomplete="off" aria-label="${esc(label)}" placeholder="${esc(L`Type and press Enter`)}">
+          <button class="btn btn--ghost btn--sm" data-act="tag-add" data-scope="${scope}" data-key="${key}" type="button">${L`Add`}</button>
+        </div>
+        <div class="tags__suggest">${left.map((x) => `<button class="cat cat--sm" data-act="tag-add" data-scope="${scope}" data-key="${key}" data-value="${esc(x)}" type="button">+ ${esc(x)}</button>`).join('')}</div>` : `<p class="hint">${L`Up to ${MAX_TAGS}.`}</p>`}
       </div>`;
+}
+
+// The list a tag button edits: your saved card, or the onboarding answers
+function tagList(scope, key) {
+  if (scope !== 'me') return U.quiz[key];
+  if (!Array.isArray(S.me[key])) S.me[key] = key === 'curious' ? [...myCurious()] : [];
+  return S.me[key];
+}
 
 // The first-time form skips what the quick questions already asked
 function profileForm(me, first) {
@@ -713,7 +770,8 @@ function profileForm(me, first) {
         ${select('stage', L`What you are doing these days`, STAGES.map(([v, l]) => [v, L(l)]), me.stage || 'exploring')}
         ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
       </div>
-      ${interestChecks(myInterests())}`}
+      ${tagEditor('me', 'curious', myCurious(), L`Curious about`)}
+      ${tagEditor('me', 'share', myShare(), L`Can share`)}`}
       ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
       ${field('proof', L`Proof of work`, me.proof, { ph: L`Something you built or achieved` })}
     </fieldset>
@@ -738,7 +796,7 @@ function profileForm(me, first) {
    A few quick questions, one per screen, then the order form.
    Single-choice answers move on by themselves. */
 
-const QUIZ_STEPS = 4;
+const QUIZ_STEPS = 5;
 
 function quizStep(q) {
   const option = (key, value, label, art = '') => `
@@ -762,15 +820,17 @@ function quizStep(q) {
   }
   if (q.step === 2) {
     return `
-    <h2 class="quiz__q">${L`Pick topics you could talk about for an hour.`}</h2>
-    <p class="quiz__hint">${L`Up to ${MAX_INTERESTS}.`}</p>
-    <div class="options options--chips">${INTERESTS.map((i) => {
-      const on = q.interests.includes(i);
-      return `<button class="option option--chip ${on ? 'is-on' : ''}" data-act="quiz-interest" data-value="${esc(i)}" type="button" aria-pressed="${on}">${esc(L(i))}</button>`;
-    }).join('')}</div>
-    <p class="meta">${L`${q.interests.length} of ${MAX_INTERESTS} picked`}</p>`;
+    <h2 class="quiz__q">${L`What are you curious about?`}</h2>
+    <p class="quiz__hint">${L`Things you would love to hear about. Type your own or tap one.`}</p>
+    ${tagEditor('quiz', 'curious', q.curious, L`Curious about`)}`;
   }
   if (q.step === 3) {
+    return `
+    <h2 class="quiz__q">${L`What can you share?`}</h2>
+    <p class="quiz__hint">${L`Things you know well enough to talk about for an hour.`}</p>
+    ${tagEditor('quiz', 'share', q.share, L`Can share`)}`;
+  }
+  if (q.step === 4) {
     return `
     <h2 class="quiz__q">${L`How do you like to meet?`}</h2>
     <div class="options">${MEETS.map(([v, l]) => option('meet', v, L(l))).join('')}</div>
@@ -783,7 +843,7 @@ function quizStep(q) {
 
 function viewOnboard() {
   const q = U.quiz;
-  const canNext = [q.field, q.stage, q.interests.length, q.meet][q.step];
+  const canNext = [q.field, q.stage, q.curious.length, q.share.length, q.meet][q.step];
   return `
   <main class="onboard">
     <div class="onboard__top">
@@ -1141,7 +1201,7 @@ function viewDrop() {
         <div>
           <h1>${L`Someone in ${esc(p.country)}`}</h1>
           <p class="sub">${L`Field: ${esc(fieldsLabel(p))}. That is all you know.`}</p>
-          ${D.anchor ? `<p class="anchor"><i class="ph ph-anchor-simple" aria-hidden="true"></i>${L`In common: ${esc(D.anchor)}`}</p>` : ''}
+          ${D.anchor ? `<p class="anchor"><i class="ph ph-anchor-simple" aria-hidden="true"></i>${esc(anchorLabel(D.anchor))}</p>` : ''}
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
@@ -1219,7 +1279,7 @@ function dropStart() {
   const met = new Set(S.threads.map((t) => t.pid));
   // One thing in common (the anchor), everything else as different as possible.
   // The anchor outweighs the rest; a little luck keeps it a surprise.
-  const score = (x) => (anchorOf(x) ? 10 : 0)
+  const score = (x) => ((anchorOf(x) || {}).weight || 0)
     + (fieldsOf(x).some((f) => fieldsOf(me).includes(f)) ? 0 : 3)
     + (sameCity(x.city, me.city) ? 0 : 2)
     + (x.stage !== me.stage ? 1 : 0)
@@ -1229,7 +1289,7 @@ function dropStart() {
   const anchor = anchorOf(p);
   Object.assign(D, { phase: 'live', pid: p.id, anchor, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
   D.msgs = [anchor
-    ? { from: 'sys', text: 'You both care about {0}. Start there: how does it show up in your work?', vars: [anchor] }
+    ? { from: 'sys', text: ANCHOR_OPENERS[anchor.kind], vars: [anchor.a, anchor.b] }
     : { from: 'sys', text: 'Your first sip lasts 10 minutes. Start by asking what they are busy with.' }];
   render({ fresh: true, focus: 'c-msg' });
   dropReply(1600);
@@ -1350,7 +1410,6 @@ function viewThread(t) {
     <details class="who">
       <summary>${both ? L`Their full card` : L`Their card`}</summary>
       ${brief(p)}
-      <p class="chips">${p.topics.map((x) => `<span>${esc(x)}</span>`).join('')}</p>
       <dl class="brief brief--locked ${both ? '' : 'is-sealed'}">
         ${locked(L`Name`, p.real.name)}
         ${locked(L`School`, p.real.school)}
@@ -1592,12 +1651,12 @@ const forms = {
     const first = !S.me;
     if (first) {
       const q = U.quiz;
-      Object.assign(data, { field: q.field, field2: q.field2, stage: q.stage, interests: q.interests, meet: q.meet, city: q.city });
-    } else {
-      data.interests = new FormData(form).getAll('interests').slice(0, MAX_INTERESTS);
-      if (data.field2 === data.field) data.field2 = '';
+      Object.assign(data, { field: q.field, field2: q.field2, stage: q.stage, curious: q.curious, share: q.share, meet: q.meet, city: q.city });
+    } else if (data.field2 === data.field) {
+      data.field2 = '';
     }
-    S.me = data;
+    // Keep what the form does not hold, like your tags
+    S.me = first ? data : { ...S.me, ...data };
     save();
     if (first) { lastPath = null; go('explore'); render({ fresh: true }); } else { toast(L`Saved`); render(); }
   },
@@ -1783,22 +1842,35 @@ const acts = {
     else q.field2 = v;
     render();
   },
-  'quiz-interest'(el) {
-    const list = U.quiz.interests;
+  // Add tags from a suggestion or the text box (several at once, split by commas)
+  'tag-add'(el) {
+    const { scope, key } = el.dataset;
+    const list = tagList(scope, key);
+    const input = document.getElementById(`c-tag-${key}`);
+    const raw = el.dataset.value || (input ? input.value : '');
+    raw.split(/[,，、]/).map((t) => t.trim()).filter(Boolean).forEach((t) => {
+      if (list.length < MAX_TAGS && !list.some((x) => normTag(x) === normTag(t))) list.push(t);
+    });
+    if (input) input.value = '';
+    if (scope === 'me') save();
+    render({ focus: `c-tag-${key}` });
+  },
+  'tag-remove'(el) {
+    const list = tagList(el.dataset.scope, el.dataset.key);
     const i = list.indexOf(el.dataset.value);
     if (i >= 0) list.splice(i, 1);
-    else if (list.length < MAX_INTERESTS) list.push(el.dataset.value);
+    if (el.dataset.scope === 'me') save();
     render();
   },
   'quiz-next'() {
     const city = document.getElementById('f-city');
-    if (U.quiz.step === 3 && city) U.quiz.city = city.value.trim();
+    if (U.quiz.step === 4 && city) U.quiz.city = city.value.trim();
     U.quiz.step += 1;
     render({ fresh: true });
   },
   'quiz-back'() {
     const city = document.getElementById('f-city');
-    if (U.quiz.step === 3 && city) U.quiz.city = city.value.trim();
+    if (U.quiz.step === 4 && city) U.quiz.city = city.value.trim();
     U.quiz.step = Math.max(0, U.quiz.step - 1);
     render({ fresh: true });
   },
@@ -1825,7 +1897,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', stage: 'side', meet: 'both', interests: ['Small business', 'User research', 'AI'], doing: 'Testing Half Sugar', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', stage: 'side', meet: 'both', curious: ['Pricing', 'AI products'], share: ['Product design', 'User research'], doing: 'Testing Half Sugar', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');
@@ -1848,6 +1920,14 @@ const acts = {
 document.addEventListener('click', (event) => {
   const el = event.target.closest('[data-act]');
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
+});
+
+// Enter in a tag box adds the tag instead of sending the form
+document.addEventListener('keydown', (event) => {
+  const el = event.target.closest('[data-tag-input]');
+  if (!el || event.key !== 'Enter' || event.isComposing) return;
+  event.preventDefault();
+  acts['tag-add'](el);
 });
 
 document.addEventListener('submit', (event) => {

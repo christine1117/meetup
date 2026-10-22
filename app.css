@@ -2193,3 +2193,73 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
 .anchor i {
   color: var(--orange-deep);
 }
+
+/* ---------- Tags: curious about, can share ---------- */
+
+.tags > * + * {
+  margin-top: 4px;
+}
+
+.tags__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.tag-chip button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tag-chip button:hover {
+  background: rgb(255 255 255 / 0.15);
+}
+
+.tags__add {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tags__add input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tags__add .btn {
+  min-height: 46px;
+}
+
+.tags__suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cat--sm {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
