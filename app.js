@@ -89,6 +89,11 @@ function sugarNotes(t, before) {
   if (before < 100 && after >= 100) {
     t.msgs.push({ from: 'sys', text: 'Full sugar. Maybe it is time for a boba run?', at: Date.now() });
   }
+  // Reaching half sugar earns a gift box, once per chat
+  if (before < REVEAL_AT && after >= REVEAL_AT && !(t.rewards && t.rewards.half)) {
+    t.rewards = { ...t.rewards, half: true };
+    earnBox('small', 'For reaching half sugar with {0}.', [P[t.pid].alias]);
+  }
 }
 
 // A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
@@ -116,7 +121,7 @@ const PEOPLE = [
     id: 'p1', alias: 'Mochi', city: 'Taipei', country: 'Taiwan', field: 'Design',
     doing: 'An inventory tool for independent bookstores',
     topics: ['Bookstores', 'Pricing', 'Interviews'],
-    proof: 'Live for three months, used by 6 bookstores',
+    fun: 'Has visited 140 independent bookstores across Taiwan.',
     real: { name: 'Yen Shu-Wei', school: 'National Cheng Kung University, Industrial Design', company: 'Logistics startup, 12 people', title: 'Product designer', linkedin: 'linkedin.com/in/shuwei-yen' },
     lines: ['Interesting. How did you get started on it?', 'I interviewed a dozen bookstore owners. What they dread most is stock counting.', 'Which part are you most stuck on right now?', 'If you like, I can send you my interview guide.'],
     take: 'In my experience, talking to three people face to face beats a hundred survey replies.',
@@ -126,7 +131,7 @@ const PEOPLE = [
     id: 'p2', alias: 'Kite', city: 'Berlin', country: 'Germany', field: 'Engineering',
     doing: 'An open-source tool that maps bike-lane gaps from GPS traces',
     topics: ['Open data', 'Cities', 'Rust'],
-    proof: 'Used by two cycling groups in Berlin',
+    fun: 'Bikes 40 km to work, even in winter.',
     real: { name: 'Jonas Albrecht', school: 'TU Berlin, Computer Science', company: 'Mobility startup, 40 people', title: 'Backend engineer', linkedin: 'linkedin.com/in/jonas-albrecht' },
     lines: ['Interesting. What made you start on that?', "Here it's the opposite: the city has the data but nobody is allowed to use it.", 'How are you testing whether people actually want it?', "I'd love to see what you have so far, even if it's rough."],
     take: 'I would flip the question: who loses something if this works? Talk to them first.',
@@ -136,7 +141,7 @@ const PEOPLE = [
     id: 'p3', alias: 'Sol', city: 'Lagos', country: 'Nigeria', field: 'Founder',
     doing: 'A savings app for market traders who get paid daily',
     topics: ['Fintech', 'Informal markets', 'Distribution'],
-    proof: '1,300 traders saving every week',
+    fun: 'Sold handmade soap at the market at age 12.',
     real: { name: 'Adaeze Okonkwo', school: 'University of Lagos, Economics', company: 'Her own startup', title: 'Co-founder', linkedin: 'linkedin.com/in/adaeze-okonkwo' },
     lines: ["That sounds familiar. Our traders don't trust anything that asks for a password.", "What's the hardest part for you right now?", 'We got our first 50 users by standing in the market for a week. Nothing clever.', 'If you want, I can share how we run agent onboarding.'],
     take: 'In my market this fails for one reason: trust. Who vouches for you on day one?',
@@ -146,7 +151,7 @@ const PEOPLE = [
     id: 'p4', alias: 'Nori', city: 'Seoul', country: 'South Korea', field: 'Content',
     doing: 'A newsletter about small factories in Asia',
     topics: ['Manufacturing', 'Writing', 'Community'],
-    proof: '4,200 subscribers, written every week for a year',
+    fun: 'Writes every first draft on a typewriter.',
     real: { name: 'Han Seo-yeon', school: 'Yonsei University, Sociology', company: 'Freelance', title: 'Writer', linkedin: 'linkedin.com/in/seoyeon-han' },
     lines: ['Oh nice. Who is this for, exactly?', "I've interviewed about thirty factory owners. Most said nobody had ever asked.", 'What would make you pay for something like this yourself?', 'Happy to read a draft if you have one.'],
     take: 'Write down the story of one real person who has this problem. It clears things up fast.',
@@ -156,7 +161,7 @@ const PEOPLE = [
     id: 'p5', alias: 'Pim', city: 'Taipei', country: 'Taiwan', field: 'Research',
     doing: 'Measuring indoor air in old apartments with cheap sensors',
     topics: ['Air quality', 'Sensors', 'Housing'],
-    proof: '23 homes measured, data is public on GitHub',
+    fun: 'Keeps a sensor in the fridge, just to see.',
     real: { name: 'Tsou Ting-An', school: 'National Tsing Hua University, MSc Environmental Engineering', company: 'University lab', title: 'Research assistant', linkedin: 'linkedin.com/in/tingan-tsou' },
     lines: ['I see. Whose problem are you trying to solve?', 'I measured twenty-some old apartments. The kitchen numbers were worse than I expected.', 'Have you tried showing it to users directly?', 'I can share the data. I just really cannot build interfaces.'],
     take: 'I would check for existing data first. Many questions were already measured, just never organized.',
@@ -166,7 +171,7 @@ const PEOPLE = [
     id: 'p6', alias: 'Rue', city: 'São Paulo', country: 'Brazil', field: 'Design',
     doing: 'A booking tool for independent tattoo artists',
     topics: ['Branding', 'Creators', 'Mobile'],
-    proof: '35 artists on the waitlist',
+    fun: 'Has drawn over 300 tattoo designs and has no tattoos.',
     real: { name: 'Beatriz Nogueira', school: 'Universidade de São Paulo, Design', company: 'Design studio, 8 people', title: 'Brand designer', linkedin: 'linkedin.com/in/beatriz-nogueira' },
     lines: ['Love that. How did you find your first users?', "Tattoo artists here take bookings over Instagram DMs. It's chaos.", 'What does it look like today? A sketch is fine.', 'Payments are the part that scares me. Have you dealt with that?'],
     take: 'Show it to people before it looks good. Ugly prototypes get more honest answers.',
@@ -176,7 +181,7 @@ const PEOPLE = [
     id: 'p7', alias: 'Tavi', city: 'Bangalore', country: 'India', field: 'Engineering',
     doing: 'Turning voice notes into structured records for small clinics',
     topics: ['Health', 'Speech', 'ML'],
-    proof: 'Pilot running in 3 clinics',
+    fun: 'Can recite pi to 80 digits.',
     real: { name: 'Karthik Venkataraman', school: 'IISc Bangalore, MTech', company: 'Health-tech company', title: 'ML engineer', linkedin: 'linkedin.com/in/karthik-venkataraman' },
     lines: ['Got it. What does a normal day of using it look like?', 'Small clinics here write everything by hand, then type it again at night.', "What have you tried that didn't work?", 'I can share the on-device setup if that is useful.'],
     take: 'Measure the boring thing first: how many minutes does this save one person per day?',
@@ -186,7 +191,7 @@ const PEOPLE = [
     id: 'p8', alias: 'Ode', city: 'Taichung', country: 'Taiwan', field: 'Business',
     doing: "Selling small farms' surplus produce to restaurants",
     topics: ['Farming', 'Sales channels', 'Logistics'],
-    proof: 'Supplying 9 restaurants every week',
+    fun: 'Can tell how sweet a mango is by smell.',
     real: { name: 'Lai Po-Jui', school: 'Tunghai University, International Business', company: 'Family produce wholesaler', title: 'Second-generation successor', linkedin: 'linkedin.com/in/pojui-lai' },
     lines: ['Sounds good. How far along are you?', 'Restaurants are happy to buy. Nobody helps them put a full order together.', 'Is the hard part the tech, or finding people willing to try it?', 'I can take you to the market once. It makes more sense when you see it.'],
     take: 'Ask whether anyone would pay. One person paying three dollars matters more than a hundred saying it is great.',
@@ -386,14 +391,14 @@ const MIN_WEIGHT = 0.05;    // no factor ever drops below this
 // Simulated people: curiosities, what they can share, stage, how they like to meet,
 // a starting reply rate, and days since their last visit
 const PEOPLE_EXTRA = {
-  p1: { field2: 'Engineering', curious: ['Pricing', 'Sales', 'Small business'], share: ['Product design', 'User research', 'Side projects'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
-  p2: { curious: ['Climate tech', 'Community building', 'Fundraising'], share: ['Open data', 'Data analysis', 'Working abroad'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
-  p3: { curious: ['Product design', 'Hiring', 'AI products'], share: ['Fintech', 'Small business', 'Fundraising'], stage: 'startup', meet: 'online', replyRate: 0.85, activeDays: 1 },
-  p4: { curious: ['Community building', 'Pricing', 'Supply chains'], share: ['Writing', 'Branding', 'Studying abroad'], stage: 'side', meet: 'online', replyRate: 0.6, activeDays: 3 },
-  p5: { field2: 'Engineering', curious: ['Product design', 'Health tech', 'Career change'], share: ['Data analysis', 'Hardware', 'Studying abroad'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
-  p6: { curious: ['Fintech', 'Sales', 'Side projects'], share: ['Branding', 'Product design', 'Working abroad'], stage: 'startup', meet: 'online', replyRate: 0.75, activeDays: 0 },
-  p7: { curious: ['User research', 'Health tech', 'Semiconductors'], share: ['AI products', 'Job interviews', 'Hardware'], stage: 'job', meet: 'online', replyRate: 0.95, activeDays: 0 },
-  p8: { curious: ['AI in supply chains', 'Side projects', 'Hiring'], share: ['Supply chains', 'Sales', 'Small business'], stage: 'startup', meet: 'inperson', replyRate: 0.65, activeDays: 4 },
+  p1: { toppings: ['coconut', 'pudding', 'foam'], field2: 'Engineering', curious: ['Pricing', 'Sales', 'Small business'], share: ['Product design', 'User research', 'Side projects'], stage: 'side', meet: 'both', replyRate: 0.9, activeDays: 0 },
+  p2: { toppings: ['grass', 'aloe'], curious: ['Climate tech', 'Community building', 'Fundraising'], share: ['Open data', 'Data analysis', 'Working abroad'], stage: 'side', meet: 'online', replyRate: 0.7, activeDays: 2 },
+  p3: { toppings: ['redbean', 'crystal', 'tiger', 'mochi'], curious: ['Product design', 'Hiring', 'AI products'], share: ['Fintech', 'Small business', 'Fundraising'], stage: 'startup', meet: 'online', replyRate: 0.85, activeDays: 1 },
+  p4: { toppings: ['coconut'], curious: ['Community building', 'Pricing', 'Supply chains'], share: ['Writing', 'Branding', 'Studying abroad'], stage: 'side', meet: 'online', replyRate: 0.6, activeDays: 3 },
+  p5: { toppings: ['aloe', 'crystal', 'taroball'], field2: 'Engineering', curious: ['Product design', 'Health tech', 'Career change'], share: ['Data analysis', 'Hardware', 'Studying abroad'], stage: 'research', meet: 'inperson', replyRate: 0.8, activeDays: 1 },
+  p6: { toppings: ['pudding', 'foam', 'sakura'], curious: ['Fintech', 'Sales', 'Side projects'], share: ['Branding', 'Product design', 'Working abroad'], stage: 'startup', meet: 'online', replyRate: 0.75, activeDays: 0 },
+  p7: { toppings: ['grass', 'redbean', 'brulee', 'golden'], curious: ['User research', 'Health tech', 'Semiconductors'], share: ['AI products', 'Job interviews', 'Hardware'], stage: 'job', meet: 'online', replyRate: 0.95, activeDays: 0 },
+  p8: { toppings: ['redbean', 'tiger'], curious: ['AI in supply chains', 'Side projects', 'Hiring'], share: ['Supply chains', 'Sales', 'Small business'], stage: 'startup', meet: 'inperson', replyRate: 0.65, activeDays: 4 },
 };
 PEOPLE.forEach((p) => {
   Object.assign(p, PEOPLE_EXTRA[p.id]);
@@ -559,7 +564,7 @@ const outcomeOf = (t) => ({
   replied: t.msgs.some((m) => m.from === 'them') && t.msgs.some((m) => m.from === 'me'),
   half: sugarOf(t) >= REVEAL_AT,
   popped: t.reveal.me && t.reveal.them,
-  bobaRun: !!t.booking,
+  bobaRun: !!(t.booking && t.booking.met),
 });
 
 // With enough finished chats, move a little weight from the factor that tells good
@@ -611,13 +616,14 @@ function viewAlgorithm() {
 
 /* ---------- State ---------- */
 
-const blank = () => ({ me: null, myThoughts: [], myPosts: [], threads: [], drops: 0 });
+const blank = () => ({ me: null, myThoughts: [], myPosts: [], threads: [], drops: 0, toppings: {}, boxes: [] });
 
 function load() {
   try {
     const saved = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
     // Old or damaged data: keep lists as lists and drop chats with people who no longer exist
-    ['myThoughts', 'myPosts', 'threads'].forEach((k) => { if (!Array.isArray(saved[k])) saved[k] = []; });
+    ['myThoughts', 'myPosts', 'threads', 'boxes'].forEach((k) => { if (!Array.isArray(saved[k])) saved[k] = []; });
+    if (!saved.toppings || typeof saved.toppings !== 'object') saved.toppings = {};
     if (saved.me && typeof saved.me !== 'object') saved.me = null;
     saved.threads = saved.threads.filter((t) => t && P[t.pid] && Array.isArray(t.msgs));
     return saved;
@@ -676,21 +682,15 @@ const select = (name, label, opts, val, hint = '') => `
   </div>`;
 
 
-const brief = (p) => `
-  <dl class="brief">
-    <div><dt>${L`Flavor`}</dt><dd>${esc(drinkFor(p))} (${esc(fieldsLabel(p))})</dd></div>
-    <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
-    ${p.proof ? `<div><dt>${L`Proof of work`}</dt><dd>${esc(p.proof)}</dd></div>` : ''}
-    ${p.curious ? `<div><dt>${L`Curious about`}</dt><dd>${esc(p.curious.join(', '))}</dd></div>` : ''}
-    ${p.share ? `<div><dt>${L`Can share`}</dt><dd>${esc(p.share.join(', '))}</dd></div>` : ''}
-  </dl>`;
 
 const flavorChip = (p) => `<span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span>`;
 
+// Name and cup open that person's profile
+const whoAttrs = (p) => `data-act="profile" data-pid="${p.id || 'me'}" type="button"`;
 const byline = (p, full = false) => `
   <p class="byline">
-    <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> ${flavorChip(p)}${full ? `<br><small>${esc(p.doing)}</small>` : ''}</span>
+    <button class="avatar avatar--cup avatar-btn" ${whoAttrs(p)} tabindex="-1" aria-hidden="true">${cupFor(p)}</button>
+    <span><button class="name-btn" ${whoAttrs(p)}>${esc(p.alias)}</button> ${flavorChip(p)}${full ? `<br><small>${esc(p.doing)}</small>` : ''}</span>
   </p>`;
 
 function toast(msg) {
@@ -783,6 +783,241 @@ function scheduleIncoming(item, key) {
   });
 }
 
+/* ---------- Toppings ----------
+   Rewards that land in your cup.
+   small:   reach half sugar in a chat (or a mutual Mystery Cup refill)
+   premium: you both check in at a boba run
+   secret:  a lucky find inside any gift box
+   A gift box shows three closed boxes; you pick one. */
+
+const TOPPINGS = [
+  { id: 'coconut', name: 'Coconut jelly', tier: 'small' },
+  { id: 'aloe', name: 'Aloe vera', tier: 'small' },
+  { id: 'grass', name: 'Grass jelly', tier: 'small' },
+  { id: 'redbean', name: 'Red bean', tier: 'small' },
+  { id: 'pudding', name: 'Egg pudding', tier: 'small' },
+  { id: 'crystal', name: 'Crystal boba', tier: 'small' },
+  { id: 'foam', name: 'Cheese foam', tier: 'premium' },
+  { id: 'tiger', name: 'Brown sugar stripes', tier: 'premium' },
+  { id: 'taroball', name: 'Taro balls', tier: 'premium' },
+  { id: 'mochi', name: 'Mochi', tier: 'premium' },
+  { id: 'brulee', name: 'Crème brûlée', tier: 'premium' },
+  { id: 'golden', name: 'Golden pearl', tier: 'secret' },
+  { id: 'galaxy', name: 'Galaxy jelly', tier: 'secret' },
+  { id: 'sakura', name: 'Sakura jelly', tier: 'secret' },
+];
+const TOPPING = Object.fromEntries(TOPPINGS.map((t) => [t.id, t]));
+const SECRET_CHANCE = { small: 0.08, premium: 0.18 };
+const TIER_NAME = { small: 'Topping', premium: 'Premium topping', secret: 'Secret topping' };
+const TIER_HOW = {
+  small: 'Reach half sugar in a chat.',
+  premium: 'Both check in at a boba run.',
+  secret: 'Found by luck in any gift box.',
+};
+
+// Three different toppings for the three boxes
+function rollBoxes(tier) {
+  const out = [];
+  while (out.length < 3) {
+    const pool = TOPPINGS.filter((t) => t.tier === (Math.random() < SECRET_CHANCE[tier] ? 'secret' : tier) && !out.includes(t.id));
+    if (pool.length) out.push(pick(pool).id);
+  }
+  return out;
+}
+
+const myToppings = () => Object.keys(S.toppings || {}).filter((k) => TOPPING[k] && S.toppings[k] > 0);
+const toppingsOf = (pid) => (pid === 'me' ? myToppings() : (P[pid].toppings || []));
+
+// Pieces that float in the drink, drawn at a spot (x, y) in the 24 x 28 cup
+const PIECE = {
+  coconut: (x, y) => `<rect x="${x - 0.9}" y="${y - 0.9}" width="1.8" height="1.8" rx=".3" fill="#fbf6ea" fill-opacity=".95" transform="rotate(14 ${x} ${y})"/>`,
+  aloe: (x, y) => `<rect x="${x - 0.85}" y="${y - 0.85}" width="1.7" height="1.7" rx=".35" fill="#d3eab9" fill-opacity=".95" transform="rotate(-10 ${x} ${y})"/>`,
+  grass: (x, y) => `<rect x="${x - 0.95}" y="${y - 0.95}" width="1.9" height="1.9" rx=".2" fill="#3a2f26" transform="rotate(8 ${x} ${y})"/>`,
+  redbean: (x, y) => `<circle cx="${x}" cy="${y}" r=".55" fill="#8b2f2b"/><circle cx="${x + 0.95}" cy="${y + 0.35}" r=".55" fill="#9c3a33"/><circle cx="${x + 0.3}" cy="${y + 0.95}" r=".55" fill="#7c2925"/>`,
+  pudding: (x, y) => `<rect x="${x - 1.4}" y="${y - 1}" width="2.8" height="2" rx=".5" fill="#f3cf6a"/><rect x="${x - 1.4}" y="${y - 1}" width="2.8" height=".55" rx=".25" fill="#c98a2c"/>`,
+  crystal: (x, y) => `<circle cx="${x}" cy="${y}" r="1.05" fill="#fff" fill-opacity=".6" stroke="#fff" stroke-width=".25"/>`,
+  taroball: (x, y, n) => `<circle cx="${x}" cy="${y}" r="1" fill="${n % 2 ? '#f2a35f' : '#b99ad6'}"/>`,
+  mochi: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="1.3" ry="1" fill="#fffdf8" stroke="#e4d7c3" stroke-width=".25"/>`,
+  golden: (x, y) => `<circle cx="${x}" cy="${y}" r="1.35" fill="#e9b93a"/><circle cx="${x - 0.4}" cy="${y - 0.45}" r=".42" fill="#fff7cf"/>`,
+  galaxy: (x, y) => `<rect x="${x - 1}" y="${y - 1}" width="2" height="2" rx=".4" fill="#4b3b9a"/><circle cx="${x - 0.35}" cy="${y - 0.3}" r=".18" fill="#fff"/><circle cx="${x + 0.4}" cy="${y + 0.35}" r=".14" fill="#fff"/>`,
+  sakura: (x, y) => `<circle cx="${x}" cy="${y}" r="1.2" fill="#f7c1d3"/><circle cx="${x}" cy="${y}" r=".38" fill="#e3799d"/>`,
+};
+const PIECE_SLOTS = [[7.2, 14.8], [12.6, 14.4], [16.9, 15], [9.4, 17.3], [14.7, 17.1], [17.1, 19.5], [7, 19.7], [11.6, 19.9], [12.1, 16.4], [15.9, 21.3]];
+
+// Your base drink with your toppings in it
+function drinkCup(p, ids = [], cls = '') {
+  const id = 'dk' + uid();
+  const surface = 12.2;
+  const has = (k) => ids.includes(k);
+  const color = flavor(p.field)[1];
+  const color2 = p.field2 ? flavor(p.field2)[1] : '';
+  const mid = ((surface + 27) / 2).toFixed(1);
+  const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
+    const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
+    return PIECE[k](x, y, n);
+  }).join('')).join('');
+  const foamTop = has('brulee') ? surface - 1.8 : surface - 2.2;
+  return `<svg class="cup drink ${cls}" viewBox="0 0 24 28" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">
+    <defs><clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath></defs>
+    <g clip-path="url(#${id})">
+      <rect x="0" y="${surface}" width="24" height="28" fill="${color2 || color}"/>
+      ${color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
+      ${has('tiger') ? `<g fill="none" stroke="#6b3e1f" stroke-width=".8" stroke-opacity=".55" stroke-linecap="round"><path d="M6.6 12.6q-.9 3 .2 6t.4 6"/><path d="M17.4 12.6q.9 3-.2 6t-.4 6"/><path d="M12 13.4q1.1 3 0 6"/></g>` : ''}
+      ${pieces}
+      <g fill="var(--pearl)"><circle cx="8.7" cy="24.4" r="1.6"/><circle cx="12" cy="25" r="1.6"/><circle cx="15.3" cy="24.4" r="1.6"/><circle cx="10.4" cy="21.6" r="1.6"/><circle cx="13.6" cy="21.6" r="1.6"/></g>
+      ${has('foam') ? `<path d="M0 ${foamTop}h24v${(surface + 1 - foamTop).toFixed(1)}q-2 .7-4 0t-4 0-4 0-4 0-4 0-4 0z" fill="#fff6e3"/>` : ''}
+      ${has('brulee') ? `<rect x="0" y="${(has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1)}" width="24" height="1.6" fill="#e7b14f"/><rect x="0" y="${(has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1)}" width="24" height=".5" fill="#a9621f"/>` : ''}
+    </g>
+    <path d="M14.6 1.4 11.8 21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// A topping on its own, for chips and the collection board
+function toppingIcon(k) {
+  const piece = PIECE[k]
+    ? `<g transform="translate(5 5) scale(2.3) translate(-${k === 'redbean' ? 5.45 : 5} -${k === 'redbean' ? 5.45 : 5})">${PIECE[k](5, 5, 0)}</g>`
+    : {
+      foam: '<path d="M1.5 6.5q0-2.2 2-2.4.6-1.9 2.6-1.4 1.8.1 2 1.8 1.6.4 1.4 2z" fill="#fff6e3" stroke="#d9c7a3" stroke-width=".5"/>',
+      tiger: '<g fill="none" stroke="#6b3e1f" stroke-width="1.1" stroke-linecap="round"><path d="M2.5 1.5q-1 3 0 7"/><path d="M5 1.5q1 3 0 7"/><path d="M7.5 1.5q-1 3 0 7"/></g>',
+      brulee: '<rect x="1.2" y="3" width="7.6" height="4.2" rx="1" fill="#e7b14f"/><rect x="1.2" y="3" width="7.6" height="1.3" rx=".6" fill="#a9621f"/>',
+    }[k];
+  return `<svg class="ti" viewBox="0 0 10 10" aria-hidden="true">${piece}</svg>`;
+}
+
+const toppingChip = (k, count = 1) => `<span class="tchip tchip--${TOPPING[k].tier}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${count > 1 ? `<b>×${count}</b>` : ''}</span>`;
+
+// Gift boxes wait in a queue until you open them
+function earnBox(tier, reason, vars = []) {
+  S.boxes = S.boxes || [];
+  S.boxes.push({ id: uid(), tier, reason, vars });
+  save();
+  toast(tier === 'premium' ? L`You earned a premium gift box!` : L`You earned a gift box!`);
+  later(700, () => { if (!U.modal) openNextBox(); });
+}
+
+function openNextBox() {
+  if (!(S.boxes || []).length) return;
+  const box = S.boxes[0];
+  U.modal = { type: 'box', box, contents: rollBoxes(box.tier), picked: null, phase: 'pick' };
+  renderModal();
+}
+
+/* ---------- Pop-up window: gift boxes and profiles ---------- */
+
+const modalEl = document.createElement('div');
+modalEl.id = 'modal';
+document.body.appendChild(modalEl);
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const giftSvg = (tier) => `
+  <svg class="gift__art" viewBox="0 0 60 60" aria-hidden="true">
+    <rect class="gift__body" x="9" y="27" width="42" height="27" rx="4"/>
+    <rect class="gift__ribbon" x="27" y="27" width="6" height="27"/>
+    <g class="gift__lid">
+      <rect class="gift__top" x="6" y="18" width="48" height="11" rx="3"/>
+      <rect class="gift__ribbon" x="27" y="18" width="6" height="11"/>
+      <path class="gift__bow" d="M30 18c-4-8-13-8-11-2 1 3 7 3 11 2zm0 0c4-8 13-8 11-2-1 3-7 3-11 2z"/>
+    </g>
+  </svg>`;
+
+function boxModal(m) {
+  const opened = m.phase === 'open';
+  const got = opened && TOPPING[m.contents[m.picked]];
+  const left = (S.boxes || []).length;
+  return `
+    <div class="modal__card modal__card--box" tabindex="-1">
+      <button class="modal__x" data-act="modal-close" type="button" aria-label="${esc(L`Close`)}"><i class="ph ph-x" aria-hidden="true"></i></button>
+      <p class="tier-tag tier-tag--${m.box.tier}">${m.box.tier === 'premium' ? L`Premium gift box` : L`Gift box`}</p>
+      <h2 id="modal-title">${opened ? L`You got ${esc(L(got.name))}!` : L`Pick a box.`}</h2>
+      <p class="sub">${esc(tr(m.box.reason, m.box.vars))}</p>
+      <div class="gifts gifts--${m.box.tier}">
+        ${m.contents.map((k, i) => `
+        <button class="gift ${m.picked === i ? 'is-picked' : ''} ${m.picked !== null && m.picked !== i ? 'is-other' : ''} is-${m.phase}" data-act="box-pick" data-i="${i}" type="button" ${m.phase === 'pick' ? '' : 'disabled'} aria-label="${esc(L`Box ${i + 1}`)}">
+          ${giftSvg(m.box.tier)}
+          ${opened ? `<span class="gift__prize">${toppingIcon(k)}</span><small class="gift__name">${esc(L(TOPPING[k].name))}</small>` : ''}
+        </button>`).join('')}
+      </div>
+      ${opened ? `
+      <p class="prize-line"><span class="tier-tag tier-tag--${got.tier}">${L(TIER_NAME[got.tier])}</span>${(S.toppings[got.id] || 0) > 1 ? `<span class="meta">${L`You now have ${S.toppings[got.id]}.`}</span>` : ''}</p>
+      <div class="btnrow btnrow--center">
+        ${left ? `<button class="btn btn--primary" data-act="box-next" type="button">${L`Open next box (${left})`}</button>` : `<button class="btn btn--primary" data-act="modal-close" type="button">${L`Add to my cup`}</button>`}
+        <a class="btn btn--ghost" href="#/me">${L`See my cup`}</a>
+      </div>` : `<p class="meta">${L`The other two open after you pick.`}</p>`}
+    </div>`;
+}
+
+// What anyone can see about a person, plus their sealed details once you have both popped the seal
+function profileModal(pid) {
+  const me = pid === 'me';
+  const p = me ? { ...S.me, curious: myCurious(), share: myShare() } : P[pid];
+  const ids = toppingsOf(pid);
+  const t = me ? null : S.threads.find((x) => x.pid === pid);
+  const revealed = t && t.reveal.me && t.reveal.them;
+  const stage = (STAGES.find(([v]) => v === p.stage) || [])[1];
+  const fun = p.fun || p.proof;
+  const chips = (list) => list.map((x) => `<span>${esc(x)}</span>`).join('');
+  return `
+    <div class="modal__card modal__card--profile" tabindex="-1">
+      <button class="modal__x" data-act="modal-close" type="button" aria-label="${esc(L`Close`)}"><i class="ph ph-x" aria-hidden="true"></i></button>
+      <div class="pf__top">
+        <div class="pf__cup">${drinkCup(p, ids, 'cup--profile')}</div>
+        <div class="pf__who">
+          <h2 id="modal-title">${esc(me ? S.me.alias : p.alias)}</h2>
+          <p>${flavorChip(p)}</p>
+          <p class="meta">${[stage && L(stage), p.city].filter(Boolean).map(esc).join(', ')}</p>
+          <p class="pf__drink">${esc(drinkFor(p))}</p>
+        </div>
+      </div>
+      <div class="pf__toppings">
+        ${ids.length ? ids.map((k) => toppingChip(k, me ? S.toppings[k] : 1)).join('') : `<span class="meta">${L`No toppings yet.`}</span>`}
+      </div>
+      <dl class="brief">
+        <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
+        ${fun ? `<div><dt>${L`Fun fact`}</dt><dd>${esc(fun)}</dd></div>` : ''}
+      </dl>
+      ${p.curious && p.curious.length ? `<div class="pf__tags"><p class="field__label">${L`Curious about`}</p><p class="chips">${chips(p.curious)}</p></div>` : ''}
+      ${p.share && p.share.length ? `<div class="pf__tags"><p class="field__label">${L`Can share`}</p><p class="chips">${chips(p.share)}</p></div>` : ''}
+      ${me ? '' : revealed ? `
+      <dl class="brief brief--locked">
+        <div><dt>${L`Name`}</dt><dd>${esc(p.real.name)}</dd></div>
+        <div><dt>${L`School`}</dt><dd>${esc(p.real.school)}</dd></div>
+        <div><dt>${L`Company`}</dt><dd>${esc(p.real.company)}</dd></div>
+        <div><dt>${L`Job title`}</dt><dd>${esc(p.real.title)}</dd></div>
+        <div><dt>LinkedIn</dt><dd>${esc(p.real.linkedin)}</dd></div>
+      </dl>` : `<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Name, school and company stay sealed until you both pop the seal.`}</p>`}
+      <div class="pf__actions">
+        ${me
+          ? `<a class="btn btn--dark btn--sm" href="#/me">${L`Edit my order`}</a>`
+          : t ? `<a class="btn btn--dark btn--sm" href="#/chats/${t.id}">${L`Open chat`}</a>`
+          : `<form class="stack" data-form="hi" data-pid="${pid}" novalidate>
+              <label class="sr" for="c-hi">${L`Say hi`}</label>
+              <textarea id="c-hi" name="hi" rows="2" placeholder="${esc(L`Say hi. Start with what caught your eye.`)}"></textarea>
+              <button class="btn btn--dark btn--sm" type="submit">${L`Send`}</button>
+            </form>`}
+      </div>
+    </div>`;
+}
+
+function renderModal() {
+  const m = U.modal;
+  document.body.classList.toggle('modal-open', !!m);
+  if (!m) { modalEl.innerHTML = ''; return; }
+  const wasOpen = !!modalEl.firstElementChild;
+  modalEl.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal__backdrop" data-act="modal-close"></div>
+      ${m.type === 'box' ? boxModal(m) : profileModal(m.pid)}
+    </div>`;
+  if (!wasOpen) $('.modal__card', modalEl).focus();
+}
+
+function closeModal() {
+  U.modal = null;
+  renderModal();
+  render();
+}
+
 /* ---------- Screen: profile ---------- */
 
 // Type tags (Enter or a comma adds one) or tap a suggestion. scope is 'quiz' or 'me'.
@@ -829,7 +1064,7 @@ function profileForm(me, first) {
       ${tagEditor('me', 'curious', myCurious(), L`Curious about`)}
       ${tagEditor('me', 'share', myShare(), L`Can share`)}`}
       ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
-      ${field('proof', L`Proof of work`, me.proof, { ph: L`Something you built or achieved` })}
+      ${field('fun', L`Fun fact`, me.fun ?? me.proof, { ph: L`Something people would not guess about you` })}
     </fieldset>
     <fieldset class="panel panel--locked">
       <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed until you both pop the seal`}</legend>
@@ -933,16 +1168,37 @@ function viewMe() {
   <header class="head">
     <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
   </header>
-  <section class="receipt">
-    ${cupFor(S.me, 'cup--lg')}
-    <div>
+  <section class="receipt mydrink">
+    <button class="mydrink__cup" data-act="profile" data-pid="me" type="button" aria-label="${esc(L`See how others see your profile`)}">${drinkCup(S.me, myToppings(), 'cup--profile')}</button>
+    <div class="mydrink__info">
       <p class="receipt__label">${L`Your usual`}</p>
       <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
-      <p class="receipt__meta">${L`For ${esc(S.me.alias)}.`}</p>
+      ${myToppings().length ? `<div class="pf__toppings">${myToppings().map((k) => toppingChip(k, S.toppings[k])).join('')}</div>` : `<p class="receipt__meta">${L`No toppings yet. Reach half sugar in a chat to earn one.`}</p>`}
       <p class="receipt__meta">${S.threads.some((t) => t.msgs.some((m) => m.from === 'them'))
         ? L`You reply to ${Math.round(myReplyRate() * 100)}% of chats.`
         : L`Your reply rate shows up after your first chats.`}</p>
+      <div class="btnrow">
+        ${(S.boxes || []).length ? `<button class="btn btn--primary btn--sm gift-cta" data-act="box-next" type="button"><i class="ph ph-gift" aria-hidden="true"></i>${L`Open gift box (${S.boxes.length})`}</button>` : ''}
+        <button class="btn btn--ghost btn--sm" data-act="profile" data-pid="me" type="button">${L`See my profile`}</button>
+      </div>
     </div>
+  </section>
+  <section class="panel collection">
+    <h2>${L`Toppings`}<span class="meta">${L`${myToppings().length} of ${TOPPINGS.length} collected`}</span></h2>
+    ${['small', 'premium', 'secret'].map((tier) => `
+    <div class="collection__group">
+      <p class="collection__how"><span class="tier-tag tier-tag--${tier}">${L(TIER_NAME[tier])}</span>${L(TIER_HOW[tier])}</p>
+      <ul class="tiles">${TOPPINGS.filter((x) => x.tier === tier).map((x) => {
+        const n = (S.toppings || {})[x.id] || 0;
+        const hidden = !n && tier === 'secret';
+        return `<li class="tile ${n ? 'is-owned' : ''}">
+          <span class="tile__art">${hidden ? '<i class="ph ph-question" aria-hidden="true"></i>' : toppingIcon(x.id)}</span>
+          <span class="tile__name">${hidden ? L`Secret` : esc(L(x.name))}</span>
+          ${n > 1 ? `<span class="tile__count">×${n}</span>` : ''}
+          ${n ? '' : '<i class="ph ph-lock-simple tile__lock" aria-hidden="true"></i>'}
+        </li>`;
+      }).join('')}</ul>
+    </div>`).join('')}
   </section>
   ${profileForm(S.me, false)}
   ${viewAlgorithm()}
@@ -950,6 +1206,7 @@ function viewMe() {
     <h2>${L`Demo mode`}</h2>
     <p><a class="inline-link" href="#/about">${L`What is Half Sugar?`}</a></p>
     <p>${L`Not connected to a server yet. Your data stays in this browser, and the other people are simulated.`}</p>
+    <button class="btn btn--ghost btn--sm" data-act="dev-box" type="button">Dev: get a gift box</button>
     ${U.confirmReset
       ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
       : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear all data`}</button>`}
@@ -1063,6 +1320,14 @@ function viewExplore() {
   <form class="panel stack" data-form="thought" novalidate>
     ${select('cat', L`Topic`, CATEGORIES.map(([v, l]) => [v, L(l)]), cat === 'all' ? 'startups' : cat)}
     ${field('text', L`Your thought or question`, '', { area: true, rows: 3, req: true, ph: L`Something you have been turning over lately` })}
+    <div class="brew-nudge" id="brew-nudge" hidden>
+      <i class="ph ph-hammer" aria-hidden="true"></i>
+      <p>${L`Looking for people to build with? Brew is made for that.`}</p>
+      <div class="btnrow">
+        <button class="btn btn--dark btn--sm" data-act="to-brew" type="button">${L`Move to Brew`}</button>
+        <button class="btn btn--ghost btn--sm" data-act="nudge-off" type="button">${L`Keep it here`}</button>
+      </div>
+    </div>
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">${L`Post`}</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">${L`Cancel`}</button>
@@ -1108,10 +1373,10 @@ function viewPost(id) {
     <ul class="comments__list">
       ${comments.map((c) => `
       <li class="comment">
-        <span class="avatar avatar--cup" aria-hidden="true">${cupFor(c.by === 'me' ? S.me : P[c.by])}</span>
+        <button class="avatar avatar--cup avatar-btn" data-act="profile" data-pid="${c.by}" type="button" tabindex="-1" aria-hidden="true">${cupFor(c.by === 'me' ? S.me : P[c.by])}</button>
         <div class="comment__body">
           <p class="comment__head">
-            <strong>${esc(authorName(c.by))}</strong>
+            <button class="name-btn" data-act="profile" data-pid="${c.by}" type="button">${esc(authorName(c.by))}</button>
             ${c.by === 'me' ? '' : flavorChip(P[c.by])}
             ${c.by !== 'me' && c.by === post.by ? `<span class="tag">${L`Author`}</span>` : ''}
             <span class="meta">${agoText(c.at)}</span>
@@ -1234,6 +1499,9 @@ function syncRoleDescs() {
 }
 
 function viewBuild() {
+  // Text carried over from an Explore post that was really looking for people
+  const prefill = U.pendingBrew || '';
+  U.pendingBrew = null;
   const open = SEED_POSTS.filter((b) => openRoles(b).length);
   const forYou = topPicks(open.map((b) => P[b.by]), BREW_TOP_PICKS, dayKey() + 'brew').map((p) => SEED_POSTS.find((b) => b.by === p.id));
   const rest = SEED_POSTS.filter((b) => !forYou.includes(b));
@@ -1247,7 +1515,7 @@ function viewBuild() {
 
   ${U.compose === 'post' ? `
   <form class="panel stack" data-form="post" novalidate>
-    ${field('title', L`What are you building?`, '', { area: true, req: true, ph: L`e.g. A shared-kitchen platform for home cooks` })}
+    ${field('title', L`What are you building?`, prefill, { area: true, req: true, ph: L`e.g. A shared-kitchen platform for home cooks` })}
     <div class="row2">
       ${select('kind', L`What kind of project`, BREW_KINDS.map(([v, l]) => [v, L(l)]), d.kind)}
       ${field('duration', L`Time`, '', { ph: L`e.g. One call, a four-week project` })}
@@ -1477,8 +1745,10 @@ function dropDecide() {
       t.msgs.push(...D.msgs.filter((m) => m.from !== 'sys').map((m) => ({ ...m, at: m.at || Date.now() })));
       t.li = Math.max(0, D.li - 1);
       t.reveal = { me: true, them: true };
+      t.rewards = { half: true };
       save();
       D.result = 'match';
+      earnBox('small', 'For a mutual refill with {0}.', [P[t.pid].alias]);
     } else {
       D.result = 'declined';
     }
@@ -1529,14 +1799,13 @@ function viewThread(t) {
   const sugar = sugarOf(t);
   const cold = isCold(t);
   const today = new Date().toISOString().slice(0, 10);
-  const locked = (label, value) => `<div><dt>${label}</dt><dd>${both ? esc(value) : `<span class="locked"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed`}</span>`}</dd></div>`;
 
   return `
   <section class="chat">
     <header class="chat__head">
       <a class="back" href="#/chats" aria-label="${esc(L`Back to chats`)}"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
-        <h1>${esc(shownName(t))}</h1>
+        <h1><button class="name-btn name-btn--big" data-act="profile" data-pid="${t.pid}" type="button">${esc(shownName(t))}<i class="ph ph-caret-right" aria-hidden="true"></i></button></h1>
         <p class="sub">${L`${originName(t.origin)}, ${esc(p.city)}`}</p>
         <div class="meta-row">${sugarMeter(sugar)}${t.status === 'open' && !cold ? `<span class="expiry">${closesText(t)}</span>` : ''}</div>
       </div>
@@ -1553,17 +1822,6 @@ function viewThread(t) {
     </header>
 
 
-    <details class="who">
-      <summary>${both ? L`Their full card` : L`Their card`}</summary>
-      ${brief(p)}
-      <dl class="brief brief--locked ${both ? '' : 'is-sealed'}">
-        ${locked(L`Name`, p.real.name)}
-        ${locked(L`School`, p.real.school)}
-        ${locked(L`Company`, p.real.company)}
-        ${locked(L`Job title`, p.real.title)}
-        ${locked('LinkedIn', p.real.linkedin)}
-      </dl>
-    </details>
 
     ${U.booking === t.id ? `
     <form class="panel stack" data-form="book" data-id="${t.id}" novalidate>
@@ -1584,7 +1842,13 @@ function viewThread(t) {
       </div>
     </form>` : ''}
 
-    ${t.booking ? `<p class="booking"><i class="ph ph-calendar-check" aria-hidden="true"></i>${esc(bookingLabel(t.booking))}</p>` : ''}
+    ${t.booking ? `<div class="booking">
+      <i class="ph ph-calendar-check" aria-hidden="true"></i>
+      <span>${esc(bookingLabel(t.booking))}</span>
+      ${t.booking.met ? `<strong class="done"><i class="ph ph-check" aria-hidden="true"></i>${L`You both showed up`}</strong>`
+        : t.booking.me ? `<span class="meta">${L`Waiting for them to check in`}</span>`
+        : `<button class="btn btn--dark btn--sm" data-act="checkin" data-id="${t.id}" type="button"><i class="ph ph-map-pin" aria-hidden="true"></i>${L`I'm here`}</button>`}
+    </div>` : ''}
 
     <ul class="log" id="log">${bubbles(t.msgs, U.typing[t.id])}</ul>
 
@@ -1626,6 +1890,7 @@ const GLOSSARY = [
   ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
   ['Refill', 'ph-arrows-clockwise', 'At the end of a Mystery Cup, you both choose Refill to keep talking.'],
   ['Gone cold', 'ph-snowflake', 'A chat closes if nobody replies for 3 days.'],
+  ['Toppings', 'ph-gift', 'Rewards for your cup. Reach half sugar for a gift box, both check in at a boba run for a premium one. Some toppings are secret.'],
   ['Boba run', 'ph-person-simple-walk', 'Meet in person, at a boba shop or a café.'],
 ];
 
@@ -1723,6 +1988,7 @@ function shell(route, body) {
         <a href="#/${name}" ${route.name === name || (name === 'explore' && route.name === 'post') ? 'aria-current="page"' : ''}>
           <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span ${name === 'chats' ? '' : 'lang="en"'}>${L(label)}</span></span>
           ${name === 'chats' && unread ? `<span class="badge" aria-label="${esc(L`${unread} unread`)}">${unread}</span>` : ''}
+          ${name === 'me' && (S.boxes || []).length ? `<span class="badge" aria-label="${esc(L`${S.boxes.length} gift boxes`)}">${S.boxes.length}</span>` : ''}
         </a>`).join('')}
       </nav>
       <div class="side__foot">
@@ -1757,7 +2023,6 @@ function draw(opt = {}) {
   const activeId = document.activeElement && document.activeElement.id;
   const keep = {};
   if (same) app.querySelectorAll('[id^="f-"], [id^="c-"]').forEach((el) => { keep[el.id] = el.value; });
-  const whoOpen = path === lastPath && $('.who', app) && $('.who', app).open;
   document.documentElement.lang = LANG === 'zh' ? 'zh-Hant' : 'en';
 
   if (!S.me) {
@@ -1780,7 +2045,6 @@ function draw(opt = {}) {
   }
 
   Object.entries(keep).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.value = value; });
-  if (whoOpen && $('.who', app)) $('.who', app).open = true;
   const focusId = opt.focus || (path === lastPath ? activeId : null);
   if (focusId) { const el = document.getElementById(focusId); if (el) el.focus(); }
   const log = document.getElementById('log');
@@ -1837,6 +2101,18 @@ const forms = {
     render({ fresh: true });
     toast(L`Sent to ${item.sentTo.length} people who fit`);
     scheduleIncoming(item, 'post');
+  },
+
+  hi(form, data) {
+    if (!data.hi) { $('#c-hi', form).focus(); return; }
+    const pid = form.dataset.pid;
+    const t = createThread(pid, 'explore', `profile-${pid}`, 'pending', 'You said hi from their profile.');
+    t.msgs.push({ from: 'me', text: data.hi, at: Date.now() });
+    U.modal = null;
+    renderModal();
+    save();
+    go('chats/' + t.id);
+    scheduleAccept(t);
   },
 
   comment(form, data) {
@@ -1934,6 +2210,7 @@ const acts = {
   compose(el) {
     U.compose = el.dataset.what || null;
     if (U.compose === 'post') U.draft = { kind: 'side', roles: [] };
+    if (U.compose === 'thought') U.nudgeOff = false;
     render({ fresh: true, focus: U.compose === 'thought' ? 'f-text' : U.compose === 'post' ? 'f-title' : null });
   },
   target(el) { U.target = el.dataset.id || null; render({ fresh: true, focus: U.target ? 'f-reply' : null }); },
@@ -1966,6 +2243,20 @@ const acts = {
     toast(L`Call room opened in a new tab`);
   },
 
+  // Both check in at a boba run: a premium gift box
+  checkin(el) {
+    const t = thread(el.dataset.id);
+    if (!t || !t.booking || t.booking.me) return;
+    t.booking.me = true;
+    pushMsg(t, 'sys', 'You checked in at the boba run.');
+    later(2200, () => {
+      if (!thread(t.id) || t.booking.met) return;
+      t.booking.met = true;
+      pushMsg(t, 'sys', '{0} checked in too. You both showed up!', [P[t.pid].alias]);
+      earnBox('premium', 'For showing up to a boba run with {0}.', [P[t.pid].alias]);
+    });
+  },
+
   'book-open'(el) { U.booking = el.dataset.id; render({ fresh: true, focus: 'f-area' }); },
   'book-close'() { U.booking = null; render({ fresh: true }); },
 
@@ -1983,6 +2274,42 @@ const acts = {
   cat(el) { U.cat = el.dataset.value; render(); },
   'dm-open'(el) { U.dm = { pid: el.dataset.pid, spot: el.dataset.spot }; render({ fresh: true, focus: 'f-dm' }); },
   'dm-close'() { U.dm = null; render({ fresh: true }); },
+
+  profile(el) {
+    U.modal = { type: 'profile', pid: el.dataset.pid };
+    renderModal();
+  },
+  'modal-close'() { closeModal(); },
+  'box-next'() { openNextBox(); },
+  'box-pick'(el) {
+    const m = U.modal;
+    if (!m || m.type !== 'box' || m.phase !== 'pick') return;
+    m.picked = Number(el.dataset.i);
+    m.phase = 'shake';
+    renderModal();
+    later(REDUCED_MOTION ? 0 : 750, () => {
+      if (U.modal !== m) return;
+      const k = m.contents[m.picked];
+      S.toppings[k] = (S.toppings[k] || 0) + 1;
+      S.boxes = S.boxes.filter((b) => b.id !== m.box.id);
+      m.phase = 'open';
+      save();
+      renderModal();
+      render();
+    });
+  },
+  // Development shortcut: a free gift box to try the game. Remove before launch.
+  'to-brew'() {
+    const box = $('#f-text');
+    U.pendingBrew = box ? box.value.trim() : '';
+    go('build');
+  },
+  'nudge-off'() {
+    U.nudgeOff = true;
+    const box = $('#brew-nudge');
+    if (box) box.hidden = true;
+  },
+  'dev-box'() { earnBox(Math.random() < 0.5 ? 'small' : 'premium', 'A free box for testing.'); },
 
   'quiz-pick'(el) {
     const q = U.quiz;
@@ -2083,7 +2410,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', stage: 'side', meet: 'both', curious: ['Pricing', 'AI products'], share: ['Product design', 'User research'], doing: 'Testing Half Sugar', proof: '', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', stage: 'side', meet: 'both', curious: ['Pricing', 'AI products'], share: ['Product design', 'User research'], doing: 'Testing Half Sugar', fun: 'Has tried every boba shop on one street', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
     save();
     lastPath = null;
     go('explore');
@@ -2110,10 +2437,19 @@ document.addEventListener('click', (event) => {
 
 // Enter in a tag box adds the tag instead of sending the form
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && U.modal) { closeModal(); return; }
   const el = event.target.closest('[data-tag-input], [data-role-input]');
   if (!el || event.key !== 'Enter' || event.isComposing) return;
   event.preventDefault();
   acts[el.hasAttribute('data-role-input') ? 'role-add' : 'tag-add'](el);
+});
+
+// Words that usually mean someone is recruiting, not starting a discussion
+const RECRUITING = /\b(co-?founders?|teammates?|team members?|collaborators?|hiring|recruit(ing)?|join (my|our) team|(looking for|need|seeking) (a |an |some |someone |people |)(designers?|developers?|engineers?|marketers?|partners?|photographers?|editors?|analysts?|researchers?|writers?|people to))\b|徵|找隊友|招募|找夥伴|合夥人/i;
+document.addEventListener('input', (event) => {
+  if (event.target.id !== 'f-text' || U.nudgeOff) return;
+  const box = $('#brew-nudge');
+  if (box) box.hidden = !RECRUITING.test(event.target.value);
 });
 
 // Competitions and hackathons ask which one it is
@@ -2140,11 +2476,14 @@ document.addEventListener('submit', (event) => {
 });
 
 window.addEventListener('hashchange', () => {
+  if (U.modal) { U.modal = null; renderModal(); }
   U.target = null;
   U.dm = null;
   U.compose = null;
   U.booking = null;
   U.confirmReset = false;
+  // Arriving from Explore's "Move to Brew": open the Brew form with the text
+  if (U.pendingBrew != null) { U.compose = 'post'; U.draft = { kind: 'side', roles: [] }; }
   render();
 });
 

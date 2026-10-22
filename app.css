@@ -2735,3 +2735,584 @@ details.algo > summary {
   border-radius: var(--r-input);
   background: var(--bg);
 }
+
+/* =========================================================
+   Toppings, gift boxes and the profile pop-up
+   ========================================================= */
+
+/* Clickable names and cups */
+.name-btn,
+.avatar-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.name-btn {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s;
+}
+
+.name-btn:hover {
+  text-decoration-color: var(--orange);
+}
+
+.name-btn--big {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: inherit;
+}
+
+.name-btn--big i {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.avatar-btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.avatar-btn:hover {
+  border-color: var(--orange);
+}
+
+/* Topping chips */
+.ti {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.tchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 6px;
+  border-radius: var(--r-pill);
+  background: var(--sunk);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.tchip b {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.tchip--premium {
+  background: var(--orange-soft);
+}
+
+.tchip--secret {
+  background: linear-gradient(90deg, #e8defc, #fbe9c2);
+}
+
+.tier-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  background: var(--sunk);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tier-tag--premium {
+  background: var(--orange);
+}
+
+.tier-tag--secret {
+  background: linear-gradient(90deg, #cdb8f5, #f5cf6e);
+}
+
+/* My order: your drink */
+.mydrink {
+  align-items: center;
+  gap: clamp(18px, 4vw, 36px);
+}
+
+.mydrink__cup {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cup--profile {
+  width: clamp(104px, 18vw, 140px);
+  height: auto;
+  aspect-ratio: 24 / 28;
+}
+
+.mydrink__info > * + * {
+  margin-top: 8px;
+}
+
+.pf__toppings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gift-cta i {
+  font-size: 1.125rem;
+}
+
+/* Collection board */
+.collection > * + * {
+  margin-top: 18px;
+}
+
+.collection h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.collection__how {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 14px 8px 10px;
+  border: 1px dashed #c9bda8;
+  border-radius: var(--r-input);
+  text-align: center;
+}
+
+.tile__art {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sunk);
+  color: var(--muted);
+  font-size: 1.25rem;
+}
+
+.tile__art .ti {
+  width: 28px;
+  height: 28px;
+}
+
+.tile:not(.is-owned) .tile__art .ti {
+  filter: grayscale(1);
+  opacity: 0.3;
+}
+
+.tile__name {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.tile:not(.is-owned) .tile__name {
+  color: var(--muted);
+}
+
+.tile.is-owned {
+  border-style: solid;
+  border-color: var(--line);
+  background: #fffdf8;
+  box-shadow: var(--shadow-1);
+}
+
+.tile.is-owned .tile__art {
+  background: var(--bg);
+}
+
+.tile__count {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: var(--orange-deep);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tile__lock {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: #b9ad98;
+  font-size: 0.875rem;
+}
+
+/* Pop-up window */
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(42 29 22 / 0.45);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: fade 0.25s ease both;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+}
+
+.modal__card {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: clamp(22px, 4vw, 32px);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 30px 80px -20px rgb(42 29 22 / 0.5);
+  animation: pop-in 0.4s var(--ease) both;
+}
+
+.modal__card:focus {
+  outline: none;
+}
+
+.modal__card > * + * {
+  margin-top: 14px;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+.modal__x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sunk);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.modal__x:hover {
+  background: var(--line);
+}
+
+/* Profile pop-up */
+.pf__top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-right: 36px;
+}
+
+.pf__cup {
+  flex: none;
+  color: var(--ink);
+}
+
+.pf__who > * + * {
+  margin-top: 4px;
+}
+
+.pf__who h2 {
+  font-size: 1.625rem;
+  letter-spacing: -0.02em;
+}
+
+.pf__drink {
+  font-weight: 500;
+}
+
+.pf__tags .chips {
+  margin-top: 6px;
+}
+
+.pf__sealed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--r-input);
+  background: repeating-linear-gradient(135deg, var(--orange-soft) 0 10px, #fbeadb 10px 20px);
+  font-size: 0.9375rem;
+}
+
+.pf__sealed i {
+  color: var(--orange-deep);
+}
+
+.pf__actions .stack {
+  gap: 8px;
+}
+
+.pf__actions .btn {
+  justify-self: start;
+}
+
+/* Gift boxes */
+.modal__card--box {
+  text-align: center;
+}
+
+.modal__card--box h2 {
+  font-size: 1.625rem;
+  letter-spacing: -0.02em;
+}
+
+.modal__card--box .sub {
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.gifts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-block: 22px 8px;
+}
+
+.gift {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding: 10px 4px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gift:disabled {
+  cursor: default;
+}
+
+.gift__art {
+  width: 100%;
+  max-width: 120px;
+  overflow: visible;
+}
+
+.gifts--small .gift__body { fill: #d9be97; }
+.gifts--small .gift__top { fill: #e8d6bc; }
+.gifts--small .gift__ribbon,
+.gifts--small .gift__bow { fill: var(--orange); }
+.gifts--premium .gift__body { fill: var(--orange); }
+.gifts--premium .gift__top { fill: #f08a4d; }
+.gifts--premium .gift__ribbon,
+.gifts--premium .gift__bow { fill: #f5cf6e; }
+
+.gift__lid {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition: transform 0.5s var(--ease), opacity 0.4s;
+}
+
+.gift.is-pick {
+  animation: wobble 2.4s ease-in-out infinite;
+}
+
+.gift.is-pick:nth-child(2) { animation-delay: 0.3s; }
+.gift.is-pick:nth-child(3) { animation-delay: 0.6s; }
+
+.gift.is-pick:hover {
+  animation: none;
+  transform: translateY(-6px) rotate(-3deg);
+  transition: transform 0.2s var(--ease);
+}
+
+@keyframes wobble {
+  0%, 80%, 100% { transform: rotate(0); }
+  85% { transform: rotate(-4deg); }
+  90% { transform: rotate(4deg); }
+  95% { transform: rotate(-2deg); }
+}
+
+.gift.is-shake.is-picked {
+  animation: shake-box 0.12s linear infinite alternate;
+}
+
+@keyframes shake-box {
+  from { transform: rotate(-6deg) translateY(-2px); }
+  to { transform: rotate(6deg) translateY(-2px); }
+}
+
+.gift.is-other {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+.gift.is-open .gift__lid {
+  transform: translateY(-14px) rotate(-18deg);
+}
+
+.gift.is-open.is-other .gift__lid {
+  transform: translateY(-6px) rotate(10deg);
+}
+
+.gift__prize {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  transform: translateX(-50%);
+  animation: prize-up 0.6s var(--ease) both;
+}
+
+.gift__prize .ti {
+  width: 46px;
+  height: 46px;
+  padding: 6px;
+  border-radius: 50%;
+  background: #fffdf8;
+  box-shadow: 0 8px 20px -8px rgb(92 64 30 / 0.5);
+}
+
+.gift.is-picked .gift__prize .ti {
+  width: 62px;
+  height: 62px;
+  box-shadow: 0 0 0 6px rgb(245 207 110 / 0.45), 0 12px 26px -8px rgb(92 64 30 / 0.55);
+}
+
+.gift__prize small {
+  max-width: 110px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.gift.is-other .gift__prize small {
+  color: var(--muted);
+}
+
+@keyframes prize-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px) scale(0.6);
+  }
+}
+
+.prize-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Explore: suggest Brew */
+.brew-nudge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-input);
+  background: var(--orange-soft);
+  animation: rise 0.3s var(--ease) both;
+}
+
+.brew-nudge > i {
+  color: var(--orange-deep);
+  font-size: 1.375rem;
+}
+
+.brew-nudge p {
+  font-weight: 500;
+}
+
+.brew-nudge .btnrow {
+  grid-column: 2;
+}
+
+/* Boba run check-in */
+.booking {
+  flex-wrap: wrap;
+}
+
+.booking > span:first-of-type {
+  flex: 1;
+}
+
+@media (max-width: 520px) {
+  .pf__top,
+  .mydrink {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gifts {
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gift.is-pick,
+  .gift.is-shake.is-picked {
+    animation: none;
+  }
+}
+
+/* The prize floats above its box; its name sits below */
+.gifts {
+  margin-top: 48px;
+}
+
+.gift__prize {
+  top: -40px;
+}
+
+.gift__name {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  animation: fade 0.4s 0.2s ease both;
+}
+
+.gift.is-other .gift__name {
+  color: var(--muted);
+  font-weight: 500;
+}
