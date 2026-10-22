@@ -933,7 +933,7 @@ function viewMe() {
   <header class="head">
     <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
   </header>
-  <section class="receipt tilt" data-tilt-max="5">
+  <section class="receipt">
     ${cupFor(S.me, 'cup--lg')}
     <div>
       <p class="receipt__label">${L`Your usual`}</p>
@@ -1031,7 +1031,7 @@ function dmBox(pid, spot) {
 
 function postCard(post) {
   return `
-    <article class="card forum-post tilt">
+    <article class="card forum-post">
       <p class="forum-post__cat">${esc(catName(post.cat))}</p>
       <a class="thought forum-post__link" href="#/post/${post.id}">${esc(post.text)}</a>
       <div class="forum-post__foot">
@@ -1178,7 +1178,7 @@ function brewCard(b) {
   const existing = threadFor('build', b.id);
   const open = openRoles(b);
   return `
-    <article class="card brew tilt ${open.length ? '' : 'is-complete'}">
+    <article class="card brew ${open.length ? '' : 'is-complete'}">
       ${brewHead(b)}
       <h3 class="post-title">${esc(b.title)}</h3>
       ${rolesList(b, false)}
@@ -1403,7 +1403,7 @@ function viewDrop() {
   <header class="head">
     <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p></div>
   </header>
-  <section class="drop-card tilt" data-tilt-max="4">
+  <section class="drop-card">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
     <div>
       ${open
@@ -2147,42 +2147,6 @@ window.addEventListener('hashchange', () => {
   U.confirmReset = false;
   render();
 });
-
-/* ---------- 3D touch ----------
-   Cards and big cups lean a little toward the pointer, with a soft light that follows it.
-   Mouse users only, and never when someone prefers less motion or is typing in the card. */
-const CAN_TILT = window.matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)').matches;
-let tilted = null;
-
-function untilt(el) {
-  el.classList.remove('is-tilting');
-  el.style.removeProperty('--rx');
-  el.style.removeProperty('--ry');
-}
-
-if (CAN_TILT) {
-  document.addEventListener('pointermove', (event) => {
-    const el = event.target.closest ? event.target.closest('.tilt') : null;
-    if (tilted && tilted !== el) untilt(tilted);
-    tilted = el;
-    if (!el) return;
-    const active = document.activeElement;
-    if (el.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) { untilt(el); return; }
-    const box = el.getBoundingClientRect();
-    const x = (event.clientX - box.left) / box.width - 0.5;
-    const y = (event.clientY - box.top) / box.height - 0.5;
-    const max = Number(el.dataset.tiltMax || 3);
-    el.classList.add('is-tilting');
-    el.style.setProperty('--ry', `${(x * max * 2).toFixed(2)}deg`);
-    el.style.setProperty('--rx', `${(-y * max * 2).toFixed(2)}deg`);
-    el.style.setProperty('--mx', `${((x + 0.5) * 100).toFixed(1)}%`);
-    el.style.setProperty('--my', `${((y + 0.5) * 100).toFixed(1)}%`);
-  });
-  document.documentElement.addEventListener('pointerleave', () => {
-    if (tilted) untilt(tilted);
-    tilted = null;
-  });
-}
 
 // Tick once a second. Only the numbers change, the page is not redrawn.
 setInterval(() => {
