@@ -93,7 +93,50 @@ function sugarNotes(t, before) {
 
 // A boba cup built from simple shapes. level goes from 0 (empty) to 1 (full).
 const CUP_PATH = 'M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z';
+// Big cups (hero, Mystery Cup, empty states) get a shaded 3D look and lean toward the pointer
+const BIG_CUP = /cup--(hero|mystery|lg)/;
+
+function cup3d(color, o = {}) {
+  const id = 'c3' + uid();
+  const level = o.level ?? 0.62;
+  const top = 34;
+  const bottom = 146;
+  const surface = bottom - (bottom - top - 8) * level;
+  const halfAt = (y) => 44 - 14 * ((y - top) / (bottom - top)); // the cup narrows toward the bottom
+  const body = `M16 ${top} L30 ${bottom} A30 7 0 0 0 90 ${bottom} L104 ${top} Z`;
+  const pearls = [[40, 137], [54, 140], [68, 140], [82, 137], [47, 126], [61, 128], [75, 126], [54, 115], [68, 115]]
+    .filter(([, y]) => level > 0 && y > surface + 8);
+  const mid = ((surface + bottom) / 2).toFixed(1);
+  return `<span class="cup3d-wrap tilt ${o.cls || ''}" data-tilt-max="14" aria-hidden="true"><svg class="cup3d" viewBox="0 0 120 160">
+    <defs>
+      <clipPath id="${id}b"><path d="${body}"/></clipPath>
+      <linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".78"/></linearGradient>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".2" stop-color="#fff" stop-opacity=".12"/>
+        <stop offset=".65" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/>
+      </linearGradient>
+      <radialGradient id="${id}p" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#9a6a4a"/><stop offset=".45" stop-color="#3b2518"/><stop offset="1" stop-color="#170d08"/></radialGradient>
+      <linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a3a28"/><stop offset=".5" stop-color="#2a1d16"/><stop offset="1" stop-color="#120a06"/></linearGradient>
+    </defs>
+    <ellipse cx="60" cy="152" rx="38" ry="5" fill="rgb(92 64 30 / .16)"/>
+    <g clip-path="url(#${id}b)">
+      ${level > 0 ? `<rect x="0" y="${surface}" width="120" height="160" fill="url(#${id}l)"/>` : ''}
+      ${level > 0 && o.color2 ? `<rect x="0" y="${surface}" width="120" height="${(mid - surface).toFixed(1)}" fill="${o.color2}"/>` : ''}
+      ${level > 0 ? `<ellipse cx="60" cy="${surface}" rx="${halfAt(surface)}" ry="${(halfAt(surface) * 0.2).toFixed(1)}" fill="#fff" fill-opacity=".3"/>` : ''}
+      ${pearls.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7" fill="url(#${id}p)"/>`).join('')}
+      <line x1="78" y1="0" x2="58" y2="132" stroke="url(#${id}s)" stroke-width="9" stroke-linecap="round"/>
+      <path d="${body}" fill="url(#${id}g)"/>
+    </g>
+    <line x1="78" y1="4" x2="73.6" y2="34" stroke="url(#${id}s)" stroke-width="9" stroke-linecap="round"/>
+    <path d="${body}" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+    <ellipse cx="60" cy="${top}" rx="44" ry="10" fill="#fff" fill-opacity=".25" stroke="currentColor" stroke-width="3"/>
+    <path d="M25 46 L34 130" stroke="#fff" stroke-opacity=".65" stroke-width="4" stroke-linecap="round"/>
+    ${o.mark ? `<text x="44" y="${mid}" text-anchor="middle" dominant-baseline="middle" font-size="30" font-weight="700" fill="currentColor">${o.mark}</text>` : ''}
+  </svg></span>`;
+}
+
 function cup(color, o = {}) {
+  if (BIG_CUP.test(o.cls || '')) return cup3d(color, o);
   const id = 'cup' + uid();
   const level = o.level ?? 0.62;
   const y = (9 + (1 - level) * 18).toFixed(1);
@@ -590,8 +633,8 @@ function viewAlgorithm() {
   const pct = (n) => (chats.length ? Math.round((n / chats.length) * 100) : 0);
   const names = { relevance: L`Relevance`, complement: L`Different fields`, reliable: L`Replies`, active: L`Recently active`, nearby: L`Same city`, fresh: L`Daily luck` };
   return `
-  <section class="panel algo">
-    <h2>${L`How your picks are chosen`}</h2>
+  <details class="panel algo">
+    <summary><h2>${L`How your picks are chosen`}</h2></summary>
     <p class="hint">${L`Scored from both sides. Weights adjust after ${LEARN_AFTER} finished chats (now ${finished}).`}</p>
     <ul class="algo__weights">
       ${Object.entries(weights()).map(([k, w]) => `<li><span>${names[k]}</span><strong>${Math.round(w * 100)}%</strong></li>`).join('')}
@@ -605,7 +648,7 @@ function viewAlgorithm() {
       <li><span>${L`Boba runs`}</span><strong>${count('bobaRun')} (${pct(count('bobaRun'))}%)</strong></li>
     </ul>
     ${S.weights ? `<button class="btn btn--ghost btn--sm" data-act="reset-weights" type="button">${L`Reset weights`}</button>` : ''}
-  </section>`;
+  </details>`;
 }
 
 /* ---------- State ---------- */
@@ -684,10 +727,10 @@ const brief = (p) => `
     ${p.share ? `<div><dt>${L`Can share`}</dt><dd>${esc(p.share.join(', '))}</dd></div>` : ''}
   </dl>`;
 
-const byline = (p) => `
+const byline = (p, full = false) => `
   <p class="byline">
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span><br><small>${L`${esc(fieldsLabel(p))}. ${esc(p.doing)}`}</small></span>
+    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span>${full ? `<br><small>${L`${esc(fieldsLabel(p))}. ${esc(p.doing)}`}</small>` : ''}</span>
   </p>`;
 
 function toast(msg) {
@@ -896,6 +939,8 @@ function quizStep(q) {
 
 function viewOnboard() {
   const q = U.quiz;
+  const shown = U.quizShown;
+  U.quizShown = q.step;
   const canNext = [q.field, q.stage, q.curious.length, q.share.length, q.meet][q.step];
   return `
   <main class="onboard">
@@ -915,7 +960,7 @@ function viewOnboard() {
     </div>
     <p class="onboard__about"><a href="#/about">${L`New here? Read what Half Sugar is and what the boba words mean.`}</a></p>` : ''}
     <div class="progress" role="progressbar" aria-label="${esc(L`Setup progress`)}" aria-valuemin="1" aria-valuemax="${QUIZ_STEPS + 1}" aria-valuenow="${q.step + 1}"><span style="width:${((q.step + 1) / (QUIZ_STEPS + 1)) * 100}%"></span></div>
-    <section class="quiz">${quizStep(q)}</section>
+    <section class="quiz ${shown === q.step ? '' : 'enter'}">${quizStep(q)}</section>
     <div class="quiz__nav">
       ${q.step ? `<button class="btn btn--ghost" data-act="quiz-back" type="button"><i class="ph ph-arrow-left" aria-hidden="true"></i>${L`Back`}</button>` : '<span></span>'}
       ${q.step < QUIZ_STEPS ? `<button class="btn btn--primary" data-act="quiz-next" type="button" ${canNext ? '' : 'disabled'}>${L`Next`}</button>` : ''}
@@ -928,7 +973,7 @@ function viewMe() {
   <header class="head">
     <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
   </header>
-  <section class="receipt">
+  <section class="receipt tilt" data-tilt-max="5">
     ${cupFor(S.me, 'cup--lg')}
     <div>
       <p class="receipt__label">${L`Your usual`}</p>
@@ -961,7 +1006,7 @@ function responsesBlock(item, key) {
   }
   return `<ul class="responses">${item.responses.map((r) => `
     <li>
-      ${byline(P[r.pid])}
+      ${byline(P[r.pid], true)}
       ${r.role ? `<p class="meta">${L`Applied as ${esc(r.role)}`}</p>` : ''}
       <p class="quote">${esc(r.text)}</p>
       <div class="btnrow">
@@ -991,7 +1036,7 @@ const postById = (id) => allPosts().find((p) => p.id === id);
 const commentsOf = (post) => [...post.comments, ...((S.comments || {})[post.id] || [])].sort((a, b) => a.at - b.at);
 
 const authorName = (by) => (by === 'me' ? L`You` : P[by].alias);
-const authorLine = (by) => byline(by === 'me' ? { ...S.me, alias: L`You` } : P[by]);
+const authorLine = (by, full = false) => byline(by === 'me' ? { ...S.me, alias: L`You` } : P[by], full);
 
 function agoText(at) {
   const m = Math.floor((Date.now() - at) / 60000);
@@ -1022,16 +1067,14 @@ function dmBox(pid, spot) {
 
 function postCard(post) {
   return `
-    <article class="card forum-post">
+    <article class="card forum-post tilt">
       <p class="forum-post__cat">${esc(catName(post.cat))}</p>
       <a class="thought forum-post__link" href="#/post/${post.id}">${esc(post.text)}</a>
-      ${authorLine(post.by)}
       <div class="forum-post__foot">
-        <p class="meta">${L`${commentCount(commentsOf(post).length)}, ${agoText(post.at)}`}</p>
-        <div class="btnrow">
-          <a class="btn btn--dark btn--sm" href="#/post/${post.id}"><i class="ph ph-chat-text" aria-hidden="true"></i>${L`Comments`}</a>
-          ${post.by === 'me' ? '' : dmBox(post.by, post.id)}
-        </div>
+        ${authorLine(post.by)}
+        <a class="count-link" href="#/post/${post.id}" aria-label="${esc(commentCount(commentsOf(post).length))}"><i class="ph ph-chat-circle" aria-hidden="true"></i>${commentsOf(post).length}</a>
+        <span class="meta">${agoText(post.at)}</span>
+        ${post.by === 'me' ? '' : dmBox(post.by, post.id)}
       </div>
     </article>`;
 }
@@ -1089,7 +1132,7 @@ function viewPost(id) {
   <article class="card forum-post forum-post--open">
     <p class="forum-post__cat">${esc(catName(post.cat))}</p>
     <p class="thought">${esc(post.text)}</p>
-    ${authorLine(post.by)}
+    ${authorLine(post.by, true)}
     <div class="forum-post__foot">
       <p class="meta">${agoText(post.at)}</p>
       ${post.by === 'me' ? '' : dmBox(post.by, post.id)}
@@ -1150,21 +1193,26 @@ function rolesList(b, mine) {
             : r.filled ? `<span class="role__tag">${L`Filled`}</span>` : ''}
         </li>`).join('')}
       </ul>
-      <p class="meta">${roles.length && filled === roles.length ? `<strong class="done"><i class="ph ph-check" aria-hidden="true"></i>${L`Team complete`}</strong>` : L`${filled} of ${roles.length} filled`}</p>`;
+      <p class="fill">${roles.length && filled === roles.length
+        ? `<strong class="done"><i class="ph ph-check" aria-hidden="true"></i>${L`Team complete`}</strong>`
+        : `<span class="dots" aria-hidden="true">${[...roles].sort((x, y) => y.filled - x.filled).map((r) => `<i class="${r.filled ? 'on' : ''}"></i>`).join('')}</span><span class="meta">${L`${filled}/${roles.length} filled`}</span>`}</p>`;
 }
 
 const brewExtras = (b, mine) => (b.offer || b.duration ? `
+      <details class="more">
+      <summary>${L`Details`}</summary>
       <dl class="brief">
         ${b.offer ? `<div><dt>${mine ? L`I can offer` : L`Offers`}</dt><dd>${esc(b.offer)}</dd></div>` : ''}
         ${b.duration ? `<div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>` : ''}
-      </dl>` : '');
+      </dl>
+      </details>` : '');
 
 function brewCard(b) {
   const p = P[b.by];
   const existing = threadFor('build', b.id);
   const open = openRoles(b);
   return `
-    <article class="card brew ${open.length ? '' : 'is-complete'}">
+    <article class="card brew tilt ${open.length ? '' : 'is-complete'}">
       ${brewHead(b)}
       <h3 class="post-title">${esc(b.title)}</h3>
       ${rolesList(b, false)}
@@ -1227,7 +1275,7 @@ function viewBuild() {
 
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p>${explain(L`Post what you need. We send it to people who fit.`)}</div>
+    <div><h1 lang="en">${L`Brew`}</h1><p class="sub" lang="en">${L`I need someone for something.`}</p></div>
     <button class="btn btn--primary" data-act="compose" data-what="post" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Start a brew`}</button>
   </header>
 
@@ -1318,7 +1366,7 @@ function viewDrop() {
   if (D.phase === 'matching') {
     return `
     <section class="drop-stage">
-      <div class="shake">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
+      <div class="swirl">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
       <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
       <h1>${L`Shaking your mystery cup`}</h1>
       <p class="sub">${L`Different field, different city, one thing in common.`}</p>
@@ -1326,9 +1374,11 @@ function viewDrop() {
   }
 
   if (D.phase === 'live') {
+    // The chat flips open right after a match (the first redraws happen within this window)
+    const flip = Date.now() < D.flipUntil;
     return `
     <section class="chat">
-      <header class="chat__head">
+      <header class="chat__head ${flip ? 'flip-in' : ''}">
         <div>
           <h1>${L`Someone in ${esc(p.country)}`}</h1>
           <p class="sub">${L`Field: ${esc(fieldsLabel(p))}. That is all you know.`}</p>
@@ -1387,20 +1437,20 @@ function viewDrop() {
   <header class="head">
     <div><h1 lang="en">${L`Mystery Cup`}</h1><p class="sub" lang="en">${L`You can’t pick the flavor.`}</p></div>
   </header>
-  <section class="drop-card">
+  <section class="drop-card tilt" data-tilt-max="4">
     ${cup('var(--milk)', { level: 0.82, mark: '?', cls: 'cup--mystery' })}
     <div>
       ${open
         ? `<p class="drop-card__label">${L`Mystery Cup is open`}</p><p class="drop-card__time">${L`Join now`}</p>`
         : `<p class="drop-card__label">${L`Next Mystery Cup in`}</p><p class="drop-card__time" id="drop-count" role="timer">${countdownText(now)}</p>`}
-      <p class="drop-card__when">${L`${esc(localTime)} your time. Open for 10 minutes.`}</p>
+      <p class="drop-card__when">${L`${esc(localTime)}, open ${DROP_MINUTES} minutes`}</p>
       <button class="btn btn--dark" data-act="drop-join" type="button">${open ? L`Pour me one` : L`Try a practice cup`}</button>
     </div>
   </section>
-  <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`Different field and city, one thing in common.`}</p></div></li>
-    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`${DROP_MINUTES} minutes`}</strong><p>${L`Text only. That gets you to half sugar.`}</p></div></li>
-    <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
+  <ul class="rule-pills">
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i>${L`One thing in common`}</li>
+    <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i>${L`${DROP_MINUTES} minutes`}</li>
+    <li><i class="ph ph-handshake" aria-hidden="true"></i>${L`Both refill to reveal`}</li>
   </ul>
   ${S.drops ? `<p class="meta">${S.drops === 1 ? L`You have had 1 mystery cup.` : L`You have had ${S.drops} mystery cups.`}</p>` : ''}`;
 }
@@ -1418,7 +1468,7 @@ function dropStart() {
   const pool = PEOPLE.filter((x) => !met.has(x.id));
   const p = [...(pool.length ? pool : PEOPLE)].sort((a, b) => score(b) - score(a))[0];
   const anchor = anchorOf(p);
-  Object.assign(D, { phase: 'live', pid: p.id, anchor, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
+  Object.assign(D, { phase: 'live', flipUntil: Date.now() + 700, pid: p.id, anchor, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
   D.msgs = [anchor
     ? { from: 'sys', text: ANCHOR_OPENERS[anchor.kind], vars: [anchor.a, anchor.b] }
     : { from: 'sys', text: 'Your first sip lasts 10 minutes. Start by asking what they are busy with.' }];
@@ -1479,7 +1529,7 @@ function viewChats() {
   const list = [...S.threads].sort((a, b) => isCold(a) - isCold(b) || b.at - a.at);
   return `
   <header class="head">
-    <div><h1>${L`Chats`}</h1><p class="sub">${L`Every chat starts with a first sip.`}</p>${explain(L`At 50% sugar you can pop the seal. No reply for 3 days and a chat closes.`)}</div>
+    <div><h1>${L`Chats`}</h1><p class="sub">${L`Every chat starts with a first sip.`}</p></div>
   </header>
   ${list.length ? `<ul class="threads">${list.map((t) => {
     const last = t.msgs[t.msgs.length - 1];
@@ -1536,7 +1586,6 @@ function viewThread(t) {
       </div>` : ''}
     </header>
 
-    ${both ? '' : explain(L`Names stay hidden until 50% sugar, about 10 minutes of chat.`)}
 
     <details class="who">
       <summary>${both ? L`Their full card` : L`Their card`}</summary>
@@ -1706,7 +1755,7 @@ function shell(route, body) {
       <nav class="nav" aria-label="${esc(L`Main`)}">
         ${NAV.map(([name, label, icon, desc]) => `
         <a href="#/${name}" ${route.name === name || (name === 'explore' && route.name === 'post') ? 'aria-current="page"' : ''}>
-          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span ${name === 'chats' ? '' : 'lang="en"'}>${L(label)}</span><small>${L(desc)}</small></span>
+          <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span ${name === 'chats' ? '' : 'lang="en"'}>${L(label)}</span></span>
           ${name === 'chats' && unread ? `<span class="badge" aria-label="${esc(L`${unread} unread`)}">${unread}</span>` : ''}
         </a>`).join('')}
       </nav>
@@ -1760,6 +1809,8 @@ function draw(opt = {}) {
     else if (route.name === 'post') body = viewPost(route.id);
     else body = viewExplore();
     app.innerHTML = shell(route, body);
+    // Content rises in when you arrive on a page, not on every update
+    if (path !== lastPath) $('.main', app).classList.add('enter');
   }
 
   Object.entries(keep).forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.value = value; });
@@ -2130,6 +2181,42 @@ window.addEventListener('hashchange', () => {
   U.confirmReset = false;
   render();
 });
+
+/* ---------- 3D touch ----------
+   Cards and big cups lean a little toward the pointer, with a soft light that follows it.
+   Mouse users only, and never when someone prefers less motion or is typing in the card. */
+const CAN_TILT = window.matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)').matches;
+let tilted = null;
+
+function untilt(el) {
+  el.classList.remove('is-tilting');
+  el.style.removeProperty('--rx');
+  el.style.removeProperty('--ry');
+}
+
+if (CAN_TILT) {
+  document.addEventListener('pointermove', (event) => {
+    const el = event.target.closest ? event.target.closest('.tilt') : null;
+    if (tilted && tilted !== el) untilt(tilted);
+    tilted = el;
+    if (!el) return;
+    const active = document.activeElement;
+    if (el.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) { untilt(el); return; }
+    const box = el.getBoundingClientRect();
+    const x = (event.clientX - box.left) / box.width - 0.5;
+    const y = (event.clientY - box.top) / box.height - 0.5;
+    const max = Number(el.dataset.tiltMax || 3);
+    el.classList.add('is-tilting');
+    el.style.setProperty('--ry', `${(x * max * 2).toFixed(2)}deg`);
+    el.style.setProperty('--rx', `${(-y * max * 2).toFixed(2)}deg`);
+    el.style.setProperty('--mx', `${((x + 0.5) * 100).toFixed(1)}%`);
+    el.style.setProperty('--my', `${((y + 0.5) * 100).toFixed(1)}%`);
+  });
+  document.documentElement.addEventListener('pointerleave', () => {
+    if (tilted) untilt(tilted);
+    tilted = null;
+  });
+}
 
 // Tick once a second. Only the numbers change, the page is not redrawn.
 setInterval(() => {
