@@ -349,6 +349,15 @@ function sharedTopics(p) {
   return p.interests.filter((t) => mine.includes(t.toLowerCase()));
 }
 
+// Mystery Cup anchor: the one thing you share. A shared interest first,
+// otherwise a word that shows up in what you both work on.
+function anchorOf(p) {
+  const topic = sharedTopics(p)[0];
+  if (topic) return topic;
+  const mine = meAsPerson().words;
+  return [...asCandidate(p).words].find((w) => mine.has(w)) || '';
+}
+
 // The meaningful words in what someone works on. A real version would use AI to compare meaning.
 const STOP_WORDS = new Set(['about', 'after', 'also', 'because', 'from', 'have', 'into', 'just', 'like', 'more', 'that', 'their', 'them', 'they', 'this', 'what', 'when', 'with', 'your', 'tool', 'people', 'someone', 'something', 'looking', 'building', 'working', 'every', 'cannot', 'should']);
 const wordsOf = (text) => new Set((String(text || '').toLowerCase().match(/[a-z]{4,}/g) || [])
@@ -1121,18 +1130,18 @@ function viewDrop() {
       <div class="shake">${cup('var(--orange)', { level: 0.82, mark: '?', cls: 'cup--lg' })}</div>
       <div class="pearls" aria-hidden="true"><span></span><span></span><span></span></div>
       <h1>${L`Shaking your mystery cup`}</h1>
-      <p class="sub">${L`Someone in a different city and a different field.`}</p>
+      <p class="sub">${L`Different field, different city, one thing in common.`}</p>
     </section>`;
   }
 
   if (D.phase === 'live') {
-    const shared = sharedTopics(p);
     return `
     <section class="chat">
       <header class="chat__head">
         <div>
           <h1>${L`Someone in ${esc(p.country)}`}</h1>
-          <p class="sub">${shared.length ? L`You both talk about ${esc(shared[0])}.` + (LANG === 'zh' ? '' : ' ') : ''}${L`Field: ${esc(fieldsLabel(p))}. That is all you know.`}</p>
+          <p class="sub">${L`Field: ${esc(fieldsLabel(p))}. That is all you know.`}</p>
+          ${D.anchor ? `<p class="anchor"><i class="ph ph-anchor-simple" aria-hidden="true"></i>${L`In common: ${esc(D.anchor)}`}</p>` : ''}
         </div>
         <div class="chat__tools">
           <span class="timer" id="drop-timer" role="timer">${clock(D.ends - Date.now())}</span>
@@ -1198,7 +1207,7 @@ function viewDrop() {
     </div>
   </section>
   <ul class="rules">
-    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`Someone from a different field and city.`}</p></div></li>
+    <li><i class="ph ph-shuffle" aria-hidden="true"></i><div><strong>${L`No picking flavors`}</strong><p>${L`Different field and city, one thing in common.`}</p></div></li>
     <li><i class="ph ph-hourglass-medium" aria-hidden="true"></i><div><strong>${L`${DROP_MINUTES} minutes`}</strong><p>${L`Text only. That gets you to half sugar.`}</p></div></li>
     <li><i class="ph ph-handshake" aria-hidden="true"></i><div><strong>${L`Refill only if you both want one`}</strong><p>${L`Otherwise the cup disappears.`}</p></div></li>
   </ul>
@@ -1208,12 +1217,20 @@ function viewDrop() {
 function dropStart() {
   const me = S.me;
   const met = new Set(S.threads.map((t) => t.pid));
-  // A different field and city first, a shared topic as a bonus. A little luck keeps it a surprise.
-  const score = (x) => (fieldsOf(x).some((f) => fieldsOf(me).includes(f)) ? 0 : 2) + (x.city !== me.city ? 2 : 0) + (sharedTopics(x).length ? 1 : 0) + Math.random();
+  // One thing in common (the anchor), everything else as different as possible.
+  // The anchor outweighs the rest; a little luck keeps it a surprise.
+  const score = (x) => (anchorOf(x) ? 10 : 0)
+    + (fieldsOf(x).some((f) => fieldsOf(me).includes(f)) ? 0 : 3)
+    + (sameCity(x.city, me.city) ? 0 : 2)
+    + (x.stage !== me.stage ? 1 : 0)
+    + Math.random();
   const pool = PEOPLE.filter((x) => !met.has(x.id));
   const p = [...(pool.length ? pool : PEOPLE)].sort((a, b) => score(b) - score(a))[0];
-  Object.assign(D, { phase: 'live', pid: p.id, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
-  D.msgs = [{ from: 'sys', text: 'Your first sip lasts 10 minutes. Start by asking what they are busy with.' }];
+  const anchor = anchorOf(p);
+  Object.assign(D, { phase: 'live', pid: p.id, anchor, li: 0, typing: false, result: null, ends: Date.now() + DROP_LENGTH_MS });
+  D.msgs = [anchor
+    ? { from: 'sys', text: 'You both care about {0}. Start there: how does it show up in your work?', vars: [anchor] }
+    : { from: 'sys', text: 'Your first sip lasts 10 minutes. Start by asking what they are busy with.' }];
   render({ fresh: true, focus: 'c-msg' });
   dropReply(1600);
 }
@@ -1399,7 +1416,7 @@ const GLOSSARY = [
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
   ['Explore', 'ph-compass', 'A forum by topic. Comment in public, or message someone privately. Top picks come first.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need and it goes to the people who fit, or apply to a Brew without showing your titles.'],
-  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
+  ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week: a different field and background, with one thing in common. You cannot pick who you get.'],
   ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
   ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
   ['Refill', 'ph-arrows-clockwise', 'At the end of a Mystery Cup, you both choose Refill to keep talking.'],

@@ -2176,3 +2176,20 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Mystery Cup: the one thing you share */
+.anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 3px 12px 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--orange-soft);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.anchor i {
+  color: var(--orange-deep);
+}
