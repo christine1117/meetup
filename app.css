@@ -2263,3 +2263,91 @@ html:lang(zh-Hant) :is(.thought, .post-title, .msg, .quote, .threads__last, .bri
   font-size: 0.8125rem;
   font-weight: 400;
 }
+
+/* ---------- Brew: kind, event, roles ---------- */
+
+.brew-kind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.kind-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 12px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-pill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.kind-chip i {
+  color: var(--orange-deep);
+}
+
+.brew-kind__event {
+  font-weight: 600;
+}
+
+.roles {
+  display: grid;
+  gap: 6px;
+}
+
+.role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-input);
+  background: var(--bg);
+}
+
+.role i {
+  flex: none;
+  color: var(--orange-deep);
+  font-size: 1.25rem;
+}
+
+.role__name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.role.is-filled {
+  background: transparent;
+}
+
+.role.is-filled .role__name {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--orange);
+}
+
+.role__tag {
+  padding-right: 6px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.role .btn--sm {
+  min-height: 32px;
+  font-size: 0.8125rem;
+}
+
+.done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--orange-deep);
+}
+
+.brew.is-complete .post-title {
+  color: var(--muted);
+}

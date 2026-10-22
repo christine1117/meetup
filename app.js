@@ -269,12 +269,63 @@ const SEED_THOUGHTS = [
   },
 ];
 
-const SEED_POSTS = [
-  { id: 'b1', by: 'p1', title: 'Building a checker for second-hand cameras. Looking for someone who knows hardware supply chains.', need: 'Experience with parts sourcing and inspection', offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project' },
-  { id: 'b2', by: 'p7', title: 'Looking for a designer to make clinic software that nurses do not hate.', need: 'Interface design for people in a hurry', offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint' },
-  { id: 'b3', by: 'p3', title: 'Need someone to challenge my pricing before I launch in a second city.', need: 'Pricing experience, any industry', offer: 'Real numbers from 1,300 users', duration: 'One or two calls' },
-  { id: 'b4', by: 'p8', title: 'Looking for an engineer to build a produce ordering system for restaurants.', need: 'Someone who can build a simple back office and chat integration', offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible' },
+// Brew posts: what kind of project, and the roles it needs. The author ticks a role off once it is filled.
+const BREW_KINDS = [
+  ['competition', 'Competition'],
+  ['hackathon', 'Hackathon'],
+  ['startup', 'Startup'],
+  ['side', 'Side project'],
+  ['research', 'Research'],
+  ['course', 'Course project'],
+  ['other', 'Other'],
 ];
+const kindName = (k) => L((BREW_KINDS.find(([v]) => v === k) || BREW_KINDS[6])[1]);
+const hasEvent = (k) => k === 'competition' || k === 'hackathon';
+const ROLE_SUGGESTIONS = ['Frontend developer', 'Backend developer', 'Designer', 'Product manager', 'Data analyst', 'Researcher', 'Marketer', 'Writer', 'Pitch presenter'];
+const MAX_ROLES = 6;
+
+const SEED_POSTS = [
+  {
+    id: 'b5', by: 'p5', kind: 'hackathon', event: 'Taipei Climate Hackathon', deadline: '2026-11-28',
+    title: 'Joining a climate hackathon with our indoor air data. Need two more people.',
+    roles: [{ name: 'Frontend developer', filled: false }, { name: 'Designer', filled: false }, { name: 'Data analyst', filled: true }],
+    offer: 'Real sensor data from 23 homes', duration: 'Two weekends',
+  },
+  {
+    id: 'b1', by: 'p1', kind: 'side',
+    title: 'Building a checker for second-hand cameras.',
+    roles: [{ name: 'Hardware sourcing expert', filled: false }, { name: 'Inspection process expert', filled: true }],
+    offer: 'Front-end development and a list of 40 sellers', duration: 'Six-week project',
+  },
+  {
+    id: 'b2', by: 'p7', kind: 'startup',
+    title: 'Making clinic software that nurses do not hate.',
+    roles: [{ name: 'Designer', filled: false }],
+    offer: 'A working speech model and three clinics to test in', duration: 'Two-week sprint',
+  },
+  {
+    id: 'b6', by: 'p4', kind: 'competition', event: 'Asia Story Prize', deadline: '2026-12-15',
+    title: 'Entering a nonfiction prize with a story about one factory family.',
+    roles: [{ name: 'Photographer', filled: false }, { name: 'Editor', filled: true }],
+    duration: 'Six weeks',
+  },
+  {
+    id: 'b3', by: 'p3', kind: 'startup',
+    title: 'Need someone to challenge my pricing before I launch in a second city.',
+    roles: [{ name: 'Pricing reviewer', filled: false }],
+    offer: 'Real numbers from 1,300 users', duration: 'One or two calls',
+  },
+  {
+    id: 'b4', by: 'p8', kind: 'startup',
+    title: 'Building a produce ordering system for restaurants.',
+    roles: [{ name: 'Backend developer', filled: true }, { name: 'Chat bot developer', filled: false }],
+    offer: '9 restaurant customers and real daily orders', duration: 'Two months, revenue share is possible',
+  },
+];
+
+// Older saved posts had a single "need" line instead of roles
+const rolesOf = (b) => b.roles || (b.need ? [{ name: b.need, filled: false }] : []);
+const openRoles = (b) => rolesOf(b).filter((r) => !r.filled);
 
 /* ---------- Matching ----------
    1. Who can show up: people you do not have a chat with yet.
@@ -434,7 +485,7 @@ const asCandidate = (p) => ({ ...p, replyRate: replyRateOf(p), activeDays: activ
 const meAsPerson = () => ({
   id: 'me', field: S.me.field, field2: S.me.field2, curious: myCurious(), share: myShare(), stage: S.me.stage,
   meet: S.me.meet || 'both', city: S.me.city, replyRate: myReplyRate(), activeDays: 0,
-  words: wordsOf([S.me.doing, ...S.myThoughts.map((t) => t.text), ...S.myPosts.map((b) => `${b.title} ${b.need}`)].join(' ')),
+  words: wordsOf([S.me.doing, ...S.myThoughts.map((t) => t.text), ...S.myPosts.map((b) => `${b.title} ${rolesOf(b).map((r) => r.name).join(' ')}`)].join(' ')),
 });
 
 const meetsFit = (a, b) => a === 'both' || b === 'both' || a === b;
@@ -487,7 +538,7 @@ function topPicks(people, n, seed) {
 
 // Who a new Brew is sent to: people who can share what it needs, reliable people first
 function brewMatches(item) {
-  const text = `${item.title} ${item.need}`.toLowerCase();
+  const text = `${item.title} ${rolesOf(item).map((r) => r.name).join(' ')}`.toLowerCase();
   const score = (p) => p.share.filter((t) => text.includes(normTag(t))).length * 3
     + [p.field, p.field2].filter((w) => w && text.includes(w.toLowerCase())).length
     + replyRateOf(p) + (hashNum(item.id + p.id) % 100) / 100;
@@ -588,6 +639,7 @@ let S = load();
 const U = {
   compose: null, target: null, booking: null, typing: {}, confirmReset: false,
   cat: 'all', dm: null, typingPost: null,
+  draft: { kind: 'side', roles: [] },
   quiz: { step: 0, field: '', field2: '', stage: '', curious: [], share: [], meet: '', city: '' },
 };
 const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
@@ -713,13 +765,14 @@ function scheduleIncoming(item, key) {
   later(4000 + Math.random() * 3000, () => {
     const list = key === 'thought' ? S.myThoughts : S.myPosts;
     if (!list.includes(item) || item.seen.length >= 2) return;
+    if (key === 'post' && !openRoles(item).length) return;
     const pool = key === 'post' && item.sentTo ? PEOPLE.filter((x) => item.sentTo.includes(x.id)) : PEOPLE;
     const left = pool.filter((x) => !item.seen.includes(x.id));
     if (!left.length) return;
     const p = pick(left);
     item.seen.push(p.id);
     if (key === 'thought') (item.comments = item.comments || []).push({ by: p.id, text: p.take, at: Date.now() });
-    else item.responses.push({ pid: p.id, text: p.pitch });
+    else item.responses.push({ pid: p.id, text: p.pitch, role: pick(openRoles(item)).name });
     save();
     toast(key === 'thought' ? L`Someone commented on your post` : L`Someone applied to your post`);
     render();
@@ -909,6 +962,7 @@ function responsesBlock(item, key) {
   return `<ul class="responses">${item.responses.map((r) => `
     <li>
       ${byline(P[r.pid])}
+      ${r.role ? `<p class="meta">${L`Applied as ${esc(r.role)}`}</p>` : ''}
       <p class="quote">${esc(r.text)}</p>
       <div class="btnrow">
         <button class="btn btn--dark btn--sm" data-act="accept" data-key="${key}" data-id="${item.id}" data-pid="${r.pid}" type="button">${L`Accept, first sip`}</button>
@@ -1070,22 +1124,58 @@ function viewPost(id) {
 
 /* ---------- Screen: Build ---------- */
 
+const dateText = (d) => new Date(`${d}T00:00`).toLocaleDateString(LANG === 'zh' ? 'zh-TW' : 'en-US', { month: 'short', day: 'numeric' });
+
+// Kind of project, and for competitions which one and when it closes
+const brewHead = (b) => `
+      <p class="brew-kind">
+        <span class="kind-chip">${hasEvent(b.kind) ? '<i class="ph ph-trophy" aria-hidden="true"></i>' : ''}${esc(kindName(b.kind))}</span>
+        ${hasEvent(b.kind) && b.event ? `<span class="brew-kind__event">${esc(b.event)}</span>` : ''}
+        ${b.deadline ? `<span class="meta">${L`Deadline ${dateText(b.deadline)}`}</span>` : ''}
+      </p>`;
+
+// The roles a Brew needs. Filled ones are ticked off; the author can tick and untick.
+function rolesList(b, mine) {
+  const roles = rolesOf(b);
+  const filled = roles.filter((r) => r.filled).length;
+  return `
+      <ul class="roles">${roles.map((r, i) => `
+        <li class="role ${r.filled ? 'is-filled' : ''}">
+          <i class="ph ${r.filled ? 'ph-check-circle' : 'ph-circle'}" aria-hidden="true"></i>
+          <span class="role__name">${esc(r.name)}</span>
+          ${mine
+            ? `<button class="btn btn--ghost btn--sm" data-act="role-toggle" data-id="${b.id}" data-i="${i}" type="button">${r.filled ? L`Reopen` : L`Mark filled`}</button>`
+            : r.filled ? `<span class="role__tag">${L`Filled`}</span>` : ''}
+        </li>`).join('')}
+      </ul>
+      <p class="meta">${roles.length && filled === roles.length ? `<strong class="done"><i class="ph ph-check" aria-hidden="true"></i>${L`Team complete`}</strong>` : L`${filled} of ${roles.length} filled`}</p>`;
+}
+
+const brewExtras = (b, mine) => (b.offer || b.duration ? `
+      <dl class="brief">
+        ${b.offer ? `<div><dt>${mine ? L`I can offer` : L`Offers`}</dt><dd>${esc(b.offer)}</dd></div>` : ''}
+        ${b.duration ? `<div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>` : ''}
+      </dl>` : '');
+
 function brewCard(b) {
   const p = P[b.by];
   const existing = threadFor('build', b.id);
+  const open = openRoles(b);
   return `
-    <article class="card">
+    <article class="card brew ${open.length ? '' : 'is-complete'}">
+      ${brewHead(b)}
       <h3 class="post-title">${esc(b.title)}</h3>
-      <dl class="brief">
-        <div><dt>${L`Needs`}</dt><dd>${esc(b.need)}</dd></div>
-        <div><dt>${L`Offers`}</dt><dd>${esc(b.offer)}</dd></div>
-        <div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>
-      </dl>
+      ${rolesList(b, false)}
+      ${brewExtras(b, false)}
       ${byline(p)}
       ${existing
         ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Applied. Open chat`}</a>`
+        : !open.length ? ''
         : U.target === b.id
           ? `<form class="stack reply" data-form="apply" data-id="${b.id}" novalidate>
+              ${open.length > 1
+                ? select('role', L`Which role`, open.map((r) => [r.name, r.name]), open[0].name)
+                : `<input type="hidden" name="role" value="${esc(open[0].name)}">`}
               ${field('reply', L`Why you are a fit`, '', { area: true, rows: 3, req: true, ph: L`Say what you would bring. They cannot see your titles` })}
               <div class="btnrow">
                 <button class="btn btn--dark btn--sm" type="submit">${L`Send anonymously`}</button>
@@ -1096,9 +1186,28 @@ function brewCard(b) {
     </article>`;
 }
 
+// Roles for a new Brew: type one, or tap a suggestion
+function roleEditor() {
+  const roles = U.draft.roles;
+  const left = ROLE_SUGGESTIONS.filter((x) => !roles.some((r) => normTag(r) === normTag(x)));
+  return `
+    <div class="field tags" role="group" aria-labelledby="roles-label">
+      <p class="field__label" id="roles-label">${L`Roles you need`}</p>
+      ${roles.length ? `<ul class="tags__list">${roles.map((r) => `<li class="tag-chip">${esc(r)}<button type="button" data-act="role-remove" data-value="${esc(r)}" aria-label="${esc(L`Remove ${r}`)}"><i class="ph ph-x" aria-hidden="true"></i></button></li>`).join('')}</ul>` : ''}
+      ${roles.length < MAX_ROLES ? `
+      <div class="tags__add">
+        <input id="c-role" data-role-input autocomplete="off" aria-label="${esc(L`Roles you need`)}" placeholder="${esc(L`Type a role and press Enter`)}">
+        <button class="btn btn--ghost btn--sm" data-act="role-add" type="button">${L`Add`}</button>
+      </div>
+      <div class="tags__suggest">${left.map((x) => `<button class="cat cat--sm" data-act="role-add" data-value="${esc(x)}" type="button">+ ${esc(x)}</button>`).join('')}</div>` : ''}
+    </div>`;
+}
+
 function viewBuild() {
-  const forYou = topPicks(SEED_POSTS.map((b) => P[b.by]), BREW_TOP_PICKS, dayKey() + 'brew').map((p) => SEED_POSTS.find((b) => b.by === p.id));
+  const open = SEED_POSTS.filter((b) => openRoles(b).length);
+  const forYou = topPicks(open.map((b) => P[b.by]), BREW_TOP_PICKS, dayKey() + 'brew').map((p) => SEED_POSTS.find((b) => b.by === p.id));
   const rest = SEED_POSTS.filter((b) => !forYou.includes(b));
+  const d = U.draft;
 
   return `
   <header class="head">
@@ -1108,10 +1217,18 @@ function viewBuild() {
 
   ${U.compose === 'post' ? `
   <form class="panel stack" data-form="post" novalidate>
-    ${field('title', L`What you are building and who you are looking for`, '', { area: true, req: true, ph: L`e.g. Building a shared-kitchen platform, looking for someone who knows food regulation` })}
-    ${field('need', L`I need`, '', { req: true })}
-    ${field('offer', L`I can offer`, '')}
-    ${field('duration', L`Time`, '', { ph: L`e.g. One call, a four-week project` })}
+    ${field('title', L`What are you building?`, '', { area: true, req: true, ph: L`e.g. A shared-kitchen platform for home cooks` })}
+    <div class="row2">
+      ${select('kind', L`What kind of project`, BREW_KINDS.map(([v, l]) => [v, L(l)]), d.kind)}
+      ${field('duration', L`Time`, '', { ph: L`e.g. One call, a four-week project` })}
+    </div>
+    <div class="row2 event-fields" ${hasEvent(d.kind) ? '' : 'hidden'}>
+      ${field('event', L`Which competition`, '', { ph: L`e.g. Taipei Climate Hackathon` })}
+      ${field('deadline', L`Deadline`, '', { type: 'date' })}
+    </div>
+    ${roleEditor()}
+    ${field('offer', L`I can offer (optional)`, '')}
+    <p class="error" id="post-error" hidden>${L`Add at least one role.`}</p>
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">${L`Post`}</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">${L`Cancel`}</button>
@@ -1122,19 +1239,17 @@ function viewBuild() {
   <section class="mine">
     <h2>${L`Your brews`}</h2>
     ${S.myPosts.map((b) => `
-    <article class="card card--mine">
+    <article class="card card--mine brew">
+      ${b.kind ? brewHead(b) : ''}
       <h3 class="post-title">${esc(b.title)}</h3>
-      <dl class="brief">
-        <div><dt>${L`I need`}</dt><dd>${esc(b.need)}</dd></div>
-        ${b.offer ? `<div><dt>${L`I can offer`}</dt><dd>${esc(b.offer)}</dd></div>` : ''}
-        ${b.duration ? `<div><dt>${L`Time`}</dt><dd>${esc(b.duration)}</dd></div>` : ''}
-      </dl>
+      ${rolesList(b, true)}
+      ${brewExtras(b, true)}
       ${b.sentTo ? `
       <div class="sent">
         <p class="meta"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>${L`Sent to ${b.sentTo.length} people who fit`}</p>
         <ul class="sent__list">${b.sentTo.map((pid) => `<li><span class="avatar avatar--cup" aria-hidden="true">${cupFor(P[pid])}</span>${esc(P[pid].alias)}</li>`).join('')}</ul>
       </div>` : ''}
-      ${responsesBlock(b, 'post')}
+      ${openRoles(b).length ? responsesBlock(b, 'post') : ''}
     </article>`).join('')}
   </section>` : ''}
 
@@ -1672,8 +1787,15 @@ const forms = {
   },
 
   post(form, data) {
-    if (!data.title || !data.need) { $(data.title ? '#f-need' : '#f-title', form).focus(); return; }
-    const item = { id: uid(), ...data, responses: [], seen: [] };
+    if (!data.title) { $('#f-title', form).focus(); return; }
+    if (!U.draft.roles.length) { $('#post-error', form).hidden = false; $('#c-role', form).focus(); return; }
+    const withEvent = hasEvent(data.kind);
+    const item = {
+      id: uid(), title: data.title, kind: data.kind,
+      event: withEvent ? data.event : '', deadline: withEvent ? data.deadline : '',
+      roles: U.draft.roles.map((name) => ({ name, filled: false })),
+      offer: data.offer, duration: data.duration, responses: [], seen: [],
+    };
     item.sentTo = brewMatches(item);
     S.myPosts.unshift(item);
     U.compose = null;
@@ -1721,7 +1843,7 @@ const forms = {
   apply(form, data) {
     if (!data.reply) { $('#f-reply', form).focus(); return; }
     const seed = SEED_POSTS.find((b) => b.id === form.dataset.id);
-    const t = createThread(seed.by, 'build', seed.id, 'pending', 'You applied anonymously to this post: "{0}"', [seed.title]);
+    const t = createThread(seed.by, 'build', seed.id, 'pending', 'You applied anonymously as {0}: "{1}"', [data.role, seed.title]);
     t.msgs.push({ from: 'me', text: data.reply, at: Date.now() });
     U.target = null;
     save();
@@ -1775,7 +1897,11 @@ function takeResponse(el) {
 }
 
 const acts = {
-  compose(el) { U.compose = el.dataset.what || null; render({ fresh: true, focus: U.compose === 'thought' ? 'f-text' : U.compose === 'post' ? 'f-title' : null }); },
+  compose(el) {
+    U.compose = el.dataset.what || null;
+    if (U.compose === 'post') U.draft = { kind: 'side', roles: [] };
+    render({ fresh: true, focus: U.compose === 'thought' ? 'f-text' : U.compose === 'post' ? 'f-title' : null });
+  },
   target(el) { U.target = el.dataset.id || null; render({ fresh: true, focus: U.target ? 'f-reply' : null }); },
 
   accept(el) {
@@ -1855,6 +1981,31 @@ const acts = {
     if (scope === 'me') save();
     render({ focus: `c-tag-${key}` });
   },
+  'role-add'(el) {
+    const input = document.getElementById('c-role');
+    const raw = el.dataset.value || (input ? input.value : '');
+    raw.split(/[,，、]/).map((t) => t.trim()).filter(Boolean).forEach((t) => {
+      if (U.draft.roles.length < MAX_ROLES && !U.draft.roles.some((r) => normTag(r) === normTag(t))) U.draft.roles.push(t);
+    });
+    if (input) input.value = '';
+    render({ focus: 'c-role' });
+  },
+  'role-remove'(el) {
+    const i = U.draft.roles.indexOf(el.dataset.value);
+    if (i >= 0) U.draft.roles.splice(i, 1);
+    render();
+  },
+  // The author ticks a role off when it is filled, or opens it again
+  'role-toggle'(el) {
+    const b = S.myPosts.find((x) => x.id === el.dataset.id);
+    if (!b) return;
+    b.roles = rolesOf(b);
+    const role = b.roles[Number(el.dataset.i)];
+    role.filled = !role.filled;
+    save();
+    if (!openRoles(b).length) toast(L`Team complete. Nice brew.`);
+    render();
+  },
   'tag-remove'(el) {
     const list = tagList(el.dataset.scope, el.dataset.key);
     const i = list.indexOf(el.dataset.value);
@@ -1924,10 +2075,18 @@ document.addEventListener('click', (event) => {
 
 // Enter in a tag box adds the tag instead of sending the form
 document.addEventListener('keydown', (event) => {
-  const el = event.target.closest('[data-tag-input]');
+  const el = event.target.closest('[data-tag-input], [data-role-input]');
   if (!el || event.key !== 'Enter' || event.isComposing) return;
   event.preventDefault();
-  acts['tag-add'](el);
+  acts[el.hasAttribute('data-role-input') ? 'role-add' : 'tag-add'](el);
+});
+
+// Competitions and hackathons ask which one it is
+document.addEventListener('change', (event) => {
+  if (event.target.id !== 'f-kind') return;
+  U.draft.kind = event.target.value;
+  const box = $('.event-fields');
+  if (box) box.hidden = !hasEvent(U.draft.kind);
 });
 
 document.addEventListener('submit', (event) => {
