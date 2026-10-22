@@ -834,21 +834,66 @@ const shownToppings = () => {
 };
 const toppingsOf = (pid) => (pid === 'me' ? shownToppings() : (P[pid].toppings || []));
 
-// Pieces that float in the drink, drawn at a spot (x, y) in the 24 x 28 cup
-const PIECE = {
-  coconut: (x, y) => `<rect x="${x - 0.9}" y="${y - 0.9}" width="1.8" height="1.8" rx=".3" fill="#fbf6ea" fill-opacity=".95" transform="rotate(14 ${x} ${y})"/>`,
-  aloe: (x, y) => `<rect x="${x - 0.85}" y="${y - 0.85}" width="1.7" height="1.7" rx=".35" fill="#d3eab9" fill-opacity=".95" transform="rotate(-10 ${x} ${y})"/>`,
-  grass: (x, y) => `<rect x="${x - 0.95}" y="${y - 0.95}" width="1.9" height="1.9" rx=".2" fill="#3a2f26" transform="rotate(8 ${x} ${y})"/>`,
-  redbean: (x, y) => `<circle cx="${x}" cy="${y}" r=".55" fill="#8b2f2b"/><circle cx="${x + 0.95}" cy="${y + 0.35}" r=".55" fill="#9c3a33"/><circle cx="${x + 0.3}" cy="${y + 0.95}" r=".55" fill="#7c2925"/>`,
-  pudding: (x, y) => `<rect x="${x - 1.4}" y="${y - 1}" width="2.8" height="2" rx=".5" fill="#f3cf6a"/><rect x="${x - 1.4}" y="${y - 1}" width="2.8" height=".55" rx=".25" fill="#c98a2c"/>`,
-  crystal: (x, y) => `<circle cx="${x}" cy="${y}" r="1.05" fill="#fff" fill-opacity=".6" stroke="#fff" stroke-width=".25"/>`,
-  taroball: (x, y, n) => `<circle cx="${x}" cy="${y}" r="1" fill="${n % 2 ? '#f2a35f' : '#b99ad6'}"/>`,
-  mochi: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="1.3" ry="1" fill="#fffdf8" stroke="#e4d7c3" stroke-width=".25"/>`,
-  golden: (x, y) => `<circle cx="${x}" cy="${y}" r="1.35" fill="#e9b93a"/><circle cx="${x - 0.4}" cy="${y - 0.45}" r=".42" fill="#fff7cf"/>`,
-  galaxy: (x, y) => `<rect x="${x - 1}" y="${y - 1}" width="2" height="2" rx=".4" fill="#4b3b9a"/><circle cx="${x - 0.35}" cy="${y - 0.3}" r=".18" fill="#fff"/><circle cx="${x + 0.4}" cy="${y + 0.35}" r=".14" fill="#fff"/>`,
-  sakura: (x, y) => `<circle cx="${x}" cy="${y}" r="1.2" fill="#f7c1d3"/><circle cx="${x}" cy="${y}" r=".38" fill="#e3799d"/>`,
+// Toppings are drawn with light from the top left: glossy spheres, jelly cubes
+// with three shaded faces, and a soft shadow underneath.
+// Each SVG gets its own set of gradients (prefixed with an id) so they never clash.
+const SPHERE_MAT = {
+  taro: ['#ece0f7', '#a985d0', '#664890'],
+  orange: ['#ffe0bd', '#f2a35f', '#b0602a'],
+  golden: ['#fff7cf', '#f1c84b', '#a3721a'],
+  sakura: ['#fff2f6', '#f5b3c8', '#c9668b'],
+  redbean: ['#d77266', '#922f29', '#4f1310'],
+  crystal: ['#ffffff', '#f5eedf', '#cdbd9f'],
+  mochi: ['#ffffff', '#f6efe4', '#d3c4aa'],
+  foam: ['#ffffff', '#fbf4e6', '#ddcaa6'],
 };
-const PIECE_SLOTS = [[7.2, 14.8], [12.6, 14.4], [16.9, 15], [9.4, 17.3], [14.7, 17.1], [17.1, 19.5], [7, 19.7], [11.6, 19.9], [12.1, 16.4], [15.9, 21.3]];
+
+function toppingDefs(id) {
+  const radial = (name, [a, b, c]) => `<radialGradient id="${id}-${name}" cx=".34" cy=".3" r=".78"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
+  return `<defs>
+    ${Object.entries(SPHERE_MAT).map(([name, c]) => radial(name, c)).join('')}
+    <linearGradient id="${id}-pud" x1="0" x2="1"><stop offset="0" stop-color="#d79b33"/><stop offset=".4" stop-color="#f8dd88"/><stop offset="1" stop-color="#c88a28"/></linearGradient>
+    <radialGradient id="${id}-burnt" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#eab26a"/><stop offset=".6" stop-color="#a8622a"/><stop offset="1" stop-color="#5e2f0f"/></radialGradient>
+    <linearGradient id="${id}-syrup" x1="0" x2="1"><stop offset="0" stop-color="#a5622f"/><stop offset=".5" stop-color="#6d3a17"/><stop offset="1" stop-color="#3f1f0a"/></linearGradient>
+    <linearGradient id="${id}-foamL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#efe0c2"/></linearGradient>
+    <linearGradient id="${id}-bruL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a4a17"/><stop offset=".35" stop-color="#d99a45"/><stop offset="1" stop-color="#f3d38e"/></linearGradient>
+  </defs>`;
+}
+
+const shadow = (x, y, s) => `<ellipse cx="${x}" cy="${y + 0.92 * s}" rx="${0.7 * s}" ry="${0.16 * s}" fill="#3b2518" fill-opacity=".18"/>`;
+const shine = (x, y, r) => `<ellipse cx="${x - r * 0.34}" cy="${y - r * 0.38}" rx="${r * 0.3}" ry="${r * 0.17}" fill="#fff" fill-opacity=".85" transform="rotate(-28 ${x - r * 0.34} ${y - r * 0.38})"/>`;
+const sphere = (id, mat, x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}-${mat})"${mat === 'crystal' ? ` fill-opacity=".82" stroke="#fff" stroke-opacity=".9" stroke-width="${r * 0.08}"` : ''}/>${shine(x, y, r)}`;
+
+// A small cube seen from above: top, left and right faces in three tones
+function cube(x, y, s, [top, left, right], opacity = 1) {
+  const pt = (px, py) => `${(x + px * s).toFixed(2)},${(y + py * s).toFixed(2)}`;
+  return `<g fill-opacity="${opacity}" stroke="#2a1d16" stroke-opacity=".12" stroke-width="${0.04 * s}" stroke-linejoin="round">
+    <polygon points="${pt(0, -0.9)} ${pt(0.8, -0.5)} ${pt(0, -0.1)} ${pt(-0.8, -0.5)}" fill="${top}"/>
+    <polygon points="${pt(-0.8, -0.5)} ${pt(0, -0.1)} ${pt(0, 0.8)} ${pt(-0.8, 0.4)}" fill="${left}"/>
+    <polygon points="${pt(0.8, -0.5)} ${pt(0, -0.1)} ${pt(0, 0.8)} ${pt(0.8, 0.4)}" fill="${right}"/>
+  </g><path d="M${pt(-0.55, -0.48)} L${pt(-0.05, -0.75)}" stroke="#fff" stroke-opacity=".7" stroke-width="${0.08 * s}" stroke-linecap="round"/>`;
+}
+
+// Pieces that float in the drink. (id, x, y, size, n) where n alternates colours
+const PIECE = {
+  coconut: (id, x, y, s) => cube(x, y, s, ['#ffffff', '#efe6d3', '#d6c8ad']),
+  aloe: (id, x, y, s) => cube(x, y, s, ['#f0f9e2', '#cfe7b3', '#a3c880'], 0.92),
+  grass: (id, x, y, s) => cube(x, y, s, ['#6e5c4a', '#3f3229', '#231912']),
+  galaxy: (id, x, y, s) => `${cube(x, y, s, ['#8070e3', '#4d3d9e', '#2d2270'])}<circle cx="${x - 0.3 * s}" cy="${y + 0.2 * s}" r="${0.07 * s}" fill="#fff"/><circle cx="${x + 0.35 * s}" cy="${y + 0.05 * s}" r="${0.05 * s}" fill="#fff"/><circle cx="${x + 0.1 * s}" cy="${y - 0.5 * s}" r="${0.06 * s}" fill="#fff"/>`,
+  redbean: (id, x, y, s) => [[-0.38, 0.18], [0.42, 0.25], [0.04, -0.32]].map(([dx, dy]) => sphere(id, 'redbean', x + dx * s, y + dy * s, 0.44 * s)).join(''),
+  pudding: (id, x, y, s) => `
+    <path d="M${x - 0.75 * s} ${y - 0.3 * s} L${x - 0.85 * s} ${y + 0.55 * s} A${0.85 * s} ${0.26 * s} 0 0 0 ${x + 0.85 * s} ${y + 0.55 * s} L${x + 0.75 * s} ${y - 0.3 * s} Z" fill="url(#${id}-pud)"/>
+    <ellipse cx="${x}" cy="${y - 0.3 * s}" rx="${0.75 * s}" ry="${0.23 * s}" fill="#9a5a20"/>
+    <path d="M${x - 0.75 * s} ${y - 0.3 * s} q${0.2 * s} ${0.35 * s} ${0.4 * s} 0 q${0.2 * s} ${0.45 * s} ${0.4 * s} 0" fill="#9a5a20"/>
+    <ellipse cx="${x - 0.25 * s}" cy="${y - 0.36 * s}" rx="${0.22 * s}" ry="${0.06 * s}" fill="#fff" fill-opacity=".6"/>`,
+  crystal: (id, x, y, s) => sphere(id, 'crystal', x, y, 0.82 * s),
+  taroball: (id, x, y, s, n) => sphere(id, n % 2 ? 'orange' : 'taro', x, y, 0.78 * s),
+  mochi: (id, x, y, s) => `<ellipse cx="${x}" cy="${y}" rx="${0.95 * s}" ry="${0.72 * s}" fill="url(#${id}-mochi)"/>${shine(x, y, 0.8 * s)}`,
+  golden: (id, x, y, s) => `${sphere(id, 'golden', x, y, 0.88 * s)}<path d="M${x + 0.55 * s} ${y - 0.95 * s} l${0.08 * s} ${0.22 * s} ${0.22 * s} ${0.08 * s} ${-0.22 * s} ${0.08 * s} ${-0.08 * s} ${0.22 * s} ${-0.08 * s} ${-0.22 * s} ${-0.22 * s} ${-0.08 * s} ${0.22 * s} ${-0.08 * s}z" fill="#fffbe6"/>`,
+  sakura: (id, x, y, s) => `${sphere(id, 'sakura', x, y, 0.84 * s)}<g fill="#fff" fill-opacity=".9">${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(x + 0.06 * s + Math.cos((a * Math.PI) / 180) * 0.2 * s).toFixed(2)}" cy="${(y + 0.12 * s + Math.sin((a * Math.PI) / 180) * 0.2 * s).toFixed(2)}" r="${0.12 * s}"/>`).join('')}</g><circle cx="${x + 0.06 * s}" cy="${y + 0.12 * s}" r="${0.08 * s}" fill="#e3799d"/>`,
+};
+const PIECE_SLOTS = [[7.2, 14.9], [12.6, 14.5], [16.9, 15.1], [9.4, 17.4], [14.7, 17.2], [17.1, 19.5], [7, 19.7], [11.6, 19.9], [12.1, 16.5], [15.9, 21.3]];
+const PIECE_SIZE = 1.15;
 
 // Your base drink with your toppings in it
 function drinkCup(p, ids = [], cls = '') {
@@ -860,35 +905,38 @@ function drinkCup(p, ids = [], cls = '') {
   const mid = ((surface + 27) / 2).toFixed(1);
   const pieces = ids.filter((k) => PIECE[k]).map((k, i) => [0, 1].map((n) => {
     const [x, y] = PIECE_SLOTS[(i * 2 + n) % PIECE_SLOTS.length];
-    return PIECE[k](x, y, n);
+    return PIECE[k](id, x, y, PIECE_SIZE, n);
   }).join('')).join('');
   const foamTop = has('brulee') ? surface - 1.8 : surface - 2.2;
+  const bruleeY = (has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1);
   return `<svg class="cup drink ${cls}" viewBox="0 0 24 28" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">
+    ${toppingDefs(id)}
     <defs><clipPath id="${id}"><path d="${CUP_PATH}"/></clipPath></defs>
     <g clip-path="url(#${id})">
       <rect x="0" y="${surface}" width="24" height="28" fill="${color2 || color}"/>
       ${color2 ? `<rect x="0" y="${mid}" width="24" height="28" fill="${color}"/>` : ''}
-      ${has('tiger') ? `<g fill="none" stroke="#6b3e1f" stroke-width=".8" stroke-opacity=".55" stroke-linecap="round"><path d="M6.6 12.6q-.9 3 .2 6t.4 6"/><path d="M17.4 12.6q.9 3-.2 6t-.4 6"/><path d="M12 13.4q1.1 3 0 6"/></g>` : ''}
+      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1" stroke-opacity=".75" stroke-linecap="round"><path d="M6.6 12.6q-.9 3 .2 6t.4 6"/><path d="M17.4 12.6q.9 3-.2 6t-.4 6"/><path d="M12 13.4q1.1 3 0 6"/></g>` : ''}
       ${pieces}
       <g fill="var(--pearl)"><circle cx="8.7" cy="24.4" r="1.6"/><circle cx="12" cy="25" r="1.6"/><circle cx="15.3" cy="24.4" r="1.6"/><circle cx="10.4" cy="21.6" r="1.6"/><circle cx="13.6" cy="21.6" r="1.6"/></g>
-      ${has('foam') ? `<path d="M0 ${foamTop}h24v${(surface + 1 - foamTop).toFixed(1)}q-2 .7-4 0t-4 0-4 0-4 0-4 0-4 0z" fill="#fff6e3"/>` : ''}
-      ${has('brulee') ? `<rect x="0" y="${(has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1)}" width="24" height="1.6" fill="#e7b14f"/><rect x="0" y="${(has('foam') ? foamTop - 1.4 : surface - 1.5).toFixed(1)}" width="24" height=".5" fill="#a9621f"/>` : ''}
+      ${has('foam') ? `<path d="M0 ${foamTop}h24v${(surface + 1 - foamTop).toFixed(1)}q-2 .7-4 0t-4 0-4 0-4 0-4 0-4 0z" fill="url(#${id}-foamL)"/>${[5, 8.5, 12, 15.5, 19].map((cx, i) => `<circle cx="${cx}" cy="${(foamTop + 0.15 + (i % 2) * 0.2).toFixed(2)}" r="1.05" fill="url(#${id}-foam)"/>`).join('')}` : ''}
+      ${has('brulee') ? `<rect x="0" y="${bruleeY}" width="24" height="1.7" fill="url(#${id}-bruL)"/>` : ''}
     </g>
     <path d="M14.6 1.4 11.8 21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
     <path d="${CUP_PATH}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
   </svg>`;
 }
 
-// A topping on its own, for chips and the collection board
+// A topping on its own, for chips and gift boxes
 function toppingIcon(k) {
-  const piece = PIECE[k]
-    ? `<g transform="translate(5 5) scale(2.3) translate(-${k === 'redbean' ? 5.45 : 5} -${k === 'redbean' ? 5.45 : 5})">${PIECE[k](5, 5, 0)}</g>`
+  const id = 'ti' + uid();
+  const art = PIECE[k]
+    ? `${shadow(0, k === 'mochi' ? -0.15 : 0, 1)}${PIECE[k](id, 0, k === 'redbean' ? -0.05 : 0, 1, 0)}`
     : {
-      foam: '<path d="M1.5 6.5q0-2.2 2-2.4.6-1.9 2.6-1.4 1.8.1 2 1.8 1.6.4 1.4 2z" fill="#fff6e3" stroke="#d9c7a3" stroke-width=".5"/>',
-      tiger: '<g fill="none" stroke="#6b3e1f" stroke-width="1.1" stroke-linecap="round"><path d="M2.5 1.5q-1 3 0 7"/><path d="M5 1.5q1 3 0 7"/><path d="M7.5 1.5q-1 3 0 7"/></g>',
-      brulee: '<rect x="1.2" y="3" width="7.6" height="4.2" rx="1" fill="#e7b14f"/><rect x="1.2" y="3" width="7.6" height="1.3" rx=".6" fill="#a9621f"/>',
+      foam: `${shadow(0, 0.1, 1.1)}<ellipse cx="0" cy=".45" rx="1" ry=".45" fill="url(#${id}-foam)"/>${sphere(id, 'foam', -0.45, 0.15, 0.5)}${sphere(id, 'foam', 0.45, 0.2, 0.48)}${sphere(id, 'foam', 0, -0.25, 0.6)}`,
+      brulee: `${shadow(0, 0.05, 1.1)}<path d="M-1 -.25 L-1 .55 A1 .3 0 0 0 1 .55 L1 -.25 Z" fill="url(#${id}-pud)"/><ellipse cx="0" cy="-.25" rx="1" ry=".3" fill="url(#${id}-burnt)"/><ellipse cx="-.35" cy="-.32" rx=".25" ry=".06" fill="#fff" fill-opacity=".55"/>`,
+      tiger: `<g fill="none" stroke-linecap="round"><path d="M-.6 -1q-.5 .6 0 1.1t0 1" stroke="url(#${id}-syrup)" stroke-width=".38"/><path d="M.15 -1q.5 .6 0 1.1t0 1" stroke="url(#${id}-syrup)" stroke-width=".38"/><path d="M.85 -.8q-.35 .5 0 .9" stroke="url(#${id}-syrup)" stroke-width=".3"/><path d="M-.68 -.85q-.3 .4-.08 .7" stroke="#fff" stroke-opacity=".6" stroke-width=".08"/></g>`,
     }[k];
-  return `<svg class="ti" viewBox="0 0 10 10" aria-hidden="true">${piece}</svg>`;
+  return `<svg class="ti" viewBox="-1.3 -1.3 2.6 2.6" aria-hidden="true">${toppingDefs(id)}${art}</svg>`;
 }
 
 const toppingChip = (k, count = 1) => `<span class="tchip tchip--${TOPPING[k].tier}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${count > 1 ? `<b>×${count}</b>` : ''}</span>`;

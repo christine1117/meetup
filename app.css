@@ -3367,3 +3367,28 @@ body.modal-open {
 .tchip-btn.is-on > i {
   color: var(--orange-deep);
 }
+
+/* Gift box prize: a warm milk-tea circle so white toppings show */
+.gift__prize .ti {
+  background: radial-gradient(circle at 35% 30%, #f6ead6, #d9be97);
+}
+
+.tchip .ti {
+  width: 22px;
+  height: 22px;
+}
+
+/* The other two boxes fade, but what was inside stays easy to see */
+.gift.is-other {
+  opacity: 1;
+  filter: none;
+}
+
+.gift.is-other .gift__art {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+.gift.is-other .gift__prize {
+  opacity: 0.9;
+}
