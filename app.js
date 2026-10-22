@@ -684,10 +684,12 @@ const brief = (p) => `
     ${p.share ? `<div><dt>${L`Can share`}</dt><dd>${esc(p.share.join(', '))}</dd></div>` : ''}
   </dl>`;
 
+const flavorChip = (p) => `<span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span>`;
+
 const byline = (p, full = false) => `
   <p class="byline">
     <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
-    <span><strong>${esc(p.alias)}</strong> <span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span>${full ? `<br><small>${L`${esc(fieldsLabel(p))}. ${esc(p.doing)}`}</small>` : ''}</span>
+    <span><strong>${esc(p.alias)}</strong> ${flavorChip(p)}${full ? `<br><small>${esc(p.doing)}</small>` : ''}</span>
   </p>`;
 
 function toast(msg) {
@@ -1004,7 +1006,7 @@ function agoText(at) {
 }
 
 // One line about who someone is, so you know who you are messaging
-const introLine = (p) => L`${fieldsLabel(p)}. ${p.doing}`;
+const introLine = (p) => p.doing;
 
 const commentCount = (n) => (n === 1 ? L`1 comment` : L`${n} comments`);
 
@@ -1109,6 +1111,7 @@ function viewPost(id) {
         <div class="comment__body">
           <p class="comment__head">
             <strong>${esc(authorName(c.by))}</strong>
+            ${c.by === 'me' ? '' : flavorChip(P[c.by])}
             ${c.by !== 'me' && c.by === post.by ? `<span class="tag">${L`Author`}</span>` : ''}
             <span class="meta">${agoText(c.at)}</span>
           </p>
