@@ -1003,6 +1003,9 @@ function agoText(at) {
   return L`${Math.floor(m / 1440)}d ago`;
 }
 
+// One line about who someone is, so you know who you are messaging
+const introLine = (p) => L`${fieldsLabel(p)}. ${p.doing}`;
+
 const commentCount = (n) => (n === 1 ? L`1 comment` : L`${n} comments`);
 
 // Message someone you met in Explore. `spot` says where the box opens, so only one shows at a time.
@@ -1012,6 +1015,7 @@ function dmBox(pid, spot) {
   if (U.dm && U.dm.pid === pid && U.dm.spot === spot) {
     return `
       <form class="stack reply" data-form="dm" data-pid="${pid}" data-post="${esc(spot.split(':')[0])}" novalidate>
+        ${parseRoute().name === 'post' ? '' : `<div class="dm-who">${byline(P[pid], true)}</div>`}
         ${field('dm', L`Message ${esc(P[pid].alias)} privately`, '', { area: true, rows: 3, req: true, ph: L`Only they will see this. Your titles stay hidden.` })}
         <div class="btnrow">
           <button class="btn btn--dark btn--sm" type="submit">${L`Send`}</button>
@@ -1108,6 +1112,7 @@ function viewPost(id) {
             ${c.by !== 'me' && c.by === post.by ? `<span class="tag">${L`Author`}</span>` : ''}
             <span class="meta">${agoText(c.at)}</span>
           </p>
+          ${c.by === 'me' ? '' : `<p class="comment__intro">${esc(introLine(P[c.by]))}</p>`}
           <p>${esc(c.text)}</p>
           ${c.by === 'me' ? '' : `<div class="comment__actions">${dmBox(c.by, `${post.id}:${c.at}`)}</div>`}
         </div>

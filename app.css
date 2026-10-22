@@ -2759,3 +2759,17 @@ details.algo > summary {
 .receipt {
   box-shadow: var(--shadow-1);
 }
+
+/* Who a commenter is, in one line */
+.comment__body > .comment__intro {
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.dm-who .byline {
+  padding: 10px 12px;
+  border-radius: var(--r-input);
+  background: var(--bg);
+}
