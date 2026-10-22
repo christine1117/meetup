@@ -133,7 +133,7 @@ function cupArt(color, o = {}) {
   const mid = ((teaTop + 25) / 2).toFixed(1);
   const halfAt = (y) => 9.3 - 1.9 * ((y - 10.4) / 14.2); // the cup is narrower lower down
   const line = big ? 0.38 : 0.75;
-  const ink = big ? '#9a948a' : '#2a1d16';
+  const ink = '#2a1d16'; // black outline on every cup
   const part = (name, body) => (body ? `<g class="part p-${name}" style="${APART[name] || ''}">${body}</g>` : '');
   // Floating toppings, split into the left and right halves of the cup
   const placed = ids.filter((k) => PIECE[k]).flatMap((k, i) => [0, 1].map((n) => {
