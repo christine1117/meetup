@@ -195,13 +195,78 @@ const PEOPLE = [
 ];
 const P = Object.fromEntries(PEOPLE.map((p) => [p.id, p]));
 
+// Explore is a forum. Each post sits in a topic, has an age in minutes, and a few public comments.
+const CATEGORIES = [
+  ['tech', 'Tech'],
+  ['startups', 'Startups'],
+  ['design', 'Design'],
+  ['science', 'Science & research'],
+  ['society', 'Society & cities'],
+  ['creative', 'Writing & creative'],
+  ['career', 'Work & career'],
+];
+const catName = (k) => L((CATEGORIES.find(([v]) => v === k) || CATEGORIES[1])[1]);
+
 const SEED_THOUGHTS = [
-  { id: 't1', by: 'p2', mode: 'online', size: '1on1', text: 'If a city gives away its data for free, who should be responsible when someone builds something harmful with it?' },
-  { id: 't2', by: 'p5', mode: 'offline', size: '1on1', text: 'Everyone says "build what users want". But as a researcher, how do I even know who my user is?' },
-  { id: 't3', by: 'p4', mode: 'online', size: 'group', text: 'Is a newsletter a product or a habit? I cannot tell which one I am building.' },
-  { id: 't4', by: 'p8', mode: 'offline', size: 'group', text: 'If you took over a family business, how did you convince your parents to let you try something new?' },
-  { id: 't5', by: 'p3', mode: 'online', size: '1on1', text: 'What is one thing that works in your city that would never work in mine? I am collecting examples.' },
-  { id: 't6', by: 'p6', mode: 'online', size: '1on1', text: 'Designers: when did you last change your mind because an engineer was right?' },
+  {
+    id: 't1', by: 'p2', cat: 'society', ago: 190,
+    text: 'If a city gives away its data for free, who should be responsible when someone builds something harmful with it?',
+    comments: [
+      { by: 'p5', ago: 150, text: 'Researchers ask this too. We publish our air data and still worry about how it gets used.' },
+      { by: 'p3', ago: 95, text: 'Whoever sells a product built on it should carry the risk, not the city.' },
+    ],
+  },
+  {
+    id: 't2', by: 'p5', cat: 'science', ago: 420,
+    text: 'Everyone says "build what users want". But as a researcher, how do I even know who my user is?',
+    comments: [
+      { by: 'p1', ago: 380, text: 'Find the person who is annoyed enough to email you twice. That is your user.' },
+      { by: 'p7', ago: 300, text: 'Run one small pilot. The first person who asks to keep using it is your user.' },
+    ],
+  },
+  {
+    id: 't3', by: 'p4', cat: 'creative', ago: 75,
+    text: 'Is a newsletter a product or a habit? I cannot tell which one I am building.',
+    comments: [
+      { by: 'p6', ago: 40, text: 'If people miss it when it is late, it is a habit. If they pay to keep it, it is a product.' },
+    ],
+  },
+  {
+    id: 't4', by: 'p8', cat: 'career', ago: 1500,
+    text: 'If you took over a family business, how did you convince your parents to let you try something new?',
+    comments: [
+      { by: 'p3', ago: 1320, text: 'I showed my parents numbers from a small test first. Arguments did not work, results did.' },
+    ],
+  },
+  {
+    id: 't5', by: 'p3', cat: 'startups', ago: 260,
+    text: 'What is one thing that works in your city that would never work in mine? I am collecting examples.',
+    comments: [
+      { by: 'p8', ago: 210, text: 'Cash on delivery. Everyone told me online prepayment would win here. It did not.' },
+      { by: 'p2', ago: 120, text: 'Bike sharing without docks. Great in one city, chaos in the next.' },
+    ],
+  },
+  {
+    id: 't6', by: 'p6', cat: 'design', ago: 30,
+    text: 'Designers: when did you last change your mind because an engineer was right?',
+    comments: [
+      { by: 'p7', ago: 12, text: 'Last week. The engineer showed the design would break on slow phones.' },
+    ],
+  },
+  {
+    id: 't7', by: 'p7', cat: 'tech', ago: 600,
+    text: 'Is running AI on the device worth the pain for a small team, or should we just use the cloud?',
+    comments: [
+      { by: 'p2', ago: 560, text: 'Cloud first. Move only the part users actually notice onto the device.' },
+    ],
+  },
+  {
+    id: 't8', by: 'p1', cat: 'startups', ago: 900,
+    text: 'How do you price a tool for tiny shops that already think software is too expensive?',
+    comments: [
+      { by: 'p3', ago: 840, text: 'Charge per week, not per month. Small shops think in weeks.' },
+    ],
+  },
 ];
 
 const SEED_POSTS = [
@@ -468,7 +533,7 @@ let S = load();
 // Screen state that does not need to be saved
 const U = {
   compose: null, target: null, booking: null, typing: {}, confirmReset: false,
-  f: { mode: '', size: '', city: '', field: '' },
+  cat: 'all', dm: null, typingPost: null,
   quiz: { step: 0, field: '', field2: '', stage: '', interests: [], meet: '', city: '' },
 };
 const D = { phase: 'idle', pid: null, msgs: [], ends: 0, li: 0, typing: false, result: null };
@@ -503,7 +568,6 @@ const select = (name, label, opts, val, hint = '') => `
     ${hint ? `<p class="hint">${hint}</p>` : ''}
   </div>`;
 
-const modeLabel = (t) => L`${t.mode === 'offline' ? L('In person') : L('Online')}, ${t.size === 'group' ? L('small group') : L('1-on-1')}`;
 
 const brief = (p) => `
   <dl class="brief">
@@ -588,7 +652,7 @@ function resolveReveal(t) {
 /* ---------- Simulated people responding to what you post ---------- */
 
 function scheduleIncoming(item, key) {
-  item.seen = item.seen || item.responses.map((r) => r.pid);
+  item.seen = item.seen || (item.responses || item.comments || []).map((r) => r.pid || r.by);
   if (item.seen.length >= 2) return;
   later(4000 + Math.random() * 3000, () => {
     const list = key === 'thought' ? S.myThoughts : S.myPosts;
@@ -598,9 +662,10 @@ function scheduleIncoming(item, key) {
     if (!left.length) return;
     const p = pick(left);
     item.seen.push(p.id);
-    item.responses.push({ pid: p.id, text: key === 'thought' ? p.take : p.pitch });
+    if (key === 'thought') (item.comments = item.comments || []).push({ by: p.id, text: p.take, at: Date.now() });
+    else item.responses.push({ pid: p.id, text: p.pitch });
     save();
-    toast(key === 'thought' ? L`Someone responded to your thought` : L`Someone applied to your post`);
+    toast(key === 'thought' ? L`Someone commented on your post` : L`Someone applied to your post`);
     render();
     scheduleIncoming(item, key);
   });
@@ -781,85 +846,155 @@ function responsesBlock(item, key) {
     </li>`).join('')}</ul>`;
 }
 
-// One thought card. Reply to it to start a chat.
-function thoughtCard(t) {
-  const p = P[t.by];
-  const existing = threadFor('explore', t.id);
+/* ---------- Screen: Explore (a forum) ----------
+   Posts sit in topics. Comments are public but anonymous, with no likes or
+   follower counts, so nobody performs for an audience. Anyone can message a
+   post's author or a commenter privately, which starts a normal chat. */
+
+const LOADED_AT = Date.now();
+const seedAt = (ago) => LOADED_AT - ago * 60000;
+
+// Your posts and the seed posts in one shape, newest first
+function allPosts() {
+  const mine = S.myThoughts.map((t) => ({ ...t, by: 'me', cat: t.cat || 'startups', at: t.at || LOADED_AT, comments: t.comments || [] }));
+  const seeds = SEED_THOUGHTS.map((t) => ({ ...t, at: seedAt(t.ago), comments: t.comments.map((c) => ({ ...c, at: seedAt(c.ago) })) }));
+  return [...mine, ...seeds].sort((a, b) => b.at - a.at);
+}
+const postById = (id) => allPosts().find((p) => p.id === id);
+
+// Comments that came with the post plus the ones written in this browser, oldest first
+const commentsOf = (post) => [...post.comments, ...((S.comments || {})[post.id] || [])].sort((a, b) => a.at - b.at);
+
+const authorName = (by) => (by === 'me' ? L`You` : P[by].alias);
+const authorLine = (by) => byline(by === 'me' ? { ...S.me, alias: L`You` } : P[by]);
+
+function agoText(at) {
+  const m = Math.floor((Date.now() - at) / 60000);
+  if (m < 1) return L`just now`;
+  if (m < 60) return L`${m}m ago`;
+  if (m < 1440) return L`${Math.floor(m / 60)}h ago`;
+  return L`${Math.floor(m / 1440)}d ago`;
+}
+
+const commentCount = (n) => (n === 1 ? L`1 comment` : L`${n} comments`);
+
+// Message someone you met in Explore. `spot` says where the box opens, so only one shows at a time.
+function dmBox(pid, spot) {
+  const existing = S.threads.find((t) => t.pid === pid);
+  if (existing) return `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Open chat`}</a>`;
+  if (U.dm && U.dm.pid === pid && U.dm.spot === spot) {
+    return `
+      <form class="stack reply" data-form="dm" data-pid="${pid}" data-post="${esc(spot.split(':')[0])}" novalidate>
+        ${field('dm', L`Message ${esc(P[pid].alias)} privately`, '', { area: true, rows: 3, req: true, ph: L`Only they will see this. Your titles stay hidden.` })}
+        <div class="btnrow">
+          <button class="btn btn--dark btn--sm" type="submit">${L`Send`}</button>
+          <button class="btn btn--ghost btn--sm" data-act="dm-close" type="button">${L`Cancel`}</button>
+        </div>
+      </form>`;
+  }
+  return `<button class="btn btn--ghost btn--sm" data-act="dm-open" data-pid="${pid}" data-spot="${esc(spot)}" type="button"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>${L`Message`}</button>`;
+}
+
+function postCard(post) {
   return `
-    <article class="card">
-      <p class="thought">${esc(t.text)}</p>
-      <div class="meta-row"><p class="meta">${L`${modeLabel(t)}, ${esc(p.city)}`}</p></div>
-      ${byline(p)}
-      ${existing
-        ? `<a class="btn btn--ghost btn--sm" href="#/chats/${existing.id}">${L`Responded. Open chat`}</a>`
-        : U.target === t.id
-          ? `<form class="stack reply" data-form="respond" data-id="${t.id}" novalidate>
-              ${field('reply', L`Your perspective`, '', { area: true, rows: 3, req: true, ph: L`They see your response and your card, not your titles` })}
-              <div class="btnrow">
-                <button class="btn btn--dark btn--sm" type="submit">${L`Send response`}</button>
-                <button class="btn btn--ghost btn--sm" data-act="target" data-id="" type="button">${L`Cancel`}</button>
-              </div>
-            </form>`
-          : `<button class="btn btn--dark btn--sm" data-act="target" data-id="${t.id}" type="button">${L`Respond`}</button>`}
+    <article class="card forum-post">
+      <p class="forum-post__cat">${esc(catName(post.cat))}</p>
+      <a class="thought forum-post__link" href="#/post/${post.id}">${esc(post.text)}</a>
+      ${authorLine(post.by)}
+      <div class="forum-post__foot">
+        <p class="meta">${L`${commentCount(commentsOf(post).length)}, ${agoText(post.at)}`}</p>
+        <div class="btnrow">
+          <a class="btn btn--dark btn--sm" href="#/post/${post.id}"><i class="ph ph-chat-text" aria-hidden="true"></i>${L`Comments`}</a>
+          ${post.by === 'me' ? '' : dmBox(post.by, post.id)}
+        </div>
+      </div>
     </article>`;
 }
 
 function viewExplore() {
-  const f = U.f;
-  const cities = [...new Set(PEOPLE.map((p) => p.city))];
-  // Top picks: thoughts from the people who score highest with you today
-  const top = topPicks(SEED_THOUGHTS.map((t) => P[t.by]), TOP_PICKS, dayKey()).map((p) => SEED_THOUGHTS.find((t) => t.by === p.id));
-  const rest = SEED_THOUGHTS.filter((t) => !top.includes(t)).filter((t) => {
-    const p = P[t.by];
-    return (!f.mode || t.mode === f.mode) && (!f.size || t.size === f.size) && (!f.city || p.city === f.city) && (!f.field || fieldsOf(p).includes(f.field));
-  });
-  const opt = (v, l, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`;
+  const cat = U.cat;
+  const posts = allPosts();
+  // Top picks: posts from the people who score highest with you today (All tab only)
+  const top = cat === 'all'
+    ? topPicks(SEED_THOUGHTS.map((t) => P[t.by]), TOP_PICKS, dayKey()).map((p) => posts.find((x) => x.by === p.id))
+    : [];
+  const list = posts.filter((p) => (cat === 'all' || p.cat === cat) && !top.includes(p));
+  const tabs = [['all', L`All`], ...CATEGORIES.map(([v, l]) => [v, L(l)])];
 
   return `
   <header class="head">
-    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`Browse what people are thinking about. Reply with your view to start a chat.`)}</div>
-    <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`Share a thought`}</button>
+    <div><h1 lang="en">${L`Explore`}</h1><p class="sub" lang="en">${L`I want to meet someone.`}</p>${explain(L`A forum by topic. Comment in public, or message someone privately. Everyone stays anonymous until you both pop the seal.`)}</div>
+    <button class="btn btn--primary" data-act="compose" data-what="thought" type="button"><i class="ph ph-plus" aria-hidden="true"></i>${L`New post`}</button>
   </header>
 
   ${U.compose === 'thought' ? `
   <form class="panel stack" data-form="thought" novalidate>
+    ${select('cat', L`Topic`, CATEGORIES.map(([v, l]) => [v, L(l)]), cat === 'all' ? 'startups' : cat)}
     ${field('text', L`Your thought or question`, '', { area: true, rows: 3, req: true, ph: L`Something you have been turning over lately` })}
-    <div class="row2">
-      ${select('mode', L`How to meet`, [['online', L`Online`], ['offline', L`In person`]], 'online')}
-      ${select('size', L`How many people`, [['1on1', L`1-on-1`], ['group', L`Small group`]], '1on1')}
-    </div>
     <div class="btnrow">
       <button class="btn btn--dark" type="submit">${L`Post`}</button>
       <button class="btn btn--ghost" data-act="compose" data-what="" type="button">${L`Cancel`}</button>
     </div>
   </form>` : ''}
 
-  ${S.myThoughts.length ? `
-  <section class="mine">
-    <h2>${L`Your thoughts`}</h2>
-    ${S.myThoughts.map((t) => `
-    <article class="card card--mine">
-      <p class="thought">${esc(t.text)}</p>
-      <div class="meta-row"><p class="meta">${modeLabel(t)}</p></div>
-      ${responsesBlock(t, 'thought')}
-    </article>`).join('')}
-  </section>` : ''}
+  <div class="cats" role="group" aria-label="${esc(L`Topics`)}">
+    ${tabs.map(([v, l]) => `<button class="cat ${cat === v ? 'is-on' : ''}" data-act="cat" data-value="${v}" type="button" aria-pressed="${cat === v}">${esc(l)}</button>`).join('')}
+  </div>
 
   ${top.length ? `
   <section class="mine">
     <h2>${L`Top picks`}</h2>
-    ${top.map(thoughtCard).join('')}
+    ${top.map(postCard).join('')}
   </section>` : ''}
 
   <section class="mine">
-    <h2>${top.length ? L`More thoughts` : L`All thoughts`}</h2>
-    <div class="filters" role="group" aria-label="${esc(L`Filters`)}">
-      <select data-filter="mode" aria-label="${esc(L`Online or in person`)}">${opt('', L`Any format`, f.mode)}${opt('online', L`Online`, f.mode)}${opt('offline', L`In person`, f.mode)}</select>
-      <select data-filter="size" aria-label="${esc(L`Group size`)}">${opt('', L`Any size`, f.size)}${opt('1on1', L`1-on-1`, f.size)}${opt('group', L`Small group`, f.size)}</select>
-      <select data-filter="city" aria-label="${esc(L`City`)}">${opt('', L`All cities`, f.city)}${cities.map((c) => opt(c, c, f.city)).join('')}</select>
-      <select data-filter="field" aria-label="${esc(L`Field`)}">${opt('', L`All fields`, f.field)}${FIELDS.map((c) => opt(c, L`${fieldName(c)}, ${flavorName(c)}`, f.field)).join('')}</select>
+    <h2>${cat === 'all' ? (top.length ? L`Latest` : L`All posts`) : esc(catName(cat))}</h2>
+    ${list.length ? list.map(postCard).join('') : `<p class="empty">${L`No posts in this topic yet. Start one.`}</p>`}
+  </section>`;
+}
+
+// One post with its public comments
+function viewPost(id) {
+  const post = postById(id);
+  if (!post) return viewExplore();
+  const comments = commentsOf(post);
+  return `
+  <a class="back-link" href="#/explore"><i class="ph ph-arrow-left" aria-hidden="true"></i>${L`Back to Explore`}</a>
+
+  <article class="card forum-post forum-post--open">
+    <p class="forum-post__cat">${esc(catName(post.cat))}</p>
+    <p class="thought">${esc(post.text)}</p>
+    ${authorLine(post.by)}
+    <div class="forum-post__foot">
+      <p class="meta">${agoText(post.at)}</p>
+      ${post.by === 'me' ? '' : dmBox(post.by, post.id)}
     </div>
-    ${rest.length ? rest.map(thoughtCard).join('') : `<p class="empty">${L`Nothing matches. Change the filters, or share a thought of your own.`}</p>`}
+  </article>
+
+  <section class="comments">
+    <h2>${commentCount(comments.length)}</h2>
+    ${explain(L`Comments are public, but everyone stays anonymous. Want to go deeper? Message them privately.`)}
+    <ul class="comments__list">
+      ${comments.map((c) => `
+      <li class="comment">
+        <span class="avatar avatar--cup" aria-hidden="true">${cupFor(c.by === 'me' ? S.me : P[c.by])}</span>
+        <div class="comment__body">
+          <p class="comment__head">
+            <strong>${esc(authorName(c.by))}</strong>
+            ${c.by !== 'me' && c.by === post.by ? `<span class="tag">${L`Author`}</span>` : ''}
+            <span class="meta">${agoText(c.at)}</span>
+          </p>
+          <p>${esc(c.text)}</p>
+          ${c.by === 'me' ? '' : `<div class="comment__actions">${dmBox(c.by, `${post.id}:${c.at}`)}</div>`}
+        </div>
+      </li>`).join('')}
+      ${U.typingPost === post.id ? `<li class="comment"><span class="msg msg--them msg--typing" aria-label="${esc(L`Someone is typing`)}"><span></span><span></span><span></span></span></li>` : ''}
+    </ul>
+    <form class="comment-form" data-form="comment" data-id="${post.id}" novalidate>
+      <label class="sr" for="c-comment">${L`Add a public comment`}</label>
+      <textarea id="c-comment" name="comment" rows="2" placeholder="${esc(L`Add a public comment`)}"></textarea>
+      <button class="btn btn--dark" type="submit">${L`Comment`}</button>
+    </form>
   </section>`;
 }
 
@@ -1264,7 +1399,7 @@ const GLOSSARY = [
   ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup. Two fields make a two-flavor cup.'],
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
-  ['Explore', 'ph-compass', 'Browse open thoughts and questions, with top picks first. Reply with your view to start talking.'],
+  ['Explore', 'ph-compass', 'A forum by topic. Comment in public, or message someone privately. Top picks come first.'],
   ['Brew', 'ph-hammer', 'Build something together. Post what you need and it goes to the people who fit, or apply to a Brew without showing your titles.'],
   ['Mystery Cup', 'ph-sparkle', 'A surprise match once a week. Everyone joins at the same time and you cannot pick who you get.'],
   ['First Sip', 'ph-chat-circle', 'Your first conversation with someone. Real names are still hidden.'],
@@ -1309,7 +1444,7 @@ function viewAbout() {
       <h2>${L`How it works`}</h2>
       <ol class="steps">
         <li><strong>${L`Fill in your order.`}</strong> ${L`Say what you are working on. Your titles stay sealed.`}</li>
-        <li><strong>${L`Take a first sip.`}</strong> ${L`Reply to a thought in Explore, apply to a Brew, or join the weekly Mystery Cup.`}</li>
+        <li><strong>${L`Take a first sip.`}</strong> ${L`Comment or message someone in Explore, apply to a Brew, or join the weekly Mystery Cup.`}</li>
         <li><strong>${L`Reach half sugar, then pop the seal.`}</strong> ${L`Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.`}</li>
         <li><strong>${L`Keep it warm.`}</strong> ${L`Keep talking, build something, or go on a boba run and meet in person. A chat goes cold after 3 days with no reply.`}</li>
       </ol>
@@ -1349,7 +1484,7 @@ function viewAbout() {
 /* ---------- Shell ---------- */
 
 const NAV = [
-  ['explore', 'Explore', 'ph-compass', 'Browse ideas'],
+  ['explore', 'Explore', 'ph-compass', 'Topics and posts'],
   ['build', 'Brew', 'ph-hammer', 'Build together'],
   ['drop', 'Mystery Cup', 'ph-sparkle', 'Weekly surprise match'],
   ['chats', 'Chats', 'ph-chat-circle', 'Your conversations'],
@@ -1365,7 +1500,7 @@ function shell(route, body) {
       <a class="logo" href="#/explore" aria-label="${esc(L`Half Sugar home`)}">${LOGO}</a>
       <nav class="nav" aria-label="${esc(L`Main`)}">
         ${NAV.map(([name, label, icon, desc]) => `
-        <a href="#/${name}" ${route.name === name ? 'aria-current="page"' : ''}>
+        <a href="#/${name}" ${route.name === name || (name === 'explore' && route.name === 'post') ? 'aria-current="page"' : ''}>
           <i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span ${name === 'chats' ? '' : 'lang="en"'}>${L(label)}</span><small>${L(desc)}</small></span>
           ${name === 'chats' && unread ? `<span class="badge" aria-label="${esc(L`${unread} unread`)}">${unread}</span>` : ''}
         </a>`).join('')}
@@ -1400,6 +1535,7 @@ function render(opt = {}) {
     else if (route.name === 'drop') body = viewDrop();
     else if (route.name === 'me') body = viewMe();
     else if (route.name === 'about') body = viewAbout();
+    else if (route.name === 'post') body = viewPost(route.id);
     else body = viewExplore();
     app.innerHTML = shell(route, body);
   }
@@ -1436,11 +1572,11 @@ const forms = {
 
   thought(form, data) {
     if (!data.text) { $('#f-text', form).focus(); return; }
-    const item = { id: uid(), text: data.text, mode: data.mode, size: data.size, responses: [], seen: [] };
+    const item = { id: uid(), text: data.text, cat: data.cat, at: Date.now(), comments: [], seen: [] };
     S.myThoughts.unshift(item);
     U.compose = null;
     save();
-    render({ fresh: true });
+    go('post/' + item.id);
     scheduleIncoming(item, 'thought');
   },
 
@@ -1456,12 +1592,36 @@ const forms = {
     scheduleIncoming(item, 'post');
   },
 
-  respond(form, data) {
-    if (!data.reply) { $('#f-reply', form).focus(); return; }
-    const seed = SEED_THOUGHTS.find((t) => t.id === form.dataset.id);
-    const t = createThread(seed.by, 'explore', seed.id, 'pending', 'You responded to this thought: "{0}"', [seed.text]);
-    t.msgs.push({ from: 'me', text: data.reply, at: Date.now() });
-    U.target = null;
+  comment(form, data) {
+    if (!data.comment) return;
+    const post = postById(form.dataset.id);
+    if (!post) return;
+    S.comments = S.comments || {};
+    const list = (S.comments[post.id] = S.comments[post.id] || []);
+    list.push({ by: 'me', text: data.comment, at: Date.now() });
+    save();
+    render({ fresh: true });
+    if (post.by === 'me') return;
+    // The author answers in public after a moment
+    U.typingPost = post.id;
+    render();
+    later(2200 + Math.random() * 1800, () => {
+      const p = P[post.by];
+      const said = list.filter((c) => c.by === p.id).length;
+      list.push({ by: p.id, text: p.lines[said % p.lines.length], at: Date.now() });
+      U.typingPost = null;
+      save();
+      render();
+    });
+  },
+
+  dm(form, data) {
+    if (!data.dm) { $('#f-dm', form).focus(); return; }
+    const pid = form.dataset.pid;
+    const post = postById(form.dataset.post);
+    const t = createThread(pid, 'explore', `dm-${post.id}-${pid}`, 'pending', 'You messaged them about: "{0}"', [post.text]);
+    t.msgs.push({ from: 'me', text: data.dm, at: Date.now() });
+    U.dm = null;
     save();
     go('chats/' + t.id);
     scheduleAccept(t);
@@ -1569,6 +1729,10 @@ const acts = {
   'drop-reset'() { D.phase = 'idle'; D.pid = null; D.msgs = []; render(); },
 
 
+  cat(el) { U.cat = el.dataset.value; render(); },
+  'dm-open'(el) { U.dm = { pid: el.dataset.pid, spot: el.dataset.spot }; render({ fresh: true, focus: 'f-dm' }); },
+  'dm-close'() { U.dm = null; render({ fresh: true }); },
+
   'quiz-pick'(el) {
     const q = U.quiz;
     const step = q.step;
@@ -1654,13 +1818,6 @@ document.addEventListener('click', (event) => {
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
 });
 
-document.addEventListener('change', (event) => {
-  const el = event.target.closest('[data-filter]');
-  if (!el) return;
-  U.f[el.dataset.filter] = el.value;
-  render();
-});
-
 document.addEventListener('submit', (event) => {
   const form = event.target.closest('[data-form]');
   if (!form) return;
@@ -1670,6 +1827,7 @@ document.addEventListener('submit', (event) => {
 
 window.addEventListener('hashchange', () => {
   U.target = null;
+  U.dm = null;
   U.compose = null;
   U.booking = null;
   U.confirmReset = false;
