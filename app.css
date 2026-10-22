@@ -3404,3 +3404,9 @@ body.modal-open {
 .about__block > p.about-tops {
   font-size: 0.875rem;
 }
+
+/* One kind of gift box for every milestone */
+.gifts .gift__body { fill: var(--orange); }
+.gifts .gift__top { fill: #f08a4d; }
+.gifts .gift__ribbon,
+.gifts .gift__bow { fill: #f5cf6e; }

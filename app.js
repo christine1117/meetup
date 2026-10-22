@@ -785,9 +785,9 @@ function scheduleIncoming(item, key) {
 
 /* ---------- Toppings ----------
    Rewards that land in your cup.
-   small:   reach half sugar in a chat (or a mutual Mystery Cup refill)
-   premium: you both check in at a boba run
-   secret:  a lucky find inside any gift box
+   Every milestone earns one gift box: reaching half sugar, a mutual Mystery Cup
+   refill, or a boba run where you both check in. All boxes draw from the same
+   toppings, with a small chance of a secret one.
    A gift box shows three closed boxes; you pick one. */
 
 const TOPPINGS = [
@@ -797,29 +797,29 @@ const TOPPINGS = [
   { id: 'redbean', name: 'Red bean', tier: 'small' },
   { id: 'pudding', name: 'Egg pudding', tier: 'small' },
   { id: 'crystal', name: 'Crystal boba', tier: 'small' },
-  { id: 'foam', name: 'Cheese foam', tier: 'premium' },
-  { id: 'tiger', name: 'Brown sugar stripes', tier: 'premium' },
-  { id: 'taroball', name: 'Taro balls', tier: 'premium' },
-  { id: 'mochi', name: 'Mochi', tier: 'premium' },
-  { id: 'brulee', name: 'Crème brûlée', tier: 'premium' },
+  { id: 'foam', name: 'Cheese foam', tier: 'small' },
+  { id: 'tiger', name: 'Brown sugar stripes', tier: 'small' },
+  { id: 'taroball', name: 'Taro balls', tier: 'small' },
+  { id: 'mochi', name: 'Mochi', tier: 'small' },
+  { id: 'brulee', name: 'Crème brûlée', tier: 'small' },
   { id: 'golden', name: 'Golden pearl', tier: 'secret' },
   { id: 'galaxy', name: 'Galaxy jelly', tier: 'secret' },
   { id: 'sakura', name: 'Sakura jelly', tier: 'secret' },
 ];
 const TOPPING = Object.fromEntries(TOPPINGS.map((t) => [t.id, t]));
-const SECRET_CHANCE = { small: 0.08, premium: 0.18 };
-const TIER_NAME = { small: 'Topping', premium: 'Premium topping', secret: 'Secret topping' };
+const SECRET_CHANCE = 0.1;
+const TIER_NAME = { small: 'Topping', secret: 'Secret topping' };
 const TIER_HOW = {
-  small: 'Reach half sugar in a chat.',
-  premium: 'Both check in at a boba run.',
+  small: 'Reach half sugar, refill a Mystery Cup together, or both show up to a boba run.',
   secret: 'Found by luck in any gift box.',
 };
 
-// Three different toppings for the three boxes
-function rollBoxes(tier) {
+// Three different toppings for the three boxes. Every box draws from the same toppings.
+function rollBoxes() {
   const out = [];
   while (out.length < 3) {
-    const pool = TOPPINGS.filter((t) => t.tier === (Math.random() < SECRET_CHANCE[tier] ? 'secret' : tier) && !out.includes(t.id));
+    const tier = Math.random() < SECRET_CHANCE ? 'secret' : 'small';
+    const pool = TOPPINGS.filter((t) => t.tier === tier && !out.includes(t.id));
     if (pool.length) out.push(pick(pool).id);
   }
   return out;
@@ -946,14 +946,14 @@ function earnBox(tier, reason, vars = []) {
   S.boxes = S.boxes || [];
   S.boxes.push({ id: uid(), tier, reason, vars });
   save();
-  toast(tier === 'premium' ? L`You earned a premium gift box!` : L`You earned a gift box!`);
+  toast(L`You earned a gift box!`);
   later(700, () => { if (!U.modal) openNextBox(); });
 }
 
 function openNextBox() {
   if (!(S.boxes || []).length) return;
   const box = S.boxes[0];
-  U.modal = { type: 'box', box, contents: rollBoxes(box.tier), picked: null, phase: 'pick' };
+  U.modal = { type: 'box', box, contents: rollBoxes(), picked: null, phase: 'pick' };
   renderModal();
 }
 
@@ -982,13 +982,13 @@ function boxModal(m) {
   return `
     <div class="modal__card modal__card--box" tabindex="-1">
       <button class="modal__x" data-act="modal-close" type="button" aria-label="${esc(L`Close`)}"><i class="ph ph-x" aria-hidden="true"></i></button>
-      <p class="tier-tag tier-tag--${m.box.tier}">${m.box.tier === 'premium' ? L`Premium gift box` : L`Gift box`}</p>
+      <p class="tier-tag">${L`Gift box`}</p>
       <h2 id="modal-title">${opened ? L`You got ${esc(L(got.name))}!` : L`Pick a box.`}</h2>
       <p class="sub">${esc(tr(m.box.reason, m.box.vars))}</p>
-      <div class="gifts gifts--${m.box.tier}">
+      <div class="gifts">
         ${m.contents.map((k, i) => `
         <button class="gift ${m.picked === i ? 'is-picked' : ''} ${m.picked !== null && m.picked !== i ? 'is-other' : ''} is-${m.phase}" data-act="box-pick" data-i="${i}" type="button" ${m.phase === 'pick' ? '' : 'disabled'} aria-label="${esc(L`Box ${i + 1}`)}">
-          ${giftSvg(m.box.tier)}
+          ${giftSvg()}
           ${opened ? `<span class="gift__prize">${toppingIcon(k)}</span><small class="gift__name">${esc(L(TOPPING[k].name))}</small>` : ''}
         </button>`).join('')}
       </div>
@@ -1937,7 +1937,7 @@ const GLOSSARY = [
   ['Pop the seal', 'ph-lock-simple-open', 'Show your real name, school, company and title. It only happens when both of you press it.'],
   ['Refill', 'ph-arrows-clockwise', 'At the end of a Mystery Cup, you both choose Refill to keep talking.'],
   ['Gone cold', 'ph-snowflake', 'A chat closes if nobody replies for 3 days.'],
-  ['Toppings', 'ph-gift', 'Rewards for your cup. Reach half sugar for a gift box, both check in at a boba run for a premium one. Some toppings are secret.'],
+  ['Toppings', 'ph-gift', 'Rewards for your cup. Each milestone earns a gift box: half sugar, a mutual refill, or a boba run where you both show up. Some toppings are secret.'],
   ['Boba run', 'ph-person-simple-walk', 'Meet in person, at a boba shop or a café.'],
 ];
 
@@ -2003,7 +2003,7 @@ function viewAbout() {
         ${FIELDS.map((f) => `<li><span class="flavor" style="--flavor:${flavor(f)[1]}">${esc(flavorName(f))}</span>${esc(fieldName(f))}</li>`).join('')}
       </ul>
       <h3 class="flavors__title">${L`Toppings`}</h3>
-      ${['small', 'premium'].map((tier) => `
+      ${['small'].map((tier) => `
       <div class="about-tops">
         <p class="collection__how"><span class="tier-tag tier-tag--${tier}">${L(TIER_NAME[tier])}</span>${L(TIER_HOW[tier])}</p>
         <div class="pf__toppings">${TOPPINGS.filter((x) => x.tier === tier).map((x) => toppingChip(x.id)).join('')}</div>
@@ -2297,7 +2297,7 @@ const acts = {
     toast(L`Call room opened in a new tab`);
   },
 
-  // Both check in at a boba run: a premium gift box
+  // Both check in at a boba run: a gift box
   checkin(el) {
     const t = thread(el.dataset.id);
     if (!t || !t.booking || t.booking.me) return;
@@ -2307,7 +2307,7 @@ const acts = {
       if (!thread(t.id) || t.booking.met) return;
       t.booking.met = true;
       pushMsg(t, 'sys', '{0} checked in too. You both showed up!', [P[t.pid].alias]);
-      earnBox('premium', 'For showing up to a boba run with {0}.', [P[t.pid].alias]);
+      earnBox('small', 'For showing up to a boba run with {0}.', [P[t.pid].alias]);
     });
   },
 
@@ -2375,7 +2375,7 @@ const acts = {
     const box = $('#brew-nudge');
     if (box) box.hidden = true;
   },
-  'dev-box'() { earnBox(Math.random() < 0.5 ? 'small' : 'premium', 'A free box for testing.'); },
+  'dev-box'() { earnBox('small', 'A free box for testing.'); },
 
   'quiz-pick'(el) {
     const q = U.quiz;
