@@ -108,13 +108,16 @@ const CUP_LID = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2 Z';
 const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
 const CUP_PEARLS = [[8.5, 23.7, '#3b2518'], [11.9, 24.3, '#4a2c1c'], [15.3, 23.6, '#7d93a0'], [10.2, 21.7, '#5a3a28'], [13.7, 21.9, '#3b2518'], [6.9, 21.7, '#6f8796'], [17, 21.5, '#4a2c1c']];
 // Where each layer goes when the cup comes apart, and when it starts moving
+// Spread left and right: tea and straw to the left, lid and pearls to the right
 const APART = {
-  straw: '--dx:15px;--dy:6px;--r:-7deg;--d:0s',
-  lid: '--dy:-15.7px;--d:.04s',
-  tea: '--dy:-13.6px;--d:.1s',
-  shell: '--dy:4.5px;--d:.14s',
-  pearls: '--dy:14.3px;--d:.2s',
+  straw: '--dx:-20px;--dy:-6.5px;--r:84deg;--d:0s',
+  lid: '--dx:20px;--dy:-1px;--d:.05s',
+  tea: '--dx:-20px;--d:.1s',
+  shell: '--d:0s',
+  pearls: '--dx:20px;--dy:2.5px;--d:.16s',
 };
+// Only these cups come apart; they get a wide canvas so the pieces have room
+const EXPLODE = /cup--(hero|mystery)/;
 
 function cupArt(color, o = {}) {
   const id = 'cp' + uid();
@@ -145,8 +148,7 @@ function cupArt(color, o = {}) {
     ${part('tea', fill > 0 ? `<g clip-path="url(#${id}-in)">
       <rect x="0" y="${teaTop}" width="24" height="20" fill="${o.color2 || color}"/>
       ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="20" fill="${color}"/>` : ''}
-      ${fill > 0.5 ? `<g fill="none" stroke="#6b3a1c" stroke-opacity=".3" stroke-width="1.4" stroke-linecap="round"><path d="M6 11.5Q9 15 7 19T9 25"/><path d="M12.5 11Q15 14.5 12.8 18.5T14.6 24.5"/><path d="M17.8 11.8Q19.4 15 17.4 18.6"/></g>` : ''}
-      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1.2" stroke-opacity=".85" stroke-linecap="round"><path d="M4.6 12q-.4 3 .6 5.5t.5 5"/><path d="M19.4 12q.4 3-.6 5.5t-.5 5"/></g>` : ''}
+      ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1.3" stroke-opacity=".8" stroke-linecap="round"><path d="M6 11.5Q9 15 7 19T9 25"/><path d="M12.5 11Q15 14.5 12.8 18.5T14.6 24.5"/><path d="M17.8 11.8Q19.4 15 17.4 18.6"/></g>` : ''}
       ${pieces}
       ${has('foam') ? `<rect x="0" y="${teaTop - 0.2}" width="24" height="2.2" fill="url(#${id}-foamL)"/>` : ''}
       ${has('brulee') ? `<rect x="0" y="${teaTop - 0.3}" width="24" height="1.3" fill="url(#${id}-bruL)"/>` : ''}
@@ -170,8 +172,8 @@ function cupArt(color, o = {}) {
 }
 
 function cup(color, o = {}) {
-  const big = BIG_CUP.test(o.cls || '');
-  return `<svg class="cup ${big ? 'cup-x' : ''} ${o.cls || ''}" viewBox="-2 -6 28 34" aria-hidden="true">${cupArt(color, o)}</svg>`;
+  const x = EXPLODE.test(o.cls || '');
+  return `<svg class="cup ${x ? 'cup-x' : ''} ${o.cls || ''}" viewBox="${x ? '-20 -6 64 34' : '-2 -6 28 34'}" aria-hidden="true">${cupArt(color, o)}</svg>`;
 }
 const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
@@ -987,7 +989,7 @@ const PIECE_SIZE = 1.15;
 
 // Your base drink with your toppings in it
 function drinkCup(p, ids = [], cls = '') {
-  return `<svg class="cup drink ${BIG_CUP.test(cls) ? 'cup-x' : ''} ${cls}" viewBox="-2 -6 28 34" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
+  return `<svg class="cup drink ${cls}" viewBox="-2 -6 28 34" role="img" aria-label="${esc(drinkFor(p))}${ids.length ? esc(L`, with ${ids.length} toppings`) : ''}">${cupArt(flavor(p.field)[1], { cls, ids, level: 0.82, color2: p.field2 ? flavor(p.field2)[1] : '' })}</svg>`;
 }
 
 // A topping on its own, for chips and gift boxes

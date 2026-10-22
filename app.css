@@ -3493,3 +3493,53 @@ body.modal-open {
   0%, 28%, 100% { opacity: 1; }
   44%, 74% { opacity: 0; }
 }
+
+/* Left-right puzzle: no shrinking, the cup sits in the middle of a wide canvas */
+.cup-x:hover .asm,
+.cup-x.is-apart .asm,
+.cup--hero .asm {
+  transform: none;
+  animation: none;
+}
+
+.cup-x.cup--hero,
+.cup-x.cup--mystery {
+  aspect-ratio: 64 / 34;
+  height: auto;
+}
+
+/* First page and About: the cup gets its own wide row above the heading */
+.onboard__hero,
+.about__hero {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.onboard__hero > .cup--hero,
+.about__hero > .cup--hero {
+  order: -1;
+  justify-self: center;
+  width: min(100%, 440px);
+  margin-block: 8px 0;
+}
+
+.cup-x.cup--mystery {
+  width: clamp(230px, 32vw, 320px);
+}
+
+@media (max-width: 520px) {
+  .onboard__hero .cup--hero,
+  .about__hero .cup--hero {
+    display: block;
+  }
+}
+
+/* Mystery Cup card: the cup gets the whole top row, the countdown sits below */
+.drop-card {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+}
+
+.cup-x.cup--mystery {
+  width: min(100%, 380px);
+}
