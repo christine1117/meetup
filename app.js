@@ -132,8 +132,9 @@ function cupArt(color, o = {}) {
   const teaTop = +(24.9 - 14.1 * fill).toFixed(2);
   const mid = ((teaTop + 25) / 2).toFixed(1);
   const halfAt = (y) => 9.3 - 1.9 * ((y - 10.4) / 14.2); // the cup is narrower lower down
-  const line = big ? 0.38 : 0.75;
-  const ink = '#2a1d16'; // black outline on every cup
+  // Big cups get edges from light and shade; small cups keep a thin grey line so they stay readable
+  const line = big ? 0.22 : 0.6;
+  const ink = big ? '#8d877d' : '#a39d93';
   const part = (name, body) => (body ? `<g class="part p-${name}" style="${APART[name] || ''}">${body}</g>` : '');
   // Floating toppings, split into the left and right halves of the cup
   const placed = ids.filter((k) => PIECE[k]).flatMap((k, i) => [0, 1].map((n) => {
@@ -141,20 +142,30 @@ function cupArt(color, o = {}) {
     return { x, svg: PIECE[k](id, x, y, PIECE_SIZE, n) };
   }));
   const side = (list, left) => list.filter((p) => (left ? p.x < 12 : p.x >= 12)).map((p) => p.svg).join('');
-  const pearls = fill > 0.3 ? CUP_PEARLS.map(([x, y, c]) => ({ x, svg: `<circle cx="${x}" cy="${y}" r="1.5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.5" fill="url(#${id}-pearl)"/>` })) : [];
+  const pearls = fill > 0.3 ? CUP_PEARLS.map(([x, y, c]) => ({ x, svg: `<ellipse cx="${x}" cy="${y + 1.25}" rx="1.3" ry=".35" fill="#000" fill-opacity=".18"/><circle cx="${x}" cy="${y}" r="1.5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.5" fill="url(#${id}-pearl)"/>` })) : [];
   return `
     ${toppingDefs(id)}
     <defs>
       <clipPath id="${id}-in"><path d="${CUP_IN}"/></clipPath>
       <linearGradient id="${id}-shade" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".3" stop-color="#fff" stop-opacity="0"/><stop offset=".75" stop-color="#2a1d16" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".22"/></linearGradient>
-      <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient>
+      <radialGradient id="${id}-pearl" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>
+      <linearGradient id="${id}-deep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a1d16" stop-opacity=".2"/></linearGradient>
+      <linearGradient id="${id}-plastic" x1="0" x2="1">
+        <stop offset="0" stop-color="#6f675c" stop-opacity=".32"/><stop offset=".05" stop-color="#fff" stop-opacity=".55"/><stop offset=".13" stop-color="#fff" stop-opacity=".08"/>
+        <stop offset=".5" stop-color="#fff" stop-opacity=".04"/><stop offset=".86" stop-color="#fff" stop-opacity=".06"/><stop offset=".93" stop-color="#fff" stop-opacity=".4"/><stop offset="1" stop-color="#6f675c" stop-opacity=".34"/>
+      </linearGradient>
+      <linearGradient id="${id}-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#ece7de"/><stop offset="1" stop-color="#b8b1a6"/></linearGradient>
+      <radialGradient id="${id}-dome" cx=".38" cy=".25" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".45" stop-color="#fff" stop-opacity=".22"/><stop offset=".85" stop-color="#cfc8bc" stop-opacity=".22"/><stop offset="1" stop-color="#8d877d" stop-opacity=".4"/></radialGradient>
+      <linearGradient id="${id}-straw" x1="0" x2="1"><stop offset="0" stop-color="#b8341c"/><stop offset=".35" stop-color="#f26a45"/><stop offset=".55" stop-color="#e2492a"/><stop offset="1" stop-color="#a02c17"/></linearGradient>
+      <radialGradient id="${id}-floor" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#3b2518" stop-opacity=".22"/><stop offset="1" stop-color="#3b2518" stop-opacity="0"/></radialGradient>
     </defs>
-    ${big ? '<ellipse cx="12" cy="26.6" rx="8" ry="1" fill="#3b2518" fill-opacity=".14"/>' : ''}
+    ${big ? `<ellipse cx="12" cy="26.7" rx="10" ry="1.6" fill="url(#${id}-floor)"/>` : ''}
     ${fill > 0 ? `<g clip-path="url(#${id}-in)">
       <rect x="0" y="${teaTop}" width="24" height="20" fill="${o.color2 || color}"/>
       ${o.color2 ? `<rect x="0" y="${mid}" width="24" height="20" fill="${color}"/>` : ''}
       ${has('tiger') ? `<g fill="none" stroke="url(#${id}-syrup)" stroke-width="1.3" stroke-opacity=".8" stroke-linecap="round"><path d="M6 11.5Q9 15 7 19T9 25"/><path d="M12.5 11Q15 14.5 12.8 18.5T14.6 24.5"/><path d="M17.8 11.8Q19.4 15 17.4 18.6"/></g>` : ''}
       <rect x="0" y="${teaTop}" width="24" height="20" fill="url(#${id}-shade)"/>
+      <rect x="0" y="${teaTop}" width="24" height="20" fill="url(#${id}-deep)"/>
       ${has('foam') || has('brulee') ? '' : `<ellipse cx="12" cy="${teaTop}" rx="${halfAt(teaTop).toFixed(2)}" ry=".75" fill="#fff" fill-opacity=".22"/>`}
     </g>` : ''}
     ${part('layer', (() => {
@@ -172,22 +183,26 @@ function cupArt(color, o = {}) {
     ${part('pearlsR', side(pearls, false))}
     ${part('topL', side(placed, true))}
     ${part('topR', side(placed, false))}
-    ${part('straw', `<path d="${CUP_STRAW}" fill="#e2492a" stroke="${big ? '#a3301b' : '#2a1d16'}" stroke-width="${line * 0.7}" stroke-linejoin="round"/><path d="M14.9 -3.6 12.6 18.5" stroke="#fff" stroke-opacity=".45" stroke-width=".35" stroke-linecap="round"/>`)}
-    <path d="${CUP_SHELL} Z" fill="#fff" fill-opacity=".16"/>
-    <path d="${CUP_SHELL}" fill="none" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
-    <path d="M2.5 9.4 A9.5 1.1 0 0 1 21.5 9.4" fill="none" stroke="${ink}" stroke-width="${line * 0.8}"/>
-    <path d="M2.5 9.4 A9.5 1.1 0 0 0 21.5 9.4" fill="none" stroke="${ink}" stroke-opacity=".35" stroke-width="${line * 0.6}"/>
-    <path d="M4 11.4 5.6 23.8" stroke="#fff" stroke-opacity=".75" stroke-width=".6" stroke-linecap="round"/>
+    ${part('straw', `<path d="${CUP_STRAW}" fill="url(#${id}-straw)" ${big ? '' : 'stroke="#a3301b" stroke-width=".4" stroke-linejoin="round"'}/><path d="M14.85 -3.6 12.55 18.5" stroke="#fff" stroke-opacity=".5" stroke-width=".3" stroke-linecap="round"/><ellipse cx="15.1" cy="-4.5" rx=".95" ry=".3" fill="#8f2615"/>`)}
+    <path d="${CUP_SHELL} Z" fill="url(#${id}-plastic)"/>
+    <path d="${CUP_SHELL}" fill="none" stroke="${ink}" stroke-opacity="${big ? 0.55 : 1}" stroke-width="${line}" stroke-linejoin="round"/>
+    <path d="M4.5 25.1 Q12 27.3 19.5 25.1" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width=".3"/>
+    <path d="M3.9 11.2 5.5 23.9" stroke="#fff" stroke-opacity=".7" stroke-width=".75" stroke-linecap="round"/>
+    <path d="M19.4 11.6 18.3 21" stroke="#fff" stroke-opacity=".45" stroke-width=".3" stroke-linecap="round"/>
+    <path d="M2.5 9.4 A9.5 1.1 0 0 1 21.5 9.4" fill="none" stroke="${ink}" stroke-opacity=".5" stroke-width="${line}"/>
+    <path d="M2.3 9.4 A9.7 1.25 0 0 0 21.7 9.4 L21.7 9 A9.7 1.25 0 0 1 2.3 9 Z" fill="url(#${id}-rim)" stroke="${ink}" stroke-opacity="${big ? 0.4 : 0.9}" stroke-width="${line * 0.8}"/>
     <rect x="9.6" y="11.8" width="4.8" height="6" rx=".5" fill="#c8352b"/>
     ${big ? `<rect x="10" y="12.2" width="4" height="5.2" rx=".3" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".14"/>` : ''}
     ${o.mark
       ? `<text x="12" y="16.7" text-anchor="middle" font-family="Outfit, sans-serif" font-size="4" font-weight="700" fill="#fff">${o.mark}</text>`
       : big ? `<text x="12" y="14.6" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">半</text><text x="12" y="17.1" text-anchor="middle" font-family="'Noto Sans TC', sans-serif" font-size="2.2" font-weight="700" fill="#fff">糖</text>
         <text x="12" y="19.6" text-anchor="middle" font-family="Outfit, sans-serif" font-size="1.05" font-weight="600" letter-spacing=".32" fill="#2a1d16" fill-opacity=".8">HALF SUGAR</text>` : ''}
-    ${part('lid', `<path d="${CUP_DOME} Z" fill="#fff" fill-opacity=".35"/>
-      <path d="${CUP_DOME}" fill="none" stroke="${ink}" stroke-width="${line}" stroke-linejoin="round"/>
-      <path d="M5 7.4Q5.6 3.4 10.4 2.6" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width=".55" stroke-linecap="round"/>
-      <ellipse cx="12" cy="9.2" rx="10" ry="1.25" fill="#fff" fill-opacity=".55" stroke="${ink}" stroke-width="${line}"/>`)}`;
+    ${part('lid', `<path d="${CUP_DOME} Z" fill="url(#${id}-dome)"/>
+      <path d="${CUP_DOME}" fill="none" stroke="${ink}" stroke-opacity="${big ? 0.45 : 1}" stroke-width="${line}" stroke-linejoin="round"/>
+      <path d="M4.6 7.6Q5.2 3.3 10.6 2.5" fill="none" stroke="#fff" stroke-opacity=".95" stroke-width=".7" stroke-linecap="round"/>
+      <path d="M17.6 3.6Q19.6 5 20.2 7" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".35" stroke-linecap="round"/>
+      <path d="M2.1 9.2 A9.9 1.3 0 0 0 21.9 9.2 L21.9 8.6 A9.9 1.3 0 0 1 2.1 8.6 Z" fill="url(#${id}-rim)" fill-opacity=".9" stroke="${ink}" stroke-opacity="${big ? 0.4 : 0.9}" stroke-width="${line * 0.8}"/>
+      <path d="M3.4 9.6 A8.8 .9 0 0 0 20.6 9.6" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".25"/>`)}`;
 }
 
 function cup(color, o = {}) {
