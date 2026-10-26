@@ -3704,6 +3704,50 @@ body.modal-open {
   flex: none;
 }
 
+/* Arrows on both sides, and a soft fade so you can tell there is more */
+.strip-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.strip-wrap .pick-strip {
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 28px), transparent);
+  padding-inline: 10px 24px;
+}
+
+.strip-wrap .pick-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.strip-arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--lip-soft);
+}
+
+.strip-arrow:hover {
+  border-color: var(--ink);
+}
+
+.strip-arrow:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
 .mydrink__info {
   min-width: 0;
 }

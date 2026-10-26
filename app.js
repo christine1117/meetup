@@ -1352,10 +1352,14 @@ function viewMe() {
       <div class="slots-row">${toppingSlots(shownToppings())}<span class="receipt__meta">${L`In your cup ${shownToppings().length}/${MAX_SHOWN}`}</span></div>
       <div class="pick-toppings">
         <p class="receipt__meta">${myToppings().length ? L`Your toppings. Tap to add or take out.` : L`No toppings yet.`}</p>
+        <div class="strip-wrap">
+        <button class="strip-arrow" data-act="strip" data-dir="-1" type="button" aria-label="${esc(L`Scroll left`)}"><i class="ph ph-caret-left" aria-hidden="true"></i></button>
         <div class="pick-strip">${myToppings().map((k) => {
           const on = shownToppings().includes(k);
           return `<button class="tchip tchip--${TOPPING[k].tier} tchip-btn ${on ? 'is-on' : ''}" data-act="topping-toggle" data-id="${k}" type="button" aria-pressed="${on}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${S.toppings[k] > 1 ? `<b>×${S.toppings[k]}</b>` : ''}<i class="ph ${on ? 'ph-check' : 'ph-plus'}" aria-hidden="true"></i></button>`;
         }).join('')}</div>
+        <button class="strip-arrow" data-act="strip" data-dir="1" type="button" aria-label="${esc(L`Scroll right`)}"><i class="ph ph-caret-right" aria-hidden="true"></i></button>
+        </div>
       </div>
       <div class="btnrow">
         ${(S.boxes || []).length ? `<button class="btn btn--primary btn--sm gift-cta" data-act="box-next" type="button"><i class="ph ph-gift" aria-hidden="true"></i>${L`Open gift box (${S.boxes.length})`}</button>` : ''}
@@ -2171,7 +2175,12 @@ function shell(route, body) {
 // Draw the page. If something breaks (often old saved data), show a way out instead of a blank screen.
 function render(opt = {}) {
   try {
+    // Keep the topping row where it was scrolled to when the page is redrawn
+    const strip = $('.pick-strip', app);
+    const stripX = strip ? strip.scrollLeft : 0;
     draw(opt);
+    const after = $('.pick-strip', app);
+    if (after && stripX) after.scrollLeft = stripX;
   } catch (err) {
     console.error(err);
     app.innerHTML = `
@@ -2449,6 +2458,16 @@ const acts = {
     renderModal();
   },
   'modal-close'() { closeModal(); },
+  // Arrows beside the topping row scroll it sideways
+  strip(el) {
+    const row = el.parentElement.querySelector('.pick-strip');
+    if (!row) return;
+    const from = row.scrollLeft;
+    const to = Math.max(0, Math.min(row.scrollWidth - row.clientWidth, from + Number(el.dataset.dir) * row.clientWidth * 0.7));
+    row.scrollTo({ left: to, behavior: REDUCED_MOTION ? 'auto' : 'smooth' });
+    // Some browsers skip smooth scrolling; make sure the row still moves
+    later(450, () => { if (row.scrollLeft === from) row.scrollLeft = to; });
+  },
   'topping-toggle'(el) {
     const k = el.dataset.id;
     const list = shownToppings();
@@ -2614,6 +2633,16 @@ document.addEventListener('click', (event) => {
   const el = event.target.closest('[data-act]');
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
 });
+
+// A mouse wheel over the topping row scrolls it sideways
+document.addEventListener('wheel', (event) => {
+  const row = event.target.closest && event.target.closest('.pick-strip');
+  if (!row || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+  const max = row.scrollWidth - row.clientWidth;
+  if (max <= 0) return;
+  event.preventDefault();
+  row.scrollLeft = Math.max(0, Math.min(max, row.scrollLeft + event.deltaY));
+}, { passive: false });
 
 // Remember which My order sections are open
 document.addEventListener('toggle', (event) => {
