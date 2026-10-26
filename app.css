@@ -3649,3 +3649,61 @@ body.modal-open {
 .profile-form.is-folding:not(:has(details[open])) .save-btn {
   display: none;
 }
+
+/* ---------- Toppings in a cup: five fixed slots, so cards keep their size ---------- */
+
+.slots-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.slots {
+  display: flex;
+  gap: 6px;
+}
+
+.slot {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sunk);
+}
+
+.slot .ti {
+  width: 30px;
+  height: 30px;
+}
+
+.slot--secret {
+  background: linear-gradient(135deg, #e8defc, #fbe9c2);
+}
+
+.slot--empty {
+  background: transparent;
+  border: 1.5px dashed #c9bda8;
+}
+
+/* All your toppings sit on one line you can scroll sideways */
+.pick-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-inline: -2px;
+  padding: 2px 2px 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  min-height: 40px;
+}
+
+.pick-strip .tchip-btn {
+  flex: none;
+}
+
+.mydrink__info {
+  min-width: 0;
+}

@@ -1033,6 +1033,12 @@ function toppingIcon(k) {
   return `<svg class="ti" viewBox="-1.25 -1.25 2.5 2.5" aria-hidden="true">${toppingDefs(id)}${shadow(0, 0.02, 1)}${art}</svg>`;
 }
 
+// Five fixed slots for what is in a cup: filled ones show the topping, empty ones a dashed circle
+const toppingSlots = (ids) => `<ul class="slots" aria-label="${esc(ids.length ? ids.map((k) => L(TOPPING[k].name)).join(', ') : L`No toppings yet`)}">${Array.from({ length: MAX_SHOWN }, (_, i) => {
+  const k = ids[i];
+  return k ? `<li class="slot slot--${TOPPING[k].tier}" title="${esc(L(TOPPING[k].name))}">${toppingIcon(k)}</li>` : '<li class="slot slot--empty" aria-hidden="true"></li>';
+}).join('')}</ul>`;
+
 const toppingChip = (k, count = 1) => `<span class="tchip tchip--${TOPPING[k].tier}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${count > 1 ? `<b>×${count}</b>` : ''}</span>`;
 
 // Gift boxes wait in a queue until you open them
@@ -1117,9 +1123,7 @@ function profileModal(pid) {
           <p class="pf__drink">${esc(drinkFor(p))}</p>
         </div>
       </div>
-      <div class="pf__toppings">
-        ${ids.length ? ids.map((k) => toppingChip(k, me ? S.toppings[k] : 1)).join('') : `<span class="meta">${L`No toppings yet.`}</span>`}
-      </div>
+      <div class="slots-row">${toppingSlots(ids.slice(0, MAX_SHOWN))}</div>
       <dl class="brief">
         <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
         ${fun ? `<div><dt>${L`Fun fact`}</dt><dd>${esc(fun)}</dd></div>` : ''}
@@ -1344,18 +1348,15 @@ function viewMe() {
     <div class="mydrink__cup">${drinkCup(S.me, shownToppings(), 'cup--profile')}</div>
     <div class="mydrink__info">
       <p class="receipt__label">${L`Your usual`}</p>
-      <div class="order-line">
-        <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
-        ${shownToppings().map((k) => toppingChip(k, S.toppings[k])).join('')}
-      </div>
-      ${myToppings().length ? `
+      <p class="receipt__item">1 × ${esc(drinkFor(S.me))}</p>
+      <div class="slots-row">${toppingSlots(shownToppings())}<span class="receipt__meta">${L`In your cup ${shownToppings().length}/${MAX_SHOWN}`}</span></div>
       <div class="pick-toppings">
-        <p class="receipt__meta">${L`In your cup ${shownToppings().length}/${MAX_SHOWN}. Tap to add or take out.`}</p>
-        <div class="pf__toppings">${myToppings().map((k) => {
+        <p class="receipt__meta">${myToppings().length ? L`Your toppings. Tap to add or take out.` : L`No toppings yet.`}</p>
+        <div class="pick-strip">${myToppings().map((k) => {
           const on = shownToppings().includes(k);
           return `<button class="tchip tchip--${TOPPING[k].tier} tchip-btn ${on ? 'is-on' : ''}" data-act="topping-toggle" data-id="${k}" type="button" aria-pressed="${on}">${toppingIcon(k)}${esc(L(TOPPING[k].name))}${S.toppings[k] > 1 ? `<b>×${S.toppings[k]}</b>` : ''}<i class="ph ${on ? 'ph-check' : 'ph-plus'}" aria-hidden="true"></i></button>`;
         }).join('')}</div>
-      </div>` : ''}
+      </div>
       <div class="btnrow">
         ${(S.boxes || []).length ? `<button class="btn btn--primary btn--sm gift-cta" data-act="box-next" type="button"><i class="ph ph-gift" aria-hidden="true"></i>${L`Open gift box (${S.boxes.length})`}</button>` : ''}
         <button class="btn btn--ghost btn--sm" data-act="profile" data-pid="me" type="button">${L`See my profile`}</button>
