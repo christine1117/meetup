@@ -1,0 +1,303 @@
+/* Half Sugar Teams: only what the main app.css does not already have */
+
+.logo {
+  white-space: nowrap;
+}
+
+.side .logo {
+  gap: 6px;
+  font-size: 1.25rem;
+}
+
+.logo__sub {
+  margin-left: 2px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--orange-soft);
+  color: var(--orange-deep);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.t-hero {
+  margin: 24px 0 8px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.sec-title {
+  margin: 28px 0 12px;
+  font-size: 1.0625rem;
+}
+
+/* Competition list */
+.comp-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comp {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.comp h1,
+.comp h2 {
+  margin: 10px 0 4px;
+  font-size: 1.25rem;
+}
+
+.comp--head h1 {
+  font-size: 1.625rem;
+}
+
+.comp__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.src {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.src--organizer {
+  color: var(--orange-deep);
+  font-weight: 600;
+}
+
+.comp__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.comp__counts b {
+  color: var(--ink);
+}
+
+/* Join choice */
+.join__choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.choice {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-1);
+  transition: transform 0.15s var(--ease);
+}
+
+.choice:active {
+  transform: translateY(1px);
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--orange-deep);
+  outline-offset: 2px;
+}
+
+.choice i {
+  color: var(--orange);
+  font-size: 1.75rem;
+}
+
+.choice span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.mycard {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: var(--r-input);
+  background: var(--sunk);
+}
+
+.mycard .meta {
+  margin: 0;
+}
+
+/* Person and team cards */
+.tcard {
+  margin-bottom: 12px;
+}
+
+.tcard__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tcard__top strong {
+  font-size: 1.0625rem;
+}
+
+.tcard__top .meta {
+  margin: 2px 0 0;
+}
+
+.chips span.is-match {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  color: var(--orange-deep);
+  font-weight: 600;
+}
+
+.team-cups {
+  display: inline-flex;
+  flex: none;
+}
+
+.team-cups .cup {
+  width: 30px;
+  height: 36px;
+}
+
+.team-cups .cup + .cup {
+  margin-left: -10px;
+}
+
+.my-team {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.my-team > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.my-team .meta {
+  margin: 2px 0 0;
+}
+
+.my-team > i {
+  color: var(--muted);
+}
+
+/* Chat and team pages */
+.chat__info {
+  margin: 0;
+  padding: 8px 16px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.msg__who {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--orange-deep);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.team-info {
+  margin: 8px 0;
+  padding: 0;
+}
+
+.team-info summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.9375rem;
+}
+
+.team-info summary::-webkit-details-marker {
+  display: none;
+}
+
+.team-info[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.team-info > :not(summary) {
+  margin: 12px 16px;
+}
+
+.mates {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.mates li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mates .meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* In a team, a filled role is a good thing: no strike-through */
+.team-info .role.is-filled .role__name {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.invite {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+
+.invite .meta {
+  margin: 0;
+}
+
+.invite__row {
+  display: flex;
+  gap: 8px;
+}
+
+.invite__row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-input);
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.invite > .btn {
+  justify-self: start;
+}
