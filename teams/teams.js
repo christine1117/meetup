@@ -62,6 +62,12 @@ const FRIENDS = [
 ];
 const ALL_PEOPLE = [...PEOPLE, ...FRIENDS];
 const P = Object.fromEntries(ALL_PEOPLE.map((p) => [p.id, p]));
+// What your own teammates say to someone you are all talking to
+const MATE_LINES = [
+  'Welcome! Which part would you want to own?',
+  'We meet online twice a week. Would that work for you?',
+  'Could you share something you built? Even a small thing is fine.',
+];
 const LINES = [
   'Nice to meet you. What made you sign up for this one?',
   'I usually handle that part. How much time can you put in each week?',
@@ -83,6 +89,7 @@ function load() {
   try {
     const s = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
     ['chats', 'teams'].forEach((k) => { if (!Array.isArray(s[k])) s[k] = []; });
+    s.chats.forEach((c) => { c.votes = c.votes || {}; });
     return s;
   } catch {
     return blank();
@@ -118,6 +125,20 @@ const members = (t) => `${t.members.length} ${t.members.length === 1 ? 'member' 
 const openRoles = (t) => t.roles.filter((r) => !r.by).map((r) => r.name);
 const inATeam = (pid, cid) => teamsIn(cid).some((t) => t.members.includes(pid));
 const chatWith = (cid, kind, ref) => S.chats.find((c) => c.comp === cid && c.kind === kind && c.ref === ref);
+const passed = (cid, kind, ref) => { const c = chatWith(cid, kind, ref); return c && c.status === 'closed'; };
+
+/* Who is in a chat, and who has to say yes.
+   A chat with a team (or from your team) is a group chat: the whole team is in it.
+   Everyone has to say yes to team up. Anyone can end it politely. */
+const sideTeam = (c) => (c.kind === 'team' ? teamsIn(c.comp).find((t) => t.id === c.ref) : myTeam(c.comp));
+function voters(c) {
+  const t = sideTeam(c);
+  const list = c.kind === 'team' ? ['me', ...t.members] : [...(t ? t.members : ['me']), c.ref];
+  return [...new Set(list)];
+}
+const isGroup = (c) => voters(c).length > 2;
+const nick = (id, c) => (id === 'me' ? 'You' : c && c.revealed ? P[id].real.name : P[id].alias);
+const PASS_TEXT = 'Thanks for chatting! I don’t think it’s the right fit this time. Good luck with the competition.';
 
 /* ---------- Matching ----------
    Complementary roles count most; the same goal and similar hours help;
@@ -137,9 +158,10 @@ function teamScore(t, card) {
 function recommendations(cid) {
   const card = S.cards[cid];
   const mine = myTeam(cid);
-  const people = PEOPLE.filter((p) => p.comps.includes(cid) && !inATeam(p.id, cid))
+  // Anyone you (or they) passed on is not shown again in this competition
+  const people = PEOPLE.filter((p) => p.comps.includes(cid) && !inATeam(p.id, cid) && !passed(cid, 'person', p.id))
     .map((p) => ({ kind: 'person', ref: p.id, score: personScore(p, card, mine) }));
-  const teams = mine ? [] : teamsIn(cid).filter((t) => !t.members.includes('me') && openRoles(t).length)
+  const teams = mine ? [] : teamsIn(cid).filter((t) => !t.members.includes('me') && openRoles(t).length && !passed(cid, 'team', t.id))
     .map((t) => ({ kind: 'team', ref: t.id, score: teamScore(t, card) }));
   return [...people, ...teams].sort((a, b) => b.score - a.score);
 }
@@ -164,8 +186,12 @@ function reply(c, delay = 1500) {
   later(delay, () => {
     U.typing[c.id] = false;
     if (!chatById(c.id)) return;
-    const who = c.kind === 'team' ? pick(teamsIn(c.comp).find((t) => t.id === c.ref).members) : c.ref;
-    push(c, 'them', LINES[c.li % LINES.length], who);
+    if (c.status !== 'open') return;
+    // In a group chat a different person may answer; your own teammates ask the newcomer questions
+    const others = voters(c).filter((v) => v !== 'me');
+    const who = c.kind === 'team' ? pick(others) : c.li % 3 === 2 && others.length > 1 ? pick(others.filter((v) => v !== c.ref)) : c.ref;
+    const mate = c.kind === 'person' && who !== c.ref;
+    push(c, 'them', mate ? pick(MATE_LINES) : LINES[c.li % LINES.length], who);
     c.li += 1;
     save();
     render();
@@ -173,7 +199,12 @@ function reply(c, delay = 1500) {
 }
 
 function startChat(cid, kind, ref, text) {
-  const c = { id: uid(), comp: cid, kind, ref, msgs: [], li: 0, at: Date.now(), status: 'open', join: { me: false, them: false }, teamed: false, revealed: false };
+  const c = { id: uid(), comp: cid, kind, ref, msgs: [], li: 0, at: Date.now(), status: 'open', votes: {}, teamed: false, revealed: false };
+  if (kind === 'person' && myTeam(cid) && myTeam(cid).members.length > 1) {
+    c.msgs.push({ from: 'sys', text: 'Your whole team is in this chat. Everyone uses nicknames until you team up.', at: Date.now() });
+  } else if (kind === 'team') {
+    c.msgs.push({ from: 'sys', text: 'Everyone on the team is in this chat. Everyone uses nicknames until you team up.', at: Date.now() });
+  }
   S.chats.push(c);
   push(c, 'me', text);
   go('chat/' + c.id);
@@ -265,11 +296,15 @@ function teamCard(t, cid) {
 function hiBox(cid, kind, ref, existing, label) {
   if (existing) return `<a class="btn btn--ghost btn--sm" href="#/chat/${existing.id}">Open chat</a>`;
   const key = `${kind}:${ref}`;
+  const team = myTeam(cid);
+  const note = kind === 'team' ? 'Everyone on the team will see this. Names stay hidden until you team up.'
+    : team && team.members.length > 1 ? 'Your whole team will be in this chat. Names stay hidden until you team up.'
+      : 'Say what you can bring. Names stay hidden until you team up.';
   if (U.hi === key) {
     return `
       <form class="stack reply" data-form="hi" data-kind="${kind}" data-ref="${ref}" data-comp="${cid}" novalidate>
         <label class="sr" for="c-hi">Your message</label>
-        <textarea id="c-hi" name="hi" rows="2" placeholder="Say what you can bring. Names stay hidden until you team up."></textarea>
+        <textarea id="c-hi" name="hi" rows="2" placeholder="${esc(note)}"></textarea>
         <div class="btnrow">
           <button class="btn btn--dark btn--sm" type="submit">Send</button>
           <button class="btn btn--ghost btn--sm" data-act="hi" data-key="" type="button">Cancel</button>
@@ -390,7 +425,8 @@ function viewComp(cid) {
 }
 
 function viewChats() {
-  const chats = [...S.chats].sort((a, b) => isCold(a) - isCold(b) || b.at - a.at);
+  const done = (c) => isCold(c) || c.status === 'closed';
+  const chats = [...S.chats].sort((a, b) => done(a) - done(b) || b.at - a.at);
   return `
   <header class="head"><div><h1>Teams &amp; chats</h1><p class="sub">Chat to half sugar, then team up.</p></div></header>
   ${S.teams.length ? `
@@ -404,57 +440,85 @@ function viewChats() {
   <h2 class="sec-title">Chats</h2>
   ${chats.length ? `<ul class="threads">${chats.map((c) => {
     const last = c.msgs[c.msgs.length - 1];
-    return `<li class="${isCold(c) ? 'is-cold' : ''}"><a href="#/chat/${c.id}">
+    return `<li class="${done(c) ? 'is-cold' : ''}"><a href="#/chat/${c.id}">
       <span class="avatar avatar--cup" aria-hidden="true">${c.kind === 'team' ? cupFor(P[teamsIn(c.comp).find((t) => t.id === c.ref).members[0]]) : cupFor(P[c.ref])}</span>
-      <span class="threads__body"><strong>${esc(chatName(c))}</strong><small>${esc(COMP[c.comp].name)} · ${c.teamed ? 'Teamed up' : isCold(c) ? 'Gone cold' : `${sugarOf(c)}% sugar`}</small><span class="threads__last">${esc(last ? last.text : '')}</span></span>
+      <span class="threads__body"><strong>${esc(chatName(c))}</strong><small>${esc(COMP[c.comp].name)} · ${c.teamed ? 'Teamed up' : c.status === 'closed' ? 'Ended' : isCold(c) ? 'Gone cold' : `${sugarOf(c)}% sugar`}</small><span class="threads__last">${esc(last ? last.text : '')}</span></span>
     </a></li>`;
   }).join('')}</ul>` : '<p class="empty">No chats yet. Pick a competition and say hi to someone.</p>'}`;
 }
 
-function bubbles(msgs, typing, team) {
+// names: a function that turns a sender id into the name shown above their message (group chats only)
+function bubbles(msgs, typing, names) {
   return msgs.map((m) => {
     if (m.from === 'sys') return `<li class="msg msg--sys">${esc(m.text)}</li>`;
-    const name = team && m.from !== 'me' ? `<small class="msg__who">${esc(P[m.who].real.name)}</small>` : '';
+    const name = names && m.from !== 'me' && m.who ? `<small class="msg__who">${esc(names(m.who))}</small>` : '';
     return `<li class="msg msg--${m.from}">${name}${esc(m.text)}</li>`;
   }).join('') + (typing ? '<li class="msg msg--them msg--typing" aria-label="Typing"><span></span><span></span><span></span></li>' : '');
 }
 
 function viewChat(c) {
+  const open = c.status === 'open' && !c.teamed;
   const cold = isCold(c);
+  const live = open && !cold;
   const sugar = sugarOf(c);
   const team = c.kind === 'team' ? teamsIn(c.comp).find((t) => t.id === c.ref) : null;
   const p = c.kind === 'person' ? P[c.ref] : null;
+  const group = isGroup(c);
   const info = p
     ? `Can do ${p.canDo.join(', ')} · Looking for ${p.lookingFor.join(', ')}`
     : `Needs ${openRoles(team).join(', ') || 'no one'} · ${members(team)}`;
+  // In a group chat, say who wrote each message (nicknames until you team up)
+  const names = group ? (id) => (c.kind === 'person' && id !== c.ref ? `${nick(id, c)} · your team` : nick(id, c)) : null;
   let action = '';
   if (c.teamed) action = `<a class="btn btn--primary btn--sm" href="#/team/${c.team}">Open team</a>`;
-  else if (!cold && c.join.me) action = '<button class="btn btn--sm" type="button" disabled>Waiting for them</button>';
-  else if (!cold && sugar >= REVEAL_AT) action = `<button class="btn btn--primary btn--sm" data-act="teamup" data-id="${c.id}" type="button"><i class="ph ph-handshake" aria-hidden="true"></i>Team up</button>`;
-  else if (!cold) action = `<button class="btn btn--sm" type="button" disabled>Team up at ${REVEAL_AT}%</button>`;
+  else if (live && c.votes.me) action = '<button class="btn btn--sm" type="button" disabled>You said yes</button>';
+  else if (live && sugar >= REVEAL_AT) action = `<button class="btn btn--primary btn--sm" data-act="teamup" data-id="${c.id}" type="button"><i class="ph ph-handshake" aria-hidden="true"></i>Team up</button>`;
+  else if (live) action = `<button class="btn btn--sm" type="button" disabled>Team up at ${REVEAL_AT}%</button>`;
+  const showVotes = live && (sugar >= REVEAL_AT || Object.keys(c.votes).length);
+  let bottom;
+  if (c.status === 'closed') bottom = '<p class="cold"><i class="ph ph-door-open" aria-hidden="true"></i>This chat ended. No hard feelings: names were never shown.</p>';
+  else if (cold) bottom = '<p class="cold"><i class="ph ph-snowflake" aria-hidden="true"></i>This chat went cold: no reply for 3 days.</p>';
+  else if (U.leave === c.id) bottom = `
+    <div class="panel leave">
+      <p class="field__label">End this chat?</p>
+      <p class="meta">We send this for you. No reason needed.</p>
+      <blockquote class="leave__quote">${esc(PASS_TEXT)}</blockquote>
+      <p class="meta">Names stay hidden, and you won’t be shown to each other again in this competition.</p>
+      <div class="btnrow">
+        <button class="btn btn--dark btn--sm" data-act="leave-send" data-id="${c.id}" type="button">Send and end chat</button>
+        <button class="btn btn--ghost btn--sm" data-act="leave" data-id="" type="button">Keep chatting</button>
+      </div>
+    </div>`;
+  else bottom = `
+    <div class="devrow"><button class="btn btn--ghost btn--sm" data-act="dev-time" data-id="${c.id}" type="button">Dev: +5 min</button><button class="btn btn--ghost btn--sm" data-act="dev-days" data-id="${c.id}" type="button">Dev: +3 days</button><button class="btn btn--ghost btn--sm" data-act="dev-pass" data-id="${c.id}" type="button">Dev: they pass</button></div>
+    <form class="composer" data-form="msg" data-id="${c.id}">
+      <label class="sr" for="c-msg">Message</label>
+      <input id="c-msg" name="msg" autocomplete="off" placeholder="${group ? 'Message everyone' : 'Say something'}">
+      <button class="btn btn--dark" type="submit" aria-label="Send"><i class="ph ph-paper-plane-right" aria-hidden="true"></i></button>
+    </form>`;
   return `
   <section class="chat">
     <header class="chat__head">
       <a class="back" href="#/chats" aria-label="Back"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
         <h1>${esc(chatName(c))}</h1>
-        <p class="sub">${esc(COMP[c.comp].name)}</p>
-        <div class="meta-row">${sugarMeter(sugar)}${!cold && !c.teamed ? `<span class="expiry">${closesText(c)}</span>` : ''}</div>
+        <p class="sub">${esc(COMP[c.comp].name)}${group && p ? ' · with your team' : ''}</p>
+        <div class="meta-row">${sugarMeter(sugar)}${live ? `<span class="expiry">${closesText(c)}</span>` : ''}</div>
       </div>
       <div class="chat__tools">
-        ${cold ? '' : `<button class="btn btn--ghost btn--sm" data-act="call" data-id="${c.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Video</button>`}
+        ${live ? `<button class="btn btn--ghost btn--sm" data-act="call" data-id="${c.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Video</button>` : ''}
         ${action}
+        ${live && U.leave !== c.id ? `<button class="btn btn--ghost btn--sm" data-act="leave" data-id="${c.id}" type="button">Not a fit</button>` : ''}
       </div>
     </header>
     <p class="chat__info">${esc(info)}</p>
-    <ul class="log" id="log">${bubbles(c.msgs, U.typing[c.id], false)}</ul>
-    ${cold ? '<p class="cold"><i class="ph ph-snowflake" aria-hidden="true"></i>This chat went cold: no reply for 3 days.</p>' : `
-    <div class="devrow"><button class="btn btn--ghost btn--sm" data-act="dev-time" data-id="${c.id}" type="button">Dev: +5 min</button><button class="btn btn--ghost btn--sm" data-act="dev-days" data-id="${c.id}" type="button">Dev: +3 days</button></div>
-    <form class="composer" data-form="msg" data-id="${c.id}">
-      <label class="sr" for="c-msg">Message</label>
-      <input id="c-msg" name="msg" autocomplete="off" placeholder="Say something">
-      <button class="btn btn--dark" type="submit" aria-label="Send"><i class="ph ph-paper-plane-right" aria-hidden="true"></i></button>
-    </form>`}
+    ${showVotes ? `
+    <div class="votes" aria-label="Who said yes">
+      <span class="votes__label">Everyone says yes to team up</span>
+      <ul>${voters(c).map((v) => `<li class="${c.votes[v] ? 'is-yes' : ''}"><i class="ph ${c.votes[v] ? 'ph-check-circle' : 'ph-circle-dashed'}" aria-hidden="true"></i>${esc(nick(v, c))}<span class="sr">${c.votes[v] ? ': yes' : ': waiting'}</span></li>`).join('')}</ul>
+    </div>` : ''}
+    <ul class="log" id="log">${bubbles(c.msgs, U.typing[c.id], names)}</ul>
+    ${bottom}
   </section>`;
 }
 
@@ -481,7 +545,7 @@ function viewTeam(t) {
         <button class="btn btn--ghost btn--sm" data-act="dev-friend" data-id="${t.id}" type="button">Dev: a friend joins by link</button>
       </div>
     </details>
-    <ul class="log" id="log">${bubbles(t.msgs, U.typing[t.id], true)}</ul>
+    <ul class="log" id="log">${bubbles(t.msgs, U.typing[t.id], (id) => P[id].real.name)}</ul>
     <form class="composer" data-form="teammsg" data-id="${t.id}">
       <label class="sr" for="c-msg">Message</label>
       <input id="c-msg" name="msg" autocomplete="off" placeholder="Message the team">
@@ -628,20 +692,52 @@ const acts = {
   hi(el) { U.hi = el.dataset.key || null; render({ fresh: true, focus: U.hi ? 'c-hi' : null }); },
   teamup(el) {
     const c = chatById(el.dataset.id);
-    if (!c || c.join.me || sugarOf(c) < REVEAL_AT) return;
-    c.join.me = true;
-    c.msgs.push({ from: 'sys', text: 'You tapped Team up. Waiting for them.', at: Date.now() });
+    if (!c || c.votes.me || c.status !== 'open' || sugarOf(c) < REVEAL_AT) return;
+    c.votes.me = true;
+    c.msgs.push({ from: 'sys', text: 'You said yes. Waiting for everyone else.', at: Date.now() });
     save();
     render();
-    later(2200, () => {
-      if (!chatById(c.id) || c.teamed) return;
-      if (c.msgs.filter((m) => m.from === 'me').length >= 2) formTeam(c);
-      else {
-        c.join.me = false;
-        push(c, 'them', 'Let us talk a little more first.', c.kind === 'person' ? c.ref : undefined);
+    // Demo: the others say yes one by one, as long as you have really talked
+    const others = voters(c).filter((v) => v !== 'me' && !c.votes[v]);
+    const talked = c.msgs.filter((m) => m.from === 'me').length >= 2;
+    if (!talked) {
+      later(1800, () => {
+        if (c.status !== 'open' || c.teamed) return;
+        c.votes = {};
+        push(c, 'them', 'Let us talk a little more first.', others[0]);
         render();
-      }
-    });
+      });
+      return;
+    }
+    others.forEach((v, i) => later(1400 * (i + 1), () => {
+      if (c.status !== 'open' || c.teamed) return;
+      c.votes[v] = true;
+      save();
+      if (voters(c).every((x) => c.votes[x])) formTeam(c);
+      else render();
+    }));
+  },
+  leave(el) { U.leave = el.dataset.id || null; render(); },
+  'leave-send'(el) {
+    const c = chatById(el.dataset.id);
+    if (!c || c.status !== 'open') return;
+    U.leave = null;
+    c.msgs.push({ from: 'me', text: PASS_TEXT, at: Date.now() });
+    c.msgs.push({ from: 'sys', text: 'Chat ended.', at: Date.now() });
+    c.status = 'closed';
+    save();
+    render({ fresh: true });
+  },
+  // Demo: see what it looks like when the other side passes
+  'dev-pass'(el) {
+    const c = chatById(el.dataset.id);
+    if (!c || c.status !== 'open') return;
+    const who = c.kind === 'team' ? pick(voters(c).filter((v) => v !== 'me')) : c.ref;
+    c.msgs.push({ from: 'them', who, text: PASS_TEXT, at: Date.now() });
+    c.msgs.push({ from: 'sys', text: 'Chat ended.', at: Date.now() });
+    c.status = 'closed';
+    save();
+    render({ fresh: true });
   },
   call(el) {
     window.open(`https://meet.jit.si/HalfSugarTeams-${el.dataset.id}`, '_blank', 'noopener');
@@ -700,6 +796,7 @@ window.addEventListener('hashchange', () => {
   }
   U.form = null;
   U.hi = null;
+  U.leave = null;
   U.confirmReset = false;
   render();
 });

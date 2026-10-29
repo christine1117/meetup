@@ -301,3 +301,68 @@
 .invite > .btn {
   justify-self: start;
 }
+
+/* Who said yes to teaming up */
+.votes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 8px;
+  padding: 0 16px;
+  font-size: 0.8125rem;
+}
+
+.votes__label {
+  color: var(--muted);
+}
+
+.votes ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.votes li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 6px;
+  border: 1px dashed #b9ad98;
+  border-radius: var(--r-pill);
+  color: var(--muted);
+}
+
+.votes li.is-yes {
+  border: 1px solid var(--orange);
+  background: var(--orange-soft);
+  color: var(--orange-deep);
+  font-weight: 600;
+}
+
+.votes i {
+  font-size: 1rem;
+}
+
+/* Ending a chat politely */
+.leave {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.leave .meta,
+.leave .field__label {
+  margin: 0;
+}
+
+.leave__quote {
+  margin: 4px 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--orange);
+  border-radius: 0 var(--r-input) var(--r-input) 0;
+  background: var(--bg);
+}
