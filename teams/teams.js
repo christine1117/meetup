@@ -185,6 +185,7 @@ function formTeam(c) {
   const cid = c.comp;
   const card = S.cards[cid];
   let team;
+  let fresh = false;
   if (c.kind === 'team') {
     team = S.teams.find((t) => t.id === c.ref) || JSON.parse(JSON.stringify(SEED_TEAMS.find((t) => t.id === c.ref)));
     if (!S.teams.includes(team)) S.teams.push(team);
@@ -202,12 +203,15 @@ function formTeam(c) {
       const needed = [...new Set([...card.canDo, ...p.canDo, ...card.lookingFor, ...p.lookingFor])];
       const roles = needed.map((name) => ({ name, by: card.canDo.includes(name) ? 'me' : p.canDo.includes(name) ? p.id : null }));
       team = { id: uid(), comp: cid, name: `${S.me.alias} & ${p.alias}`, members: ['me', p.id], roles, msgs: [], code: uid() };
+      fresh = true;
       S.teams.push(team);
     }
   }
   team.msgs = team.msgs || [];
   team.code = team.code || uid();
-  team.msgs.push({ from: 'sys', text: 'Team formed. Names are now visible to everyone in the team.', at: Date.now() });
+  const newcomer = c.kind === 'team' ? `${S.me.name || S.me.alias} (you)` : P[c.ref].real.name;
+  const note = fresh ? 'Team formed. Names are now visible to everyone in the team.' : `${newcomer} joined the team after chatting to half sugar.`;
+  team.msgs.push({ from: 'sys', text: note, at: Date.now() });
   c.teamed = true;
   c.revealed = true;
   c.team = team.id;
