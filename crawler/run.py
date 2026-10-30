@@ -108,7 +108,11 @@ def main() -> int:
         started = time.time()
         try:
             raws, skipped, notes = mod.collect(cache, progress=lambda m, n=name: log.info("  %s: %s", n, m), limit=cfg.limit)
-            collected.append(((sid, name, home), raws, skipped, notes, time.time() - started))
+            # A site can list the same competition twice (a sitemap, or a list that shifts between pages)
+            unique = list({r.id: r for r in reversed(raws)}.values())[::-1]
+            if len(unique) < len(raws):
+                notes = {**notes, "duplicates removed": len(raws) - len(unique)}
+            collected.append(((sid, name, home), unique, skipped, notes, time.time() - started))
         except Exception as err:  # keep the last good items of this source
             failed += 1
             kept = [x for x in previous.values() if x.get("source") == sid]

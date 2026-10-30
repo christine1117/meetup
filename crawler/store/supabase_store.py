@@ -10,6 +10,12 @@ from __future__ import annotations
 import httpx
 
 
+def check(r: httpx.Response, table: str) -> None:
+    """Fail with the database's own explanation, so the run log says what went wrong."""
+    if r.is_error:
+        raise RuntimeError(f"{table}: HTTP {r.status_code} {r.text[:400]}")
+
+
 class SupabaseStore:
     def __init__(self, url: str, service_key: str, client: httpx.Client | None = None):
         self.client = client or httpx.Client(timeout=30)
@@ -25,12 +31,12 @@ class SupabaseStore:
             return
         prefer = "resolution=merge-duplicates,return=minimal" if upsert else "return=minimal"
         r = self.client.post(f"{self.base}/{table}", json=rows, headers={**self.headers, "Prefer": prefer})
-        r.raise_for_status()
+        check(r, table)
 
     def _delete(self, table: str, column: str, ids: list[str]) -> None:
         if ids:
             r = self.client.delete(f"{self.base}/{table}", params={column: f"in.({','.join(ids)})"}, headers=self.headers)
-            r.raise_for_status()
+            check(r, table)
 
     def save(self, rows: list[dict]) -> None:
         """rows: one per competition: {competition: {...}, tracks: [...], issues: [...]}"""

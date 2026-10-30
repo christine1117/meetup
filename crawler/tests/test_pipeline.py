@@ -141,3 +141,11 @@ def test_llm_runner_reads_in_parallel_and_stops_after_failures():
     bad = LLMRunner(Fake(True), C(), workers=1)
     out = bad.run([(c, "t") for c in comps])
     assert bad.stopped and all(v is None for v in out.values())
+
+
+def test_database_errors_say_why():
+    import pytest
+    store = SupabaseStore("https://abc.supabase.co", "sb_secret_x",
+                          client=httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(400, text='{"message":"bad column"}'))))
+    with pytest.raises(RuntimeError, match="bad column"):
+        store.save([{"competition": {"id": "dp-1"}, "tracks": [], "issues": []}])
