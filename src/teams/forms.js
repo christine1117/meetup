@@ -1,15 +1,15 @@
 /* What happens when a form is sent. */
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261030e';
-import { isCold } from '../shared/sugar.js?v=20261030e';
-import { S, U, save, saveMe } from './state.js?v=20261030e';
-import { toast } from './ui.js?v=20261030e';
-import { MAX_ROLES } from './options.js?v=20261030e';
-import { COMP } from './competitions.js?v=20261030e';
-import { go } from './router.js?v=20261030e';
-import { DEFAULT_MAX, isFull } from './rules.js?v=20261030e';
-import { chatById, push, reply, startChat } from './chats.js?v=20261030e';
-import { render } from './render.js?v=20261030e';
+import { $, later, pick, uid } from '../shared/core.js?v=20261030f';
+import { isCold } from '../shared/sugar.js?v=20261030f';
+import { S, U, save, saveMe } from './state.js?v=20261030f';
+import { toast } from './ui.js?v=20261030f';
+import { MAX_ROLES } from './options.js?v=20261030f';
+import { COMP } from './competitions.js?v=20261030f';
+import { go } from './router.js?v=20261030f';
+import { DEFAULT_MAX, isFull } from './rules.js?v=20261030f';
+import { chatById, push, reply, startChat } from './chats.js?v=20261030f';
+import { render } from './render.js?v=20261030f';
 
 export const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v).trim()]));
 

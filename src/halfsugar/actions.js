@@ -1,20 +1,20 @@
 /* ---------- Buttons ---------- */
 
-import { $, later } from '../shared/core.js?v=20261030e';
-import { L } from '../shared/i18n.js?v=20261030e';
-import { CLOSE_AFTER_DAYS, REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030e';
-import { MAX_ROLES, P, openRoles, rolesOf } from './people.js?v=20261030e';
-import { MAX_TAGS, normTag } from './matching.js?v=20261030e';
-import { D, KEY, S, U, save } from './state.js?v=20261030e';
-import { go } from './router.js?v=20261030e';
-import { toast } from './ui.js?v=20261030e';
-import { createThread, pushMsg, resolveReveal, sugarNotes, thread } from './conversations.js?v=20261030e';
-import { MAX_SHOWN, earnBox, openNextBox, shownToppings } from './toppings.js?v=20261030e';
-import { REDUCED_MOTION, closeModal, renderModal } from './modal.js?v=20261030e';
-import { syncRoleDescs } from './screens/brew.js?v=20261030e';
-import { dropDecide, dropEnd, dropStart } from './screens/mystery.js?v=20261030e';
-import { render } from './shell.js?v=20261030e';
-import { tagList } from './screens/profile-form.js?v=20261030e';
+import { $, later } from '../shared/core.js?v=20261030f';
+import { L } from '../shared/i18n.js?v=20261030f';
+import { CLOSE_AFTER_DAYS, REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030f';
+import { MAX_ROLES, P, openRoles, rolesOf } from './people.js?v=20261030f';
+import { MAX_TAGS, normTag } from './matching.js?v=20261030f';
+import { D, KEY, S, U, save } from './state.js?v=20261030f';
+import { go } from './router.js?v=20261030f';
+import { toast } from './ui.js?v=20261030f';
+import { createThread, pushMsg, resolveReveal, sugarNotes, thread } from './conversations.js?v=20261030f';
+import { MAX_SHOWN, earnBox, openNextBox, shownToppings } from './toppings.js?v=20261030f';
+import { REDUCED_MOTION, closeModal, renderModal } from './modal.js?v=20261030f';
+import { syncRoleDescs } from './screens/brew.js?v=20261030f';
+import { dropDecide, dropEnd, dropStart } from './screens/mystery.js?v=20261030f';
+import { render } from './shell.js?v=20261030f';
+import { tagList } from './screens/profile-form.js?v=20261030f';
 
 
 export function takeResponse(el) {

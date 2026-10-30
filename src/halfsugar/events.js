@@ -1,13 +1,13 @@
 /* ---------- Events ---------- */
 
-import { $ } from '../shared/core.js?v=20261030e';
-import { SEED_POSTS, hasEvent, rolesOf } from './people.js?v=20261030e';
-import { D, U } from './state.js?v=20261030e';
-import { closeModal, renderModal } from './modal.js?v=20261030e';
-import { clock, countdownText, dropEnd } from './screens/mystery.js?v=20261030e';
-import { render } from './shell.js?v=20261030e';
-import { formData, forms } from './forms.js?v=20261030e';
-import { acts } from './actions.js?v=20261030e';
+import { $ } from '../shared/core.js?v=20261030f';
+import { SEED_POSTS, hasEvent, rolesOf } from './people.js?v=20261030f';
+import { D, U } from './state.js?v=20261030f';
+import { closeModal, renderModal } from './modal.js?v=20261030f';
+import { clock, countdownText, dropEnd } from './screens/mystery.js?v=20261030f';
+import { render } from './shell.js?v=20261030f';
+import { formData, forms } from './forms.js?v=20261030f';
+import { acts } from './actions.js?v=20261030f';
 
 
 document.addEventListener('click', (event) => {

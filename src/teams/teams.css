@@ -556,3 +556,48 @@
   margin-right: 6px;
   vertical-align: -2px;
 }
+
+/* Team-size rules and eligibility, read from the official page */
+.comp__rules {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-input);
+  background: var(--bg);
+}
+
+.comp__rules .field__label {
+  margin: 4px 0 0;
+}
+
+.comp__rules .field__label i {
+  margin-right: 6px;
+  color: var(--orange-deep);
+}
+
+.comp__rules .meta {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+}
+
+.tracks {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tracks q {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.comp__elig {
+  margin: 0;
+  line-height: 1.6;
+}

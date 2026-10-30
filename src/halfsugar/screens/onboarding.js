@@ -2,14 +2,14 @@
    A few quick questions, one per screen, then the profile form.
    Single-choice answers move on by themselves. */
 
-import { esc } from '../../shared/core.js?v=20261030e';
-import { L } from '../../shared/i18n.js?v=20261030e';
-import { FIELDS, LOGO, drinkFor, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030e';
-import { cup, cupFor } from '../../shared/cup.js?v=20261030e';
-import { field } from '../../shared/forms.js?v=20261030e';
-import { MEETS } from '../../shared/profile.js?v=20261030e';
-import { U } from '../state.js?v=20261030e';
-import { profileForm, tagEditor } from './profile-form.js?v=20261030e';
+import { esc } from '../../shared/core.js?v=20261030f';
+import { L } from '../../shared/i18n.js?v=20261030f';
+import { FIELDS, LOGO, drinkFor, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030f';
+import { cup, cupFor } from '../../shared/cup.js?v=20261030f';
+import { field } from '../../shared/forms.js?v=20261030f';
+import { MEETS } from '../../shared/profile.js?v=20261030f';
+import { U } from '../state.js?v=20261030f';
+import { profileForm, tagEditor } from './profile-form.js?v=20261030f';
 
 
 export const QUIZ_STEPS = 3;

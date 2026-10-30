@@ -2,10 +2,13 @@
   "name": "half-sugar",
   "private": true,
   "type": "module",
-  "description": "Half Sugar and Half Sugar Teams: one codebase, plain browser modules, plus a daily competition crawler.",
+  "description": "Half Sugar and Half Sugar Teams: browser modules for the apps, a Python crawler that reads competition rules with an LLM.",
   "scripts": {
-    "test": "node --test tests/*.test.js",
-    "crawl": "node crawler/run.js",
+    "test": "node --test tests/*.test.js && .venv/bin/python -m pytest crawler/tests -q",
+    "test:web": "node --test tests/*.test.js",
+    "test:crawler": ".venv/bin/python -m pytest crawler/tests -q",
+    "setup": "uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r crawler/requirements.txt",
+    "crawl": ".venv/bin/python -m crawler",
     "serve": "python3 -m http.server 8000",
     "version": "node tools/version.js"
   },

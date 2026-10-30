@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkCompetition, teamSizeText } from '../src/shared/contract.js';
+import { checkCompetition, teamSizeText, trackText } from '../src/shared/contract.js';
 import { safeUrl } from '../src/shared/core.js';
 
 const good = {
@@ -23,13 +23,24 @@ test('broken records are caught', () => {
   assert.ok(checkCompetition({ ...good, name: '' }).includes('name'));
 });
 
-test('team size is always shown as a range', () => {
+test('team size text', () => {
   assert.equal(teamSizeText({ min: 2, max: 5 }), '2–5 people');
-  assert.equal(teamSizeText({ min: null, max: 4 }), '1–4 people', 'no minimum means one person can enter');
   assert.equal(teamSizeText({ min: 1, max: 8 }), '1–8 people');
+  assert.equal(teamSizeText({ min: null, max: 4 }), 'Max 4 people', 'no minimum is made up');
   assert.equal(teamSizeText({ min: 3, max: null }), '3+ people');
   assert.equal(teamSizeText({ min: 4, max: 4 }), '4 per team');
   assert.equal(teamSizeText({ min: null, max: null }), 'Team size on the official page');
+});
+
+test('track text', () => {
+  assert.equal(trackText({ name: '高中組', min: 2, max: 4, evidence: 'x' }), '高中組: 2–4 people');
+  assert.equal(trackText({ name: null, min: null, max: 8, solo: true, evidence: 'x' }), '1–8 people');
+  assert.equal(trackText({ name: null, min: null, max: 5, mentors: 1, evidence: 'x' }), 'Max 5 people, plus 1 mentor');
+});
+
+test('tracks and eligibility are checked too', () => {
+  assert.deepEqual(checkCompetition({ ...good, tracks: [{ name: '高中組', min: 2, max: 4, evidence: '每隊2至4人' }], eligibility: '高中職學生' }), []);
+  assert.ok(checkCompetition({ ...good, tracks: [{ name: null, min: 2, max: 4 }] }).includes('tracks'), 'a rule needs its quote');
 });
 
 test('only http(s) links are let through', () => {

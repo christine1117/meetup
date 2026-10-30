@@ -1,9 +1,9 @@
 /* HTML: sign-up and the Me page (the same fields as Half Sugar). */
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261030e';
-import { field, select } from '../../shared/forms.js?v=20261030e';
-import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030e';
-import { S, U } from '../state.js?v=20261030e';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261030f';
+import { field, select } from '../../shared/forms.js?v=20261030f';
+import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030f';
+import { S, U } from '../state.js?v=20261030f';
 
 // The same profile as Half Sugar: visible from the start, then sealed details
 export function profileFields(me) {

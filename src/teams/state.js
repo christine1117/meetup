@@ -1,8 +1,8 @@
 /* Saved data for team mode: your competition cards, teams and chats.
    Your profile is shared with Half Sugar (see ../shared/profile.js). */
 
-import { readProfile, writeProfile } from '../shared/profile.js?v=20261030e';
-import { MAX_ROLES } from './options.js?v=20261030e';
+import { readProfile, writeProfile } from '../shared/profile.js?v=20261030f';
+import { MAX_ROLES } from './options.js?v=20261030f';
 
 export const KEY = 'halfsugar.teams.v1';
 export const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {} });

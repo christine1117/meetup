@@ -33,17 +33,28 @@ export function checkCompetition(x) {
   // Only team competitions are listed: max is 2 or more, or not stated
   const t = x.team;
   need(t && typeof t === 'object' && isCount(t.min) && isCount(t.max) && (t.max === null || t.max >= 2) && (t.min === null || t.max === null || t.min <= t.max), 'team');
+  // Per-track rules read by the LLM, each with the exact quote it came from (optional)
+  need(x.tracks === undefined || (Array.isArray(x.tracks) && x.tracks.every((r) => r && (r.name === null || r.name === undefined || isText(r.name, 80))
+    && isCount(r.min ?? null) && isCount(r.max ?? null) && isText(r.evidence, 1000))), 'tracks');
+  need(x.eligibility === undefined || x.eligibility === null || isText(x.eligibility, 300), 'eligibility');
   return errors;
 }
 
-// Always a range: "2–5 people", "1–8 people" (no minimum means one person
-// can enter), "3 per team", "2+ people", or not listed
+// "2–5 people", "1–8 people" (one person may also enter alone), "3 per team",
+// "Max 5 people" (the rules give no minimum, so none is made up), "2+ people"
 export function teamSizeText(team) {
   const { min = null, max = null } = team || {};
   if (max) {
-    const low = min || 1;
-    return low === max ? `${max} per team` : `${low}–${max} people`;
+    if (min) return min === max ? `${max} per team` : `${min}–${max} people`;
+    return `Max ${max} people`;
   }
   if (min) return `${min}+ people`;
   return 'Team size on the official page';
+}
+
+// One track's rule, e.g. "高中組: 2–4 people, plus 1 mentor"
+export function trackText(t) {
+  const size = teamSizeText({ min: t.min ?? (t.solo ? 1 : null), max: t.max ?? null });
+  const mentors = t.mentors ? `, plus ${t.mentors} mentor${t.mentors > 1 ? 's' : ''}` : '';
+  return `${t.name ? `${t.name}: ` : ''}${size}${mentors}`;
 }

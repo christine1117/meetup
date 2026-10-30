@@ -1,16 +1,16 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261030e';
-import { cupFor } from '../../shared/cup.js?v=20261030e';
-import { field, select } from '../../shared/forms.js?v=20261030e';
-import { teamSizeText } from '../../shared/contract.js?v=20261030e';
-import { S, U } from '../state.js?v=20261030e';
-import { roleChips } from '../ui.js?v=20261030e';
-import { GOALS, HOURS, TOPICS, goalName, hoursName } from '../options.js?v=20261030e';
-import { COMP, DATA, REGION_NAME, SOURCE_NAME, compOf, dataState, dateText, whenText } from '../competitions.js?v=20261030e';
-import { P } from '../sample-people.js?v=20261030e';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261030e';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261030e';
+import { esc, safeUrl } from '../../shared/core.js?v=20261030f';
+import { cupFor } from '../../shared/cup.js?v=20261030f';
+import { field, select } from '../../shared/forms.js?v=20261030f';
+import { teamSizeText, trackText } from '../../shared/contract.js?v=20261030f';
+import { S, U } from '../state.js?v=20261030f';
+import { roleChips } from '../ui.js?v=20261030f';
+import { GOALS, HOURS, TOPICS, goalName, hoursName } from '../options.js?v=20261030f';
+import { COMP, DATA, REGION_NAME, SOURCE_NAME, compOf, dataState, dateText, whenText } from '../competitions.js?v=20261030f';
+import { P } from '../sample-people.js?v=20261030f';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261030f';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261030f';
 
 export const PAGE = 30;
 export function viewComps() {
@@ -88,8 +88,16 @@ export function viewComp(cid) {
     <h1>${esc(c.name)}</h1>
     ${c.organizer ? `<p class="meta">${esc(c.organizer)}</p>` : ''}
     ${c.url ? `<p class="comp__when"><i class="ph ph-calendar-blank" aria-hidden="true"></i>${esc(whenText(c))}${c.where ? ` · ${esc(c.where)}` : ''}${c.prize ? ` · ${esc(c.prize)} in prizes` : ''}</p>` : ''}
-    ${c.team ? `<p class="comp__size"><i class="ph ph-users-three" aria-hidden="true"></i>${esc(teamSizeText(c.team))}</p>` : ''}
+    ${(c.tracks || []).length ? '' : `<p class="comp__size"><i class="ph ph-users-three" aria-hidden="true"></i>${esc(teamSizeText(c.team))}</p>`}
     ${c.summary ? `<p class="comp__sum">${esc(c.summary)}</p>` : ''}
+    ${(c.tracks || []).length || c.eligibility ? `
+    <div class="comp__rules">
+      ${(c.tracks || []).length ? `
+      <p class="field__label"><i class="ph ph-users-three" aria-hidden="true"></i>Team size</p>
+      <ul class="tracks">${c.tracks.map((t) => `<li><b>${esc(trackText(t))}</b><q>${esc(t.evidence)}</q></li>`).join('')}</ul>` : ''}
+      ${c.eligibility ? `<p class="field__label"><i class="ph ph-identification-card" aria-hidden="true"></i>Who can enter</p><p class="comp__elig">${esc(c.eligibility)}</p>` : ''}
+      <p class="meta">Read from the official page. Check the rules there before you sign up.</p>
+    </div>` : ''}
     ${(c.tags || []).length ? `<p class="chips">${roleChips(c.tags)}</p>` : ''}
     ${safeUrl(c.url) ? `<div class="btnrow"><a class="btn btn--ghost btn--sm" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener">Official page<i class="ph ph-arrow-up-right" aria-hidden="true"></i></a><span class="meta">Listed on ${esc(SOURCE_NAME[c.source] || '')}. Sign up there too.</span></div>` : ''}
   </section>

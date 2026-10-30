@@ -4,10 +4,10 @@
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
 
-import { S } from './state.js?v=20261030e';
-import { compOf } from './competitions.js?v=20261030e';
-import { P, demoPeople, seedTeam } from './sample-people.js?v=20261030e';
-import { roleFit, vibe } from './matching.js?v=20261030e';
+import { S } from './state.js?v=20261030f';
+import { compOf } from './competitions.js?v=20261030f';
+import { P, demoPeople, seedTeam } from './sample-people.js?v=20261030f';
+import { roleFit, vibe } from './matching.js?v=20261030f';
 
 export const personOf = (id) => (id === 'me' ? { ...S.me, alias: 'You', id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in

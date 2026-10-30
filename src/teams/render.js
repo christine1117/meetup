@@ -1,17 +1,17 @@
 /* Layout and drawing: the side nav, and render(), which draws the
    current route and shows a way out if something breaks. */
 
-import { esc } from '../shared/core.js?v=20261030e';
-import { LOGO } from '../shared/flavors.js?v=20261030e';
-import { logError } from '../shared/log.js?v=20261030e';
-import { S, U } from './state.js?v=20261030e';
-import { app } from './ui.js?v=20261030e';
-import { route } from './router.js?v=20261030e';
-import { chatById } from './chats.js?v=20261030e';
-import { viewMe, viewOnboard } from './views/profile.js?v=20261030e';
-import { viewComp, viewComps } from './views/competitions.js?v=20261030e';
-import { viewChat, viewChats } from './views/chats.js?v=20261030e';
-import { viewTeam } from './views/team.js?v=20261030e';
+import { esc } from '../shared/core.js?v=20261030f';
+import { LOGO } from '../shared/flavors.js?v=20261030f';
+import { logError } from '../shared/log.js?v=20261030f';
+import { S, U } from './state.js?v=20261030f';
+import { app } from './ui.js?v=20261030f';
+import { route } from './router.js?v=20261030f';
+import { chatById } from './chats.js?v=20261030f';
+import { viewMe, viewOnboard } from './views/profile.js?v=20261030f';
+import { viewComp, viewComps } from './views/competitions.js?v=20261030f';
+import { viewChat, viewChats } from './views/chats.js?v=20261030f';
+import { viewTeam } from './views/team.js?v=20261030f';
 
 export const NAV = [['comps', 'Competitions', 'ph-trophy'], ['chats', 'Teams & chats', 'ph-chats-circle'], ['me', 'Me', 'ph-user']];
 

@@ -1,6 +1,11 @@
 # Refresh the competition list once a day (06:00 Taiwan time), or by hand
 # from the Actions tab. Tests run first; if they fail, nothing is crawled.
-# The run log (what was kept, skipped and why) stays in the Actions tab.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   ANTHROPIC_API_KEY          lets the LLM read team-size rules (without it, rules are not read)
+#   SUPABASE_URL               the database, once it is set up (optional)
+#   SUPABASE_SERVICE_ROLE_KEY  the database key for the crawler (optional)
+# The run log (what was listed, skipped, sent for review, and why) stays in the Actions tab.
 name: Refresh competitions
 
 on:
@@ -23,18 +28,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -q -r crawler/requirements.txt
       - name: Test
         run: npm test
       - name: Crawl
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run crawl
       - name: Commit and publish if the list changed
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet -- data/competitions.json crawler/cache.json; then echo "No changes"; exit 0; fi
+          if [ -z "$(git status --porcelain -- data crawler/cache.json)" ]; then echo "No changes"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/competitions.json crawler/cache.json
+          git add data crawler/cache.json
           git commit -m "Refresh competitions"
           git push
           # Pushes from this token do not always start a Pages build, so ask for one
