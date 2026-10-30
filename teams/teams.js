@@ -4,7 +4,7 @@
    do, not where they studied.
 
    1. Pick a competition and fill in a competition card
-   2. See recommended people and teams (complementary roles first), say hi
+   2. See recommended people and teams (different roles first), say hi
    3. Chat to half sugar, then the Team up button unlocks
    4. Both tap it: names are revealed and you become a team with a group chat
    Friends join a team through an invite link, no chat needed.
@@ -24,6 +24,8 @@ const goalName = (g) => (GOALS.find(([v]) => v === g) || GOALS[1])[1];
 const HOURS = [['3', 'About 3 h a week'], ['6', 'About 6 h a week'], ['10', '10+ h a week']];
 const hoursName = (h) => (HOURS.find(([v]) => v === String(h)) || HOURS[1])[1];
 const DAY = 86400000;
+const TOPICS = ['Environment', 'Health', 'Education', 'Money', 'Food', 'Transport', 'Social good', 'AI'];
+const MAX_ROLES = 2;
 
 /* ---------- Competitions ----------
    Three ways a competition gets here: an organizer sets it up (a partner),
@@ -43,22 +45,22 @@ const dateText = (ms) => new Date(ms).toLocaleDateString('en-US', { month: 'shor
 
 /* ---------- Simulated people ---------- */
 const PEOPLE = [
-  { id: 'p1', alias: 'Mochi', field: 'Design', city: 'Taipei', comps: ['c1', 'c4'], canDo: ['Design', 'Research'], lookingFor: ['Frontend', 'Data'], goal: 'win', hours: 10, work: 'Redesigned a bus app used by 2,000 riders', reply: 0.9, real: { name: 'Yen Shu-Wei', school: 'NCKU, Industrial Design', contact: 'shuwei@example.com' } },
-  { id: 'p2', alias: 'Kite', field: 'Engineering', city: 'Taipei', comps: ['c1', 'c3', 'c5'], canDo: ['Backend', 'Data'], lookingFor: ['Design', 'Pitch'], goal: 'win', hours: 10, work: 'Built an open bike-lane map from GPS data', reply: 0.75, real: { name: 'Lin Kai-Wen', school: 'NTU, Computer Science', contact: 'kaiwen@example.com' } },
-  { id: 'p3', alias: 'Sol', field: 'Founder', city: 'Taipei', comps: ['c2', 'c5'], canDo: ['Pitch', 'Product', 'Marketing'], lookingFor: ['Frontend', 'Backend'], goal: 'win', hours: 6, work: 'Ran a savings app with 1,300 weekly users', reply: 0.85, real: { name: 'Chen Yu-Ting', school: 'NCCU, Business', contact: 'yuting@example.com' } },
-  { id: 'p4', alias: 'Nori', field: 'Content', city: 'Taichung', comps: ['c4', 'c2'], canDo: ['Writing', 'Marketing'], lookingFor: ['Design', 'Product'], goal: 'learn', hours: 6, work: 'Writes a newsletter with 4,200 readers', reply: 0.6, real: { name: 'Huang Pei-Shan', school: 'Tunghai, Sociology', contact: 'peishan@example.com' } },
-  { id: 'p5', alias: 'Pim', field: 'Research', city: 'Hsinchu', comps: ['c3', 'c1', 'c5'], canDo: ['Data', 'Research'], lookingFor: ['Frontend', 'Design'], goal: 'learn', hours: 6, work: 'Measured indoor air in 23 homes, data on GitHub', reply: 0.8, real: { name: 'Tsou Ting-An', school: 'NTHU, Environmental Engineering', contact: 'tingan@example.com' } },
-  { id: 'p6', alias: 'Rue', field: 'Design', city: 'Taipei', comps: ['c2', 'c4'], canDo: ['Design', 'Frontend'], lookingFor: ['Backend', 'Pitch'], goal: 'win', hours: 10, work: 'Booking app for tattoo artists, 35 on the waitlist', reply: 0.8, real: { name: 'Wu Ruo-Xi', school: 'Shih Chien, Communication Design', contact: 'ruoxi@example.com' } },
-  { id: 'p7', alias: 'Tavi', field: 'Engineering', city: 'Taipei', comps: ['c5', 'c1'], canDo: ['Backend', 'Data', 'Hardware'], lookingFor: ['Product', 'Design'], goal: 'fun', hours: 3, work: 'Speech-to-notes tool piloted in 3 clinics', reply: 0.95, real: { name: 'Hsu Chih-Hao', school: 'NYCU, Electrical Engineering', contact: 'chihhao@example.com' } },
-  { id: 'p8', alias: 'Ode', field: 'Business', city: 'Taichung', comps: ['c2', 'c3'], canDo: ['Marketing', 'Pitch'], lookingFor: ['Frontend', 'Data'], goal: 'learn', hours: 6, work: 'Supplies 9 restaurants with farm produce', reply: 0.65, real: { name: 'Lai Po-Jui', school: 'Tunghai, International Business', contact: 'pojui@example.com' } },
-  { id: 'p9', alias: 'Juno', field: 'Engineering', city: 'Tainan', comps: ['c3', 'c4', 'c5'], canDo: ['Frontend'], lookingFor: ['Data', 'Research'], goal: 'learn', hours: 10, work: 'Shipped three small web apps for local shops', reply: 0.9, real: { name: 'Kuo Yi-Jun', school: 'NCKU, Computer Science', contact: 'yijun@example.com' } },
-  { id: 'p10', alias: 'Bao', field: 'Founder', city: 'Taipei', comps: ['c1', 'c2'], canDo: ['Product', 'Pitch'], lookingFor: ['Design', 'Backend'], goal: 'win', hours: 6, work: 'Took a campus food app to 800 users', reply: 0.7, real: { name: 'Tsai Wei-Lun', school: 'NTU, Economics', contact: 'weilun@example.com' } },
+  { id: 'p1', alias: 'Mochi', field: 'Design', city: 'Taipei', comps: ['c1', 'c4'], canDo: ['Design', 'Research'], topics: ['Environment', 'Transport'], goal: 'win', hours: 10, work: 'Redesigned a bus app used by 2,000 riders', reply: 0.9, real: { name: 'Yen Shu-Wei', school: 'NCKU, Industrial Design', contact: 'shuwei@example.com' } },
+  { id: 'p2', alias: 'Kite', field: 'Engineering', city: 'Taipei', comps: ['c1', 'c3', 'c5'], canDo: ['Backend', 'Data'], topics: ['Transport', 'Environment'], goal: 'win', hours: 10, work: 'Built an open bike-lane map from GPS data', reply: 0.75, real: { name: 'Lin Kai-Wen', school: 'NTU, Computer Science', contact: 'kaiwen@example.com' } },
+  { id: 'p3', alias: 'Sol', field: 'Founder', city: 'Taipei', comps: ['c2', 'c5'], canDo: ['Pitch', 'Product', 'Marketing'], topics: ['Money', 'Food'], goal: 'win', hours: 6, work: 'Ran a savings app with 1,300 weekly users', reply: 0.85, real: { name: 'Chen Yu-Ting', school: 'NCCU, Business', contact: 'yuting@example.com' } },
+  { id: 'p4', alias: 'Nori', field: 'Content', city: 'Taichung', comps: ['c4', 'c2'], canDo: ['Writing', 'Marketing'], topics: ['Education', 'Social good'], goal: 'learn', hours: 6, work: 'Writes a newsletter with 4,200 readers', reply: 0.6, real: { name: 'Huang Pei-Shan', school: 'Tunghai, Sociology', contact: 'peishan@example.com' } },
+  { id: 'p5', alias: 'Pim', field: 'Research', city: 'Hsinchu', comps: ['c3', 'c1', 'c5'], canDo: ['Data', 'Research'], topics: ['Environment', 'Health'], goal: 'learn', hours: 6, work: 'Measured indoor air in 23 homes, data on GitHub', reply: 0.8, real: { name: 'Tsou Ting-An', school: 'NTHU, Environmental Engineering', contact: 'tingan@example.com' } },
+  { id: 'p6', alias: 'Rue', field: 'Design', city: 'Taipei', comps: ['c2', 'c4'], canDo: ['Design', 'Frontend'], topics: ['Food', 'Money'], goal: 'win', hours: 10, work: 'Booking app for tattoo artists, 35 on the waitlist', reply: 0.8, real: { name: 'Wu Ruo-Xi', school: 'Shih Chien, Communication Design', contact: 'ruoxi@example.com' } },
+  { id: 'p7', alias: 'Tavi', field: 'Engineering', city: 'Taipei', comps: ['c5', 'c1'], canDo: ['Backend', 'Data', 'Hardware'], topics: ['Health', 'AI'], goal: 'fun', hours: 3, work: 'Speech-to-notes tool piloted in 3 clinics', reply: 0.95, real: { name: 'Hsu Chih-Hao', school: 'NYCU, Electrical Engineering', contact: 'chihhao@example.com' } },
+  { id: 'p8', alias: 'Ode', field: 'Business', city: 'Taichung', comps: ['c2', 'c3'], canDo: ['Marketing', 'Pitch'], topics: ['Food', 'Social good'], goal: 'learn', hours: 6, work: 'Supplies 9 restaurants with farm produce', reply: 0.65, real: { name: 'Lai Po-Jui', school: 'Tunghai, International Business', contact: 'pojui@example.com' } },
+  { id: 'p9', alias: 'Juno', field: 'Engineering', city: 'Tainan', comps: ['c3', 'c4', 'c5'], canDo: ['Frontend'], topics: ['Education', 'AI'], goal: 'learn', hours: 10, work: 'Shipped three small web apps for local shops', reply: 0.9, real: { name: 'Kuo Yi-Jun', school: 'NCKU, Computer Science', contact: 'yijun@example.com' } },
+  { id: 'p10', alias: 'Bao', field: 'Founder', city: 'Taipei', comps: ['c1', 'c2'], canDo: ['Product', 'Pitch'], topics: ['Food', 'Education'], goal: 'win', hours: 6, work: 'Took a campus food app to 800 users', reply: 0.7, real: { name: 'Tsai Wei-Lun', school: 'NTU, Economics', contact: 'weilun@example.com' } },
 ];
 // Friends that join through an invite link in the demo
 const FRIENDS = [
-  { id: 'f1', alias: 'Pebble', field: 'Engineering', city: 'Taipei', canDo: ['Backend'], lookingFor: [], goal: 'win', hours: 6, work: 'Your friend', reply: 0.9, real: { name: 'Lee Hsin-Yi', school: 'NTU, Information Management', contact: 'hsinyi@example.com' } },
-  { id: 'f2', alias: 'Fig', field: 'Design', city: 'Taipei', canDo: ['Design'], lookingFor: [], goal: 'win', hours: 6, work: 'Your friend', reply: 0.9, real: { name: 'Chang Ya-Ting', school: 'NTUST, Design', contact: 'yating@example.com' } },
-  { id: 'f3', alias: 'Moss', field: 'Business', city: 'Taipei', canDo: ['Marketing'], lookingFor: [], goal: 'win', hours: 6, work: 'Your friend', reply: 0.9, real: { name: 'Liu Chia-Hui', school: 'NCCU, Marketing', contact: 'chiahui@example.com' } },
+  { id: 'f1', alias: 'Pebble', field: 'Engineering', city: 'Taipei', canDo: ['Backend'], topics: [], goal: 'win', hours: 6, work: 'Your friend', reply: 0.9, real: { name: 'Lee Hsin-Yi', school: 'NTU, Information Management', contact: 'hsinyi@example.com' } },
+  { id: 'f2', alias: 'Fig', field: 'Design', city: 'Taipei', canDo: ['Design'], topics: [], goal: 'win', hours: 6, work: 'Your friend', reply: 0.9, real: { name: 'Chang Ya-Ting', school: 'NTUST, Design', contact: 'yating@example.com' } },
+  { id: 'f3', alias: 'Moss', field: 'Business', city: 'Taipei', canDo: ['Marketing'], topics: [], goal: 'win', hours: 6, work: 'Your friend', reply: 0.9, real: { name: 'Liu Chia-Hui', school: 'NCCU, Marketing', contact: 'chiahui@example.com' } },
 ];
 const ALL_PEOPLE = [...PEOPLE, ...FRIENDS];
 const P = Object.fromEntries(ALL_PEOPLE.map((p) => [p.id, p]));
@@ -78,9 +80,9 @@ const LINES = [
 
 // Teams other people already started (they are still recruiting)
 const SEED_TEAMS = [
-  { id: 'st1', comp: 'c1', name: 'Clear Air', pitch: 'A map that warns parents when the air near their kid\u2019s school gets bad.', members: ['p1', 'p2'], roles: [{ name: 'Design', by: 'p1' }, { name: 'Data', by: 'p2' }, { name: 'Frontend', by: null }, { name: 'Pitch', by: null }] },
-  { id: 'st2', comp: 'c2', name: 'Night Market Labs', pitch: 'Pre-order from night market stalls and skip the line.', members: ['p3', 'p6'], roles: [{ name: 'Pitch', by: 'p3' }, { name: 'Design', by: 'p6' }, { name: 'Backend', by: null }] },
-  { id: 'st3', comp: 'c5', name: 'Kind Robots', pitch: 'A small desk robot that reminds older people to take their medicine.', members: ['p7'], roles: [{ name: 'Backend', by: 'p7' }, { name: 'Product', by: null }, { name: 'Design', by: null }] },
+  { id: 'st1', comp: 'c1', name: 'Clear Air', pitch: 'A map that warns parents when the air near their kid\u2019s school gets bad.', members: ['p1', 'p2'], needs: ['Frontend'] },
+  { id: 'st2', comp: 'c2', name: 'Night Market Labs', pitch: 'Pre-order from night market stalls and skip the line.', members: ['p3', 'p6'], needs: [] },
+  { id: 'st3', comp: 'c5', name: 'Kind Robots', pitch: 'A small desk robot that reminds older people to take their medicine.', members: ['p7'], needs: ['Product'] },
 ];
 
 /* ---------- State ---------- */
@@ -90,6 +92,9 @@ function load() {
     const s = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
     ['chats', 'teams'].forEach((k) => { if (!Array.isArray(s[k])) s[k] = []; });
     s.chats.forEach((c) => { c.votes = c.votes || {}; });
+    // Older versions stored role slots; now a team just has an optional "still need" list
+    s.teams.forEach((t) => { if (!t.needs) t.needs = (t.roles || []).filter((r) => !r.by).map((r) => r.name); delete t.roles; });
+    Object.values(s.cards).forEach((c) => { c.topics = c.topics || []; c.canDo = (c.canDo || []).slice(0, MAX_ROLES); });
     return s;
   } catch {
     return blank();
@@ -122,7 +127,13 @@ const roleChips = (list, match = []) => list.map((r) => `<span class="${match.in
 const teamsIn = (cid) => [...SEED_TEAMS.filter((t) => t.comp === cid && !S.teams.some((x) => x.id === t.id)), ...S.teams.filter((t) => t.comp === cid)];
 const myTeam = (cid) => S.teams.find((t) => t.comp === cid && t.members.includes('me'));
 const members = (t) => `${t.members.length} ${t.members.length === 1 ? 'member' : 'members'}`;
-const openRoles = (t) => t.roles.filter((r) => !r.by).map((r) => r.name);
+// Teams have a size limit set by the competition
+const maxSize = (cid) => COMP[cid].size[1];
+const isFull = (t) => t.members.length >= maxSize(t.comp);
+const spots = (t) => `${t.members.length} of ${maxSize(t.comp)} spots`;
+const myRoles = (cid) => (S.cards[cid] ? S.cards[cid].canDo : []);
+const teamRoles = (t) => [...new Set(t.members.flatMap((m) => (m === 'me' ? myRoles(t.comp) : P[m].canDo)))];
+const needsOf = (t) => t.needs || [];
 const inATeam = (pid, cid) => teamsIn(cid).some((t) => t.members.includes(pid));
 const chatWith = (cid, kind, ref) => S.chats.find((c) => c.comp === cid && c.kind === kind && c.ref === ref);
 const passed = (cid, kind, ref) => { const c = chatWith(cid, kind, ref); return c && c.status === 'closed'; };
@@ -141,28 +152,44 @@ const nick = (id, c) => (id === 'me' ? 'You' : c && c.revealed ? P[id].real.name
 const PASS_TEXT = 'Thanks for chatting! I don’t think it’s the right fit this time. Good luck with the competition.';
 
 /* ---------- Matching ----------
-   Complementary roles count most; the same goal and similar hours help;
-   people who reply often come first. */
-function personScore(p, card, team) {
-  const wanted = team ? openRoles(team) : card.lookingFor;
-  return overlap(p.canDo, wanted).length * 3
-    + (team ? 0 : overlap(p.lookingFor, card.canDo).length * 2)
-    + (p.goal === card.goal ? 2 : 0)
-    + (Math.abs(p.hours - Number(card.hours)) <= 3 ? 1 : 0)
-    + p.reply;
+   Everyone says which role they take. We put different roles together:
+   a role the side does not have yet scores high, a second person in the same
+   role scores a little, a third scores below zero. If a team says it still
+   needs a role (even one it already has), that role scores highest.
+   Then: the same goal, similar hours, shared topics, and people who reply. */
+function roleCounts(ids, cid) {
+  const n = {};
+  ids.forEach((m) => (m === 'me' ? myRoles(cid) : P[m].canDo).forEach((r) => { n[r] = (n[r] || 0) + 1; }));
+  return n;
 }
-function teamScore(t, card) {
+function roleFit(roles, counts, needs = []) {
+  return Math.max(...roles.map((r) => (needs.includes(r) ? 4 : !counts[r] ? 3 : counts[r] === 1 ? 0.5 : -2)));
+}
+// Roles worth pointing out: ones the other side lacks or asked for
+const freshRoles = (roles, counts, needs = []) => roles.filter((r) => needs.includes(r) || !counts[r]);
+const sideOf = (cid) => { const t = myTeam(cid); return t ? t.members : ['me']; };
+function vibe(a, b) {
+  return (a.goal === b.goal ? 2 : 0)
+    + (Math.abs(Number(a.hours) - Number(b.hours)) <= 3 ? 1 : 0)
+    + Math.min(2, overlap(a.topics, b.topics).length);
+}
+function personScore(p, cid) {
+  const t = myTeam(cid);
+  return roleFit(p.canDo, roleCounts(sideOf(cid), cid), t ? needsOf(t) : []) + vibe(p, S.cards[cid]) + p.reply;
+}
+function teamScore(t, cid) {
   const lead = P[t.members[0]];
-  return overlap(card.canDo, openRoles(t)).length * 4 + (lead.goal === card.goal ? 2 : 0) + lead.reply;
+  const topics = [...new Set(t.members.flatMap((m) => P[m].topics))];
+  return roleFit(myRoles(cid), roleCounts(t.members, cid), needsOf(t)) + vibe({ ...lead, topics }, S.cards[cid]) + lead.reply;
 }
 function recommendations(cid) {
-  const card = S.cards[cid];
   const mine = myTeam(cid);
+  if (mine && isFull(mine)) return [];
   // Anyone you (or they) passed on is not shown again in this competition
   const people = PEOPLE.filter((p) => p.comps.includes(cid) && !inATeam(p.id, cid) && !passed(cid, 'person', p.id))
-    .map((p) => ({ kind: 'person', ref: p.id, score: personScore(p, card, mine) }));
-  const teams = mine ? [] : teamsIn(cid).filter((t) => !t.members.includes('me') && openRoles(t).length && !passed(cid, 'team', t.id))
-    .map((t) => ({ kind: 'team', ref: t.id, score: teamScore(t, card) }));
+    .map((p) => ({ kind: 'person', ref: p.id, score: personScore(p, cid) }));
+  const teams = mine ? [] : teamsIn(cid).filter((t) => !t.members.includes('me') && !isFull(t) && !passed(cid, 'team', t.id))
+    .map((t) => ({ kind: 'team', ref: t.id, score: teamScore(t, cid) }));
   return [...people, ...teams].sort((a, b) => b.score - a.score);
 }
 
@@ -211,42 +238,54 @@ function startChat(cid, kind, ref, text) {
   reply(c, 1800);
 }
 
-// Both tapped Team up: reveal names and make (or grow) a team
+// How big the team would be after this chat ends in a team up
+const sizeAfter = (c) => voters(c).length;
+const tooBig = (c) => sizeAfter(c) > maxSize(c.comp);
+
+// End a chat for a reason nobody has to explain
+function endChat(c, text, mine = true) {
+  if (text) c.msgs.push({ from: mine ? 'me' : 'sys', text, at: Date.now() });
+  c.msgs.push({ from: 'sys', text: 'Chat ended.', at: Date.now() });
+  c.status = 'closed';
+}
+
+// Everyone said yes: reveal names and make (or grow) a team
 function formTeam(c) {
   const cid = c.comp;
-  const card = S.cards[cid];
   let team;
   let fresh = false;
+  const newcomer = c.kind === 'team' ? 'me' : c.ref;
   if (c.kind === 'team') {
     team = S.teams.find((t) => t.id === c.ref) || JSON.parse(JSON.stringify(SEED_TEAMS.find((t) => t.id === c.ref)));
     if (!S.teams.includes(team)) S.teams.push(team);
     team.members.push('me');
-    const slot = team.roles.find((r) => !r.by && card.canDo.includes(r.name));
-    if (slot) slot.by = 'me';
   } else {
     team = myTeam(cid);
-    const p = P[c.ref];
-    if (team) {
-      team.members.push(p.id);
-      const slot = team.roles.find((r) => !r.by && p.canDo.includes(r.name));
-      if (slot) slot.by = p.id;
-    } else {
-      const needed = [...new Set([...card.canDo, ...p.canDo, ...card.lookingFor, ...p.lookingFor])];
-      const roles = needed.map((name) => ({ name, by: card.canDo.includes(name) ? 'me' : p.canDo.includes(name) ? p.id : null }));
-      team = { id: uid(), comp: cid, name: `${S.me.alias} & ${p.alias}`, members: ['me', p.id], roles, msgs: [], code: uid() };
+    if (team) team.members.push(c.ref);
+    else {
+      team = { id: uid(), comp: cid, name: `${S.me.alias} & ${P[c.ref].alias}`, pitch: '', members: ['me', c.ref], needs: [], msgs: [], code: uid() };
       fresh = true;
       S.teams.push(team);
     }
   }
+  // A role the team asked for is now taken
+  const got = newcomer === 'me' ? myRoles(cid) : P[newcomer].canDo;
+  team.needs = needsOf(team).filter((r) => !got.includes(r));
   team.msgs = team.msgs || [];
   team.code = team.code || uid();
-  const newcomer = c.kind === 'team' ? `${S.me.name || S.me.alias} (you)` : P[c.ref].real.name;
-  const note = fresh ? 'Team formed. Names are now visible to everyone in the team.' : `${newcomer} joined the team after chatting to half sugar.`;
-  team.msgs.push({ from: 'sys', text: note, at: Date.now() });
+  const name = newcomer === 'me' ? `${S.me.name || S.me.alias} (you)` : P[newcomer].real.name;
+  team.msgs.push({ from: 'sys', text: fresh ? 'Team formed. Names are now visible to everyone in the team.' : `${name} joined the team after chatting to half sugar.`, at: Date.now() });
   c.teamed = true;
   c.revealed = true;
   c.team = team.id;
   c.msgs.push({ from: 'sys', text: 'You teamed up! Names are unlocked.', at: Date.now() });
+
+  // You can only be in one team per competition: end your chats with other teams politely
+  S.chats.filter((x) => x !== c && x.comp === cid && x.status === 'open' && !x.teamed).forEach((x) => {
+    if (x.kind === 'team') endChat(x, 'I just joined a team. Thanks for chatting, and good luck!');
+    else if (isFull(team)) endChat(x, 'The team is full now, so this chat ended.', false);
+    else if (isGroup(x)) x.msgs.push({ from: 'sys', text: 'You are in a team now, so your teammates are in this chat too.', at: Date.now() });
+  });
   save();
   toast('You teamed up!');
   go('team/' + team.id);
@@ -258,7 +297,7 @@ const avatar = (p) => `<span class="avatar avatar--cup" aria-hidden="true">${cup
 function personCard(p, cid) {
   const card = S.cards[cid];
   const mine = myTeam(cid);
-  const wanted = mine ? openRoles(mine) : card.lookingFor;
+  const fresh = freshRoles(p.canDo, roleCounts(sideOf(cid), cid), mine ? needsOf(mine) : []);
   const existing = chatWith(cid, 'person', p.id);
   return `
     <article class="card tcard">
@@ -267,8 +306,8 @@ function personCard(p, cid) {
         <div><button class="name-btn" data-act="open" data-kind="person" data-ref="${p.id}" data-comp="${cid}" type="button"><strong>${esc(p.alias)}</strong></button> ${flavorChip(p)}<p class="meta">${esc(p.city)} · ${esc(goalName(p.goal))} · ${esc(hoursName(p.hours))}</p></div>
       </div>
       <dl class="brief">
-        <div><dt>Can do</dt><dd class="chips">${roleChips(p.canDo, wanted)}</dd></div>
-        <div><dt>Looking for</dt><dd class="chips">${roleChips(p.lookingFor, card.canDo)}</dd></div>
+        <div><dt>Role</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
+        ${p.topics.length ? `<div><dt>Cares about</dt><dd class="chips">${roleChips(p.topics, card.topics)}</dd></div>` : ''}
         <div><dt>Built</dt><dd>${esc(p.work)}</dd></div>
       </dl>
       ${hiBox(cid, 'person', p.id, existing, mine ? `Invite ${p.alias}` : 'Say hi')}
@@ -278,17 +317,18 @@ function personCard(p, cid) {
 function teamCard(t, cid) {
   const card = S.cards[cid];
   const existing = chatWith(cid, 'team', t.id);
-  const skills = [...new Set(t.members.flatMap((m) => P[m].canDo))];
+  const counts = roleCounts(t.members, cid);
   return `
     <article class="card tcard tcard--team">
       <div class="tcard__top">
         <button class="team-cups avatar-btn" data-act="open" data-kind="team" data-ref="${t.id}" data-comp="${cid}" type="button" tabindex="-1" aria-hidden="true">${t.members.map((m) => cupFor(P[m])).join('')}</button>
-        <div><button class="name-btn" data-act="open" data-kind="team" data-ref="${t.id}" data-comp="${cid}" type="button"><strong>${esc(t.name)}</strong></button> <span class="tag">Team of ${t.members.length}</span><p class="meta">${esc(goalName(P[t.members[0]].goal))}</p></div>
+        <div><button class="name-btn" data-act="open" data-kind="team" data-ref="${t.id}" data-comp="${cid}" type="button"><strong>${esc(t.name)}</strong></button> <span class="tag">${spots(t)}</span><p class="meta">${esc(goalName(P[t.members[0]].goal))} · ${esc(hoursName(P[t.members[0]].hours))}</p></div>
       </div>
       ${t.pitch ? `<p class="pitch">${esc(t.pitch)}</p>` : ''}
       <dl class="brief">
-        <div><dt>Needs</dt><dd class="chips">${roleChips(openRoles(t), card.canDo)}</dd></div>
-        <div><dt>Team can do</dt><dd class="chips">${roleChips(skills)}</dd></div>
+        <div><dt>Roles</dt><dd class="chips">${roleChips(teamRoles(t))}</dd></div>
+        ${needsOf(t).length ? `<div><dt>Still need</dt><dd class="chips">${roleChips(needsOf(t), card.canDo)}</dd></div>` : ''}
+        ${!needsOf(t).length && freshRoles(card.canDo, counts).length ? `<div><dt>You’d add</dt><dd class="chips">${roleChips(freshRoles(card.canDo, counts), card.canDo)}</dd></div>` : ''}
       </dl>
       ${hiBox(cid, 'team', t.id, existing, 'Say hi to the team')}
     </article>`;
@@ -315,7 +355,7 @@ function hiBox(cid, kind, ref, existing, label) {
   return `<button class="btn btn--dark btn--sm" data-act="hi" data-key="${key}" type="button">${esc(label)}</button>`;
 }
 
-const roleChecks = (name, picked) => `<div class="checks">${ROLES.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${r}" ${picked.includes(r) ? 'checked' : ''}><span>${r}</span></label>`).join('')}</div>`;
+const roleChecks = (name, picked, list = ROLES) => `<div class="checks">${list.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${r}" ${picked.includes(r) ? 'checked' : ''}><span>${r}</span></label>`).join('')}</div>`;
 
 /* ---------- Pop-up: a person or a team ---------- */
 const modalEl = document.createElement('div');
@@ -334,6 +374,8 @@ function modalAction(cid, kind, ref, mineAlready) {
   if (!S.cards[cid]) return `<a class="btn btn--dark btn--sm" href="#/comp/${cid}">Join ${esc(COMP[cid].name)} to say hi</a>`;
   if (kind === 'team' && myTeam(cid)) return '<p class="meta">You are already in a team for this competition.</p>';
   const team = myTeam(cid);
+  const full = kind === 'team' ? isFull(teamsIn(cid).find((t) => t.id === ref)) : team && isFull(team);
+  if (full) return `<p class="meta">${kind === 'team' ? 'This team is full.' : 'Your team is full.'}</p>`;
   const note = kind === 'team' ? 'Everyone on the team will see this. Names stay hidden until you team up.'
     : team && team.members.length > 1 ? 'Your whole team will be in this chat. Names stay hidden until you team up.'
       : 'Say what you can bring. Names stay hidden until you team up.';
@@ -350,7 +392,7 @@ function personModal(pid, cid) {
   const known = knows(pid);
   const card = S.cards[cid];
   const team = myTeam(cid);
-  const wanted = team ? openRoles(team) : card ? card.lookingFor : [];
+  const fresh = card ? freshRoles(p.canDo, roleCounts(sideOf(cid), cid), team ? needsOf(team) : []) : [];
   return `
     <div class="modal__card" tabindex="-1">
       <button class="modal__x" data-act="modal-close" type="button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
@@ -364,8 +406,8 @@ function personModal(pid, cid) {
         </div>
       </div>
       <dl class="brief">
-        <div><dt>Can do</dt><dd class="chips">${roleChips(p.canDo, wanted)}</dd></div>
-        ${p.lookingFor.length ? `<div><dt>Looking for</dt><dd class="chips">${roleChips(p.lookingFor, card ? card.canDo : [])}</dd></div>` : ''}
+        <div><dt>Role</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
+        ${p.topics.length ? `<div><dt>Cares about</dt><dd class="chips">${roleChips(p.topics, card ? card.topics : [])}</dd></div>` : ''}
         <div><dt>Built</dt><dd>${esc(p.work)}</dd></div>
         ${p.comps ? `<div><dt>Joined</dt><dd>${p.comps.map((x) => esc(COMP[x].name)).join(', ')}</dd></div>` : ''}
       </dl>
@@ -390,17 +432,17 @@ function teamModal(tid, cid) {
         <span class="team-cups team-cups--big" aria-hidden="true">${t.members.map((m) => cupFor(personOf(m))).join('')}</span>
         <div class="pf__who">
           <h2 id="modal-title">${esc(t.name)}</h2>
-          <p class="meta">${esc(COMP[cid].name)} · ${members(t)}</p>
+          <p class="meta">${esc(COMP[cid].name)} · ${spots(t)}</p>
         </div>
       </div>
       ${t.pitch ? `<div class="pf__tags"><p class="field__label">What we’re building</p><p class="pitch pitch--big">${esc(t.pitch)}</p></div>` : ''}
-      ${openRoles(t).length ? `<div class="pf__tags"><p class="field__label">Still need</p><p class="chips">${roleChips(openRoles(t), card ? card.canDo : [])}</p></div>` : ''}
+      ${needsOf(t).length ? `<div class="pf__tags"><p class="field__label">Still need</p><p class="chips">${roleChips(needsOf(t), card ? card.canDo : [])}</p></div>` : ''}
       <div class="pf__tags">
         <p class="field__label">Who’s in it</p>
         <ul class="mates">${t.members.map((m) => {
           const p = personOf(m);
           const name = m === 'me' ? 'You' : mine ? p.real.name : p.alias;
-          return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${cid}" type="button" aria-label="${esc(name)}">${cupFor(p)}</button>`}<div><strong>${esc(name)}</strong><p class="chips chips--sm">${roleChips(p.canDo || [])}</p></div></li>`;
+          return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${cid}" type="button" aria-label="${esc(name)}">${cupFor(p)}</button>`}<div><strong>${esc(name)}</strong><p class="chips chips--sm">${roleChips(m === 'me' ? myRoles(cid) : p.canDo)}</p></div></li>`;
         }).join('')}</ul>
       </div>
       ${mine ? '' : '<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>Names stay hidden until you team up.</p>'}
@@ -461,7 +503,7 @@ function viewComps() {
     const joined = S.cards[c.id];
     const team = myTeam(c.id);
     const solo = PEOPLE.filter((p) => p.comps.includes(c.id) && !inATeam(p.id, c.id)).length;
-    const recruiting = teamsIn(c.id).filter((t) => openRoles(t).length).length;
+    const recruiting = teamsIn(c.id).filter((t) => !isFull(t) && !t.members.includes('me')).length;
     return `
     <li>
       <a class="card comp" href="#/comp/${c.id}">
@@ -479,19 +521,20 @@ function viewComps() {
 }
 
 function cardForm(cid, withTeam) {
-  const prev = S.cards[cid] || Object.values(S.cards)[0] || { canDo: [], lookingFor: [], goal: 'win', hours: 6 };
+  const prev = S.cards[cid] || Object.values(S.cards)[0] || { canDo: [], topics: [], goal: 'win', hours: 6 };
   return `
   <form class="panel stack" data-form="card" data-comp="${cid}" data-team="${withTeam ? 1 : ''}" novalidate>
     <h2>${withTeam ? 'Start a team' : 'Your competition card'}</h2>
     ${withTeam ? field('team', 'Team name', '', { req: true, ph: 'e.g. Clear Air' }) : ''}
     ${withTeam ? field('pitch', 'What are you building?', '', { area: true, ph: 'One or two sentences. You can change it later.' }) : ''}
-    <div class="field"><p class="field__label">What you can do</p>${roleChecks('canDo', prev.canDo)}</div>
-    <div class="field"><p class="field__label">${withTeam ? 'Roles your team still needs' : 'Roles you are looking for'}</p>${roleChecks('lookingFor', prev.lookingFor)}</div>
+    <div class="field"><p class="field__label">Your role <span class="hint-inline">Pick 1 or 2</span></p>${roleChecks('canDo', prev.canDo)}</div>
     <div class="row2">
       ${select('goal', 'Your goal', GOALS, prev.goal)}
       ${select('hours', 'Time each week', HOURS, String(prev.hours))}
     </div>
-    <p class="error" id="card-error" hidden>Pick at least one thing you can do and one role you are looking for.</p>
+    <div class="field"><p class="field__label">What you care about <span class="hint-inline">Optional</span></p>${roleChecks('topics', prev.topics || [], TOPICS)}</div>
+    ${withTeam ? `<div class="field"><p class="field__label">Still need <span class="hint-inline">Optional. Can include a role you already have.</span></p>${roleChecks('needs', [])}</div>` : ''}
+    <p class="error" id="card-error" hidden>Pick 1 or 2 roles${withTeam ? ' and add a team name' : ''}.</p>
     <div class="btnrow">
       <button class="btn btn--primary" type="submit">${withTeam ? 'Create team' : 'Join'}</button>
       <button class="btn btn--ghost" data-act="form" data-what="" type="button">Cancel</button>
@@ -524,14 +567,14 @@ function viewComp(cid) {
   ${team ? `
   <a class="card my-team" href="#/team/${team.id}">
     <span class="team-cups" aria-hidden="true">${team.members.map((m) => cupFor(personOf(m))).join('')}</span>
-    <div><strong>${esc(team.name)}</strong><p class="meta">${members(team)} · ${openRoles(team).length ? `Still need: ${esc(openRoles(team).join(', '))}` : 'Team complete'}</p></div>
+    <div><strong>${esc(team.name)}</strong><p class="meta">${spots(team)}${needsOf(team).length ? ` · Still need: ${esc(needsOf(team).join(', '))}` : ''}</p></div>
     <i class="ph ph-caret-right" aria-hidden="true"></i>
   </a>` : `
   <section class="mycard">
-    <p class="meta">Your card · Can do <b>${esc(card.canDo.join(', '))}</b> · Looking for <b>${esc(card.lookingFor.join(', '))}</b> · ${esc(goalName(card.goal))}</p>
+    <p class="meta">Your card · <b>${esc(card.canDo.join(', '))}</b> · ${esc(goalName(card.goal))} · ${esc(hoursName(card.hours))}${card.topics.length ? ` · Cares about ${esc(card.topics.join(', '))}` : ''}</p>
   </section>`}
-  ${team && !openRoles(team).length ? '<p class="empty">Your team is complete. Good luck!</p>' : `
-  <h2 class="sec-title">${team ? 'People who fit your open roles' : 'Recommended for you'}</h2>
+  ${team && isFull(team) ? `<p class="empty">Your team is full (${spots(team)}). Good luck!</p>` : `
+  <h2 class="sec-title">${team ? 'People for your team' : 'Recommended for you'}</h2>
   ${recs.length ? recs.map((r) => (r.kind === 'person' ? personCard(P[r.ref], cid) : teamCard(teamsIn(cid).find((t) => t.id === r.ref), cid))).join('') : '<p class="empty">No one else is looking right now.</p>'}`}`}`;
 }
 
@@ -545,7 +588,7 @@ function viewChats() {
   ${S.teams.map((t) => `
   <a class="card my-team" href="#/team/${t.id}">
     <span class="team-cups" aria-hidden="true">${t.members.map((m) => cupFor(personOf(m))).join('')}</span>
-    <div><strong>${esc(t.name)}</strong><p class="meta">${esc(COMP[t.comp].name)} · ${openRoles(t).length ? `Still need: ${esc(openRoles(t).join(', '))}` : 'Team complete'}</p></div>
+    <div><strong>${esc(t.name)}</strong><p class="meta">${esc(COMP[t.comp].name)} · ${spots(t)}</p></div>
     <i class="ph ph-caret-right" aria-hidden="true"></i>
   </a>`).join('')}` : ''}
   <h2 class="sec-title">Chats</h2>
@@ -576,12 +619,13 @@ function viewChat(c) {
   const p = c.kind === 'person' ? P[c.ref] : null;
   const group = isGroup(c);
   const info = p
-    ? `Can do ${p.canDo.join(', ')} · Looking for ${p.lookingFor.join(', ')}`
-    : `Needs ${openRoles(team).join(', ') || 'no one'} · ${members(team)}`;
+    ? `Role: ${p.canDo.join(', ')}${p.topics.length ? ` · Cares about ${p.topics.join(', ')}` : ''}`
+    : `Roles: ${teamRoles(team).join(', ')}${needsOf(team).length ? ` · Still need ${needsOf(team).join(', ')}` : ''} · ${spots(team)}`;
   // In a group chat, say who wrote each message (nicknames until you team up)
   const names = group ? (id) => (c.kind === 'person' && id !== c.ref ? `${nick(id, c)} · your team` : nick(id, c)) : null;
   let action = '';
   if (c.teamed) action = `<a class="btn btn--primary btn--sm" href="#/team/${c.team}">Open team</a>`;
+  else if (live && tooBig(c)) action = '<button class="btn btn--sm" type="button" disabled>Team is full</button>';
   else if (live && c.votes.me) action = '<button class="btn btn--sm" type="button" disabled>You said yes</button>';
   else if (live && sugar >= REVEAL_AT) action = `<button class="btn btn--primary btn--sm" data-act="teamup" data-id="${c.id}" type="button"><i class="ph ph-handshake" aria-hidden="true"></i>Team up</button>`;
   else if (live) action = `<button class="btn btn--sm" type="button" disabled>Team up at ${REVEAL_AT}%</button>`;
@@ -643,22 +687,23 @@ function viewTeam(t) {
       <div class="chat__tools"><button class="btn btn--ghost btn--sm" data-act="call" data-id="${t.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Team call</button></div>
     </header>
     <details class="panel team-info" ${U.teamOpen === t.id ? 'open' : ''} data-team="${t.id}">
-      <summary><span>${members(t)} · ${openRoles(t).length ? `still need ${esc(openRoles(t).join(', '))}` : 'team complete'}</span><span class="sec__edit">Details</span></summary>
-      <form class="stack pitch-form" data-form="pitch" data-id="${t.id}" novalidate>
-        ${field('pitch', 'What we’re building', t.pitch || '', { area: true, ph: 'One or two sentences. People looking for a team see this.' })}
-        <button class="btn btn--ghost btn--sm" type="submit">Save</button>
-      </form>
+      <summary><span>${spots(t)}${needsOf(t).length ? ` · still need ${esc(needsOf(t).join(', '))}` : ''}</span><span class="sec__edit">Details</span></summary>
       <ul class="mates">${t.members.map((m) => {
         const p = personOf(m);
-        return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${t.comp}" type="button" aria-label="${esc(p.real.name)}">${cupFor(p)}</button>`}<div><strong>${esc(m === 'me' ? `You (${S.me.name || S.me.alias})` : p.real.name)}</strong><p class="meta">${esc(m === 'me' ? S.me.school || '' : p.real.school)}${m === 'me' ? '' : ` · ${esc(p.real.contact)}`}</p></div></li>`;
+        const roles = m === 'me' ? myRoles(t.comp) : p.canDo;
+        return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${t.comp}" type="button" aria-label="${esc(p.real.name)}">${cupFor(p)}</button>`}<div><strong>${esc(m === 'me' ? `You (${S.me.name || S.me.alias})` : p.real.name)}</strong><p class="chips chips--sm">${roleChips(roles)}</p><p class="meta">${esc(m === 'me' ? S.me.school || '' : p.real.school)}${m === 'me' ? '' : ` · ${esc(p.real.contact)}`}</p></div></li>`;
       }).join('')}</ul>
-      <ul class="roles">${t.roles.map((r) => `<li class="role ${r.by ? 'is-filled' : ''}"><i class="ph ${r.by ? 'ph-check-circle' : 'ph-circle'}" aria-hidden="true"></i><span class="role__name">${esc(r.name)}</span><span class="role__tag">${r.by ? esc(r.by === 'me' ? 'You' : P[r.by].real.name) : 'Open'}</span></li>`).join('')}</ul>
-      <div class="invite">
+      <form class="stack pitch-form" data-form="teamedit" data-id="${t.id}" novalidate>
+        ${field('pitch', 'What we’re building', t.pitch || '', { area: true, ph: 'One or two sentences. People looking for a team see this.' })}
+        ${isFull(t) ? '' : `<div class="field"><p class="field__label">Still need <span class="hint-inline">Optional</span></p>${roleChecks('needs', needsOf(t))}</div>`}
+        <button class="btn btn--ghost btn--sm" type="submit">Save</button>
+      </form>
+      ${isFull(t) ? '<p class="meta">The team is full. No one else can join.</p>' : `<div class="invite">
         <p class="field__label">Invite friends</p>
         <p class="meta">Friends join straight away with this link. No chat needed.</p>
         <div class="invite__row"><input readonly value="${esc(link)}" aria-label="Invite link"><button class="btn btn--ghost btn--sm" data-act="copy" data-link="${esc(link)}" type="button">Copy</button></div>
         <button class="btn btn--ghost btn--sm" data-act="dev-friend" data-id="${t.id}" type="button">Dev: a friend joins by link</button>
-      </div>
+      </div>`}
     </details>
     <ul class="log" id="log">${bubbles(t.msgs, U.typing[t.id], (id) => P[id].real.name)}</ul>
     <form class="composer" data-form="teammsg" data-id="${t.id}">
@@ -759,12 +804,10 @@ const forms = {
     const fd = new FormData(form);
     const cid = form.dataset.comp;
     const canDo = fd.getAll('canDo');
-    const lookingFor = fd.getAll('lookingFor');
-    if (!canDo.length || !lookingFor.length || (form.dataset.team && !d.team)) { $('#card-error', form).hidden = false; return; }
-    S.cards[cid] = { canDo, lookingFor, goal: d.goal, hours: Number(d.hours) };
+    if (!canDo.length || canDo.length > MAX_ROLES || (form.dataset.team && !d.team)) { $('#card-error', form).hidden = false; return; }
+    S.cards[cid] = { canDo, topics: fd.getAll('topics'), goal: d.goal, hours: Number(d.hours) };
     if (form.dataset.team) {
-      const roles = [...canDo.map((name) => ({ name, by: 'me' })), ...lookingFor.filter((r) => !canDo.includes(r)).map((name) => ({ name, by: null }))];
-      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], roles, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
+      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], needs: fd.getAll('needs'), code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
     }
     U.form = null;
     save();
@@ -782,10 +825,11 @@ const forms = {
     render({ fresh: true, focus: 'c-msg' });
     reply(c, 1300 + Math.random() * 1200);
   },
-  pitch(form, d) {
+  teamedit(form, d) {
     const t = S.teams.find((x) => x.id === form.dataset.id);
     if (!t) return;
     t.pitch = d.pitch;
+    if (!isFull(t)) t.needs = new FormData(form).getAll('needs');
     save();
     toast('Saved');
     render({ fresh: true });
@@ -822,6 +866,7 @@ const acts = {
   teamup(el) {
     const c = chatById(el.dataset.id);
     if (!c || c.votes.me || c.status !== 'open' || sugarOf(c) < REVEAL_AT) return;
+    if (tooBig(c)) { toast('This team is full'); return; }
     c.votes.me = true;
     c.msgs.push({ from: 'sys', text: 'You said yes. Waiting for everyone else.', at: Date.now() });
     save();
@@ -839,7 +884,7 @@ const acts = {
       return;
     }
     others.forEach((v, i) => later(1400 * (i + 1), () => {
-      if (c.status !== 'open' || c.teamed) return;
+      if (c.status !== 'open' || c.teamed || tooBig(c)) return;
       c.votes[v] = true;
       save();
       if (voters(c).every((x) => c.votes[x])) formTeam(c);
@@ -851,9 +896,7 @@ const acts = {
     const c = chatById(el.dataset.id);
     if (!c || c.status !== 'open') return;
     U.leave = null;
-    c.msgs.push({ from: 'me', text: PASS_TEXT, at: Date.now() });
-    c.msgs.push({ from: 'sys', text: 'Chat ended.', at: Date.now() });
-    c.status = 'closed';
+    endChat(c, PASS_TEXT);
     save();
     render({ fresh: true });
   },
@@ -863,8 +906,7 @@ const acts = {
     if (!c || c.status !== 'open') return;
     const who = c.kind === 'team' ? pick(voters(c).filter((v) => v !== 'me')) : c.ref;
     c.msgs.push({ from: 'them', who, text: PASS_TEXT, at: Date.now() });
-    c.msgs.push({ from: 'sys', text: 'Chat ended.', at: Date.now() });
-    c.status = 'closed';
+    endChat(c);
     save();
     render({ fresh: true });
   },
@@ -878,13 +920,14 @@ const acts = {
   },
   'dev-friend'(el) {
     const t = S.teams.find((x) => x.id === el.dataset.id);
+    if (isFull(t)) { toast('The team is full'); return; }
     const f = FRIENDS.find((x) => !t.members.includes(x.id) && !S.teams.some((y) => y.comp === t.comp && y.members.includes(x.id)));
     if (!f) { toast('No more demo friends'); return; }
     t.members.push(f.id);
-    const slot = t.roles.find((r) => !r.by && f.canDo.includes(r.name));
-    if (slot) slot.by = f.id;
-    else t.roles.push({ name: f.canDo[0], by: f.id });
+    t.needs = needsOf(t).filter((r) => !f.canDo.includes(r));
     t.msgs.push({ from: 'sys', text: `${f.real.name} joined with your invite link.`, at: Date.now() });
+    // A full team stops talking to newcomers
+    if (isFull(t)) S.chats.filter((x) => x.comp === t.comp && x.kind === 'person' && x.status === 'open' && !x.teamed).forEach((x) => endChat(x, 'The team is full now, so this chat ended.', false));
     save();
     render();
   },

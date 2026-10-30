@@ -431,3 +431,10 @@
     gap: 8px;
   }
 }
+
+.hint-inline {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
