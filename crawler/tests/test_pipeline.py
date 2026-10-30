@@ -117,3 +117,27 @@ def test_supabase_store_sends_rows():
     assert ("POST", "/rest/v1/competitions", "resolution=merge-duplicates,return=minimal") in seen
     assert ("DELETE", "/rest/v1/competition_team_rules", None) in seen
     assert any(p == "/rest/v1/competition_team_rules" and m == "POST" for m, p, _ in seen)
+
+
+def test_llm_runner_reads_in_parallel_and_stops_after_failures():
+    from crawler.run import LLMRunner
+
+    class Fake:
+        def __init__(self, fail):
+            self.fail = fail
+
+        def extract(self, raw, text):
+            if self.fail:
+                raise RuntimeError("model not found")
+            return Extraction()
+
+    class C:
+        def save(self):
+            return 0
+
+    comps = [RawCompetition(id=f"bh-{i}", source="bhuntr", region="tw", kind="Art", name=f"C{i}", url="https://e.com") for i in range(30)]
+    ok = LLMRunner(Fake(False), C(), workers=4).run([(c, "t") for c in comps])
+    assert len(ok) == 30 and all(isinstance(v, Extraction) for v in ok.values())
+    bad = LLMRunner(Fake(True), C(), workers=1)
+    out = bad.run([(c, "t") for c in comps])
+    assert bad.stopped and all(v is None for v in out.values())

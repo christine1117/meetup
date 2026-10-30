@@ -21,6 +21,7 @@ class Config:
     review_file: Path = ROOT / "data" / "review.json"
     cache_file: Path = ROOT / "crawler" / "cache.json"
     limit: int | None = None  # for trying things out: at most this many competitions per source
+    llm_workers: int = 8      # LLM calls at the same time
 
 
 def load() -> Config:
@@ -34,5 +35,6 @@ def load() -> Config:
         supabase_url=os.environ.get("SUPABASE_URL") or None,
         supabase_service_key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or None,
         limit=int(os.environ["CRAWL_LIMIT"]) if os.environ.get("CRAWL_LIMIT") else None,
+        llm_workers=int(os.environ.get("LLM_WORKERS") or 8),
         **extra,
     )

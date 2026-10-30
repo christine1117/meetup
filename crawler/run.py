@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import logging
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from . import config as config_mod
@@ -48,6 +50,45 @@ def when(x: dict) -> float:
     return float("inf")
 
 
+class LLMRunner:
+    """Asks the LLM about many competitions at once (a few at a time), saves the
+    cache as it goes, and stops asking after 5 failures in a row."""
+
+    def __init__(self, llm, cache, workers: int):
+        self.llm, self.cache, self.workers = llm, cache, workers
+        self.lock = threading.Lock()
+        self.fails_in_row = 0
+        self.stopped = False
+        self.done = 0
+
+    def one(self, raw, text):
+        if self.stopped:
+            return None
+        try:
+            ex = self.llm.extract(raw, text)
+            with self.lock:
+                self.fails_in_row = 0
+                self.done += 1
+                if self.done % 25 == 0:
+                    self.cache.save()  # keep what is already read, even if the run stops later
+                    log.info("  LLM: %d read", self.done)
+            return ex
+        except Exception as err:
+            log.warning("  LLM failed for %s: %s", raw.id, err)
+            with self.lock:
+                self.fails_in_row += 1
+                # A wrong model name or no credit left: stop asking, keep going without it
+                if self.fails_in_row >= 5 and not self.stopped:
+                    self.stopped = True
+                    log.error("LLM failed 5 times in a row; the rest of this run goes without it")
+            return None
+
+    def run(self, jobs: list) -> dict:
+        with ThreadPoolExecutor(max_workers=self.workers) as pool:
+            futures = {raw.id: pool.submit(self.one, raw, text) for raw, text in jobs}
+        return {k: f.result() for k, f in futures.items()}
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
     logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per request is too much
@@ -56,43 +97,47 @@ def main() -> int:
     llm = make_extractor(cfg, cache)
     log.info("LLM: %s", f"{llm.provider} {llm.model}" if llm else "not set (no ANTHROPIC_API_KEY or OPENAI_API_KEY): rules are not read this run")
     previous = json_store.previous_items(cfg)
-    llm_fails_in_row = 0
 
+    # 1. Every source: the list, plus the sentences that might hold the rules
+    collected = []  # (source info, raws, skipped, notes, seconds)
     items: list[dict] = []
-    reviews: list[dict] = []
-    db: list[dict] = []
     sources: list[dict] = []
     failed = 0
     for sid, name, home, mod in SOURCES:
         started = time.time()
         try:
             raws, skipped, notes = mod.collect(cache, progress=lambda m, n=name: log.info("  %s: %s", n, m), limit=cfg.limit)
+            collected.append(((sid, name, home), raws, skipped, notes, time.time() - started))
         except Exception as err:  # keep the last good items of this source
             failed += 1
             kept = [x for x in previous.values() if x.get("source") == sid]
             items.extend(kept)
             sources.append({"id": sid, "name": name, "url": home, "count": len(kept)})
             log.warning("%s FAILED (%s); kept %d from the last run", name, err, len(kept))
-            continue
+    cache.save()
 
+    # 2. The LLM reads them, a few at a time
+    answers: dict = {}
+    if llm:
+        jobs = [(raw, label(raw.pages)) for _, raws, *_ in collected for raw in raws if raw.pages]
+        jobs = [(raw, text) for raw, text in jobs if text]
+        log.info("LLM: %d competitions to read (answers already in the cache are free)", len(jobs))
+        runner = LLMRunner(llm, cache, cfg.llm_workers)
+        answers = runner.run(jobs)
+        if runner.stopped:
+            llm = None
+
+    # 3. Check every answer and decide what to publish
+    reviews: list[dict] = []
+    db: list[dict] = []
+    for (sid, name, home), raws, skipped, notes, seconds in collected:
         counts: dict[str, int] = {}
         listed = 0
         for raw in raws:
             text = label(raw.pages)
-            ex = None
-            if llm and text:
-                try:
-                    ex = llm.extract(raw, text)
-                    llm_fails_in_row = 0
-                except Exception as err:
-                    log.warning("  LLM failed for %s: %s", raw.id, err)
-                    llm_fails_in_row += 1
-                    # Many failures in a row (a wrong model name, no credit left): stop asking, keep going without it
-                    if llm_fails_in_row >= 5:
-                        log.error("LLM failed 5 times in a row; the rest of this run goes without it")
-                        llm = None
-            elif not llm and raw.id in previous and text:
-                # No LLM this run: keep what is already published, unchanged
+            ex = answers.get(raw.id)
+            if ex is None and raw.id in previous and text:
+                # Not read this run (no LLM, or it failed): keep what is already published, unchanged
                 items.append(previous[raw.id])
                 counts["kept as published"] = counts.get("kept as published", 0) + 1
                 listed += 1
@@ -113,15 +158,15 @@ def main() -> int:
             except Exception as err:
                 log.warning("  dropped %s: breaks the data contract (%s)", raw.id, err)
         sources.append({"id": sid, "name": name, "url": home, "count": listed})
-        log.info("%s: %d found, %d listed, skipped %s, decisions %s, notes %s (%ds)",
-                 name, len(raws), listed, skipped, counts, notes, time.time() - started)
+        log.info("%s: %d found, %d listed, skipped %s, decisions %s, notes %s (%ds to collect)",
+                 name, len(raws), listed, skipped, counts, notes, seconds)
 
+    # 4. Save
     now = time.time()
     open_items = sorted((x for x in items if when(x) > now), key=when)
     json_store.save(cfg, open_items, sources, reviews)
     remembered = cache.save()
-    log.info("Saved %d competitions, %d to review, %d pages remembered%s",
-             len(open_items), len(reviews), remembered, f", {llm.calls} LLM calls" if llm else "")
+    log.info("Saved %d competitions, %d to review, %d pages remembered", len(open_items), len(reviews), remembered)
     if cfg.supabase_url and cfg.supabase_service_key:
         try:
             SupabaseStore(cfg.supabase_url, cfg.supabase_service_key).save(db)

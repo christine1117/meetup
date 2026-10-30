@@ -107,7 +107,7 @@ class ClaudeExtractor(Extractor):
         super().__init__(model, cache)
         import anthropic  # only needed when this provider is used
 
-        self.client = anthropic.Anthropic(api_key=api_key)
+        self.client = anthropic.Anthropic(api_key=api_key, timeout=90, max_retries=2)
 
     def ask(self, comp, text):
         response = self.client.messages.create(
@@ -130,7 +130,7 @@ class OpenAIExtractor(Extractor):
         super().__init__(model, cache)
         import openai  # only needed when this provider is used
 
-        self.client = openai.OpenAI(api_key=api_key)
+        self.client = openai.OpenAI(api_key=api_key, timeout=90, max_retries=2)
 
     def ask(self, comp, text):
         response = self.client.chat.completions.create(
