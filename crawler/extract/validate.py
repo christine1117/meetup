@@ -67,7 +67,7 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
     """Turn one LLM answer into what may be published."""
     if ex is None:
         # Nothing to read (MLH lists no rules text): a hackathon is listed, size on the official page
-        if not comp.pages and comp.team_by_default:
+        if comp.team_by_default and not (source_text or "").strip():
             return Decision(status="published", listed=True)
         # Not read yet (no API key, or the call failed): hackathon sites can still be listed
         return Decision(status="pending", listed=comp.team_by_default,
