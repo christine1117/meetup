@@ -1,102 +1,21 @@
-/* =========================================================
-   Shared look for the team-up app: helpers, flavors, sugar and the
-   boba cup drawing. Copied from ../app.js so this app stays separate.
-   ========================================================= */
+/* Drawing: the boba cup and the toppings. Returns SVG strings only. */
 
-const $ = (sel, root = document) => root.querySelector(sel);
-const uid = () => Math.random().toString(36).slice(2, 9);
-const later = (ms, fn) => setTimeout(fn, ms);
-const pick = (list) => list[Math.floor(Math.random() * list.length)];
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-const FIELDS = ['Design', 'Engineering', 'Founder', 'Research', 'Content', 'Business', 'Other'];
-const ORIGIN = { explore: 'Explore', build: 'Brew', drop: 'Mystery Cup' };
-const fieldName = (f) => L(f);
-const originName = (o) => L(ORIGIN[o]);
-
-// Logo: a half-full boba cup. Simple geometric mark.
-const LOGO = `<svg class="logo__mark" viewBox="0 0 24 28" aria-hidden="true"><path d="M14.5 1.5 12.8 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M4 9h16l-2 16.3A2 2 0 0 1 16 27H8a2 2 0 0 1-2-1.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M5.3 15h13.4" stroke="currentColor" stroke-width="2"/><circle cx="9.6" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="14.4" cy="22.4" r="1.7" fill="var(--orange)"/><circle cx="12" cy="19" r="1.7" fill="var(--orange)"/></svg><span>Half Sugar</span>`;
-
-// Each field is a boba flavor. The colour fills that person's cup.
-const FLAVORS = {
-  Design: ['Taro', '#c9b3dd'],
-  Engineering: ['Matcha', '#b9cf98'],
-  Founder: ['Brown sugar', '#c98f5c'],
-  Research: ['Oolong', '#dcc282'],
-  Content: ['Strawberry', '#eeb0ad'],
-  Business: ['Mango', '#f2c36f'],
-  Other: ['Classic milk tea', '#dcc3a1'],
-};
-const flavor = (f) => FLAVORS[f] || FLAVORS.Other;
-const flavorName = (f) => L(flavor(f)[0]);
-const drinkName = (f) => { const n = flavor(f)[0]; return /milk tea/.test(n) ? L(n) : L`${L(n)} milk tea`; };
-
-// Someone can have two fields, like a layered two-flavor drink. The first one is their main field.
-const fieldsOf = (p) => [p.field, p.field2].filter(Boolean);
-const fieldsLabel = (p) => fieldsOf(p).map(fieldName).join(' + ');
-const flavorsLabel = (p) => fieldsOf(p).map(flavorName).join(' + ');
-const drinkFor = (p) => (p.field2 ? L`${flavorsLabel(p)} milk tea` : drinkName(p.field));
-
-// Sugar = how long two people have talked. Every minute adds 5%, so 10 minutes is half sugar.
-// A long pause only counts as 3 minutes, so a chat left open in silence does not keep filling.
-// At 50% (half sugar) you can pop the seal. At 100% (full sugar) we suggest a boba run.
-const SUGAR_PER_MIN = 5;
-const PAUSE_CAP_MIN = 3;
-const REVEAL_AT = 50;
-function talkMinutes(t) {
-  const real = t.msgs.filter((m) => m.from !== 'sys' && m.at);
-  let ms = 0;
-  if (real.some((m) => m.from === 'me') && real.some((m) => m.from === 'them')) {
-    for (let i = 1; i < real.length; i += 1) ms += Math.min(real[i].at - real[i - 1].at, PAUSE_CAP_MIN * 60000);
-  }
-  return ms / 60000 + (t.devMin || 0);
-}
-const sugarOf = (t) => Math.min(100, Math.floor(talkMinutes(t) * SUGAR_PER_MIN));
-const sugarMeter = (v) => `<span class="sugar" title="${esc(L('Sugar goes up the longer you talk. Every minute adds 5%.'))}">${cup('var(--milk)', { level: v / 100, cls: 'cup--chip' })}${L`${v}% sugar`}</span>`;
-
-// A chat closes ("goes cold") when nobody has replied for this many days
-const CLOSE_AFTER_DAYS = 3;
-const lastActive = (t) => { const real = t.msgs.filter((m) => m.from !== 'sys'); return (real[real.length - 1] || {}).at || t.at; };
-const closesIn = (t) => CLOSE_AFTER_DAYS * 86400000 - (Date.now() - lastActive(t));
-const isCold = (t) => t.status === 'open' && closesIn(t) <= 0;
-const closesText = (t) => {
-  const ms = closesIn(t);
-  return ms > 86400000
-    ? L`Closes in ${Math.ceil(ms / 86400000)}d without a reply`
-    : L`Closes in ${Math.max(1, Math.ceil(ms / 3600000))}h without a reply`;
-};
-
-// Add a note in the chat when it reaches half sugar or full sugar.
-// System notes are saved as English keys and translated when shown.
-function sugarNotes(t, before) {
-  const after = sugarOf(t);
-  if (before < REVEAL_AT && after >= REVEAL_AT && !t.reveal.them) {
-    t.msgs.push({ from: 'sys', text: 'Half sugar! You can pop the seal now.', at: Date.now() });
-    learnWeights();
-  }
-  if (before < 100 && after >= 100) {
-    t.msgs.push({ from: 'sys', text: 'Full sugar. Maybe it is time for a boba run?', at: Date.now() });
-  }
-  // Reaching half sugar earns a gift box, once per chat
-  if (before < REVEAL_AT && after >= REVEAL_AT && !(t.rewards && t.rewards.half)) {
-    t.rewards = { ...t.rewards, half: true };
-    earnBox('small', 'For reaching half sugar with {0}.', [P[t.pid].alias]);
-  }
-}
+import { uid } from './core.js?v=20261030d';
+import { flavor } from './flavors.js?v=20261030d';
 
 // The boba cup: a clear plastic cup with a dome lid, a red straw, pearls at the
 // bottom, and a red seal label.
 // Big cups can come apart: the straw and lid lift up, and the toppings and
 // pearls fly out to the left and right. The tea and the cup stay together.
 // level goes from 0 (empty) to 1 (full). ids are toppings to put in the drink.
-const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
-const CUP_SHELL = 'M2.5 9.4 L4.5 25.1 Q12 27.3 19.5 25.1 L21.5 9.4'; // open at the top, so no line across the opening
-const CUP_IN = 'M3.2 10.4 L5.1 24.6 Q12 26.5 18.9 24.6 L20.8 10.4 Z';
-const CUP_DOME = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2'; // open at the bottom, so no line across the lid
-const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
-const CUP_PEARLS = [[8.6, 23.4, '#3b2518'], [11.9, 23.9, '#4a2c1c'], [15.3, 23.3, '#7d93a0'], [10.2, 21.4, '#5a3a28'], [13.7, 21.6, '#3b2518'], [7, 21.4, '#6f8796'], [17, 21.2, '#4a2c1c']];
+export const BIG_CUP = /cup--(hero|mystery|lg|profile)/;
+export const CUP_SHELL = 'M2.5 9.4 L4.5 25.1 Q12 27.3 19.5 25.1 L21.5 9.4'; // open at the top, so no line across the opening
+export const CUP_IN = 'M3.2 10.4 L5.1 24.6 Q12 26.5 18.9 24.6 L20.8 10.4 Z';
+export const CUP_DOME = 'M2.3 9.2 Q2.5 1.6 12 1.6 Q21.5 1.6 21.7 9.2'; // open at the bottom, so no line across the lid
+export const CUP_STRAW = 'M14.2 -4.6 L16 -4.4 L13.4 21 L11.6 20.8 Z';
+export const CUP_PEARLS = [[8.6, 23.4, '#3b2518'], [11.9, 23.9, '#4a2c1c'], [15.3, 23.3, '#7d93a0'], [10.2, 21.4, '#5a3a28'], [13.7, 21.6, '#3b2518'], [7, 21.4, '#6f8796'], [17, 21.2, '#4a2c1c']];
 // Where each piece goes when the cup comes apart, and when it starts moving
-const APART = {
+export const APART = {
   straw: '--dy:-16px;--d:0s',
   lid: '--dy:-10px;--d:.05s',
   layer: '--dy:-5.5px;--d:.08s',
@@ -106,10 +25,10 @@ const APART = {
   pearlsR: '--dx:13px;--dy:1.5px;--r:8deg;--d:.18s',
 };
 // Cups that come apart get extra room around them for the pieces
-const EXPLODE = /cup--(hero|profile)/;
-const WIDE_VIEW = '-11 -16 46 44';
+export const EXPLODE = /cup--(hero|profile)/;
+export const WIDE_VIEW = '-11 -16 46 44';
 
-function cupArt(color, o = {}) {
+export function cupArt(color, o = {}) {
   const id = 'cp' + uid();
   const ids = o.ids || [];
   const has = (k) => ids.includes(k);
@@ -193,18 +112,17 @@ function cupArt(color, o = {}) {
       <path d="M3.4 9.6 A8.8 .9 0 0 0 20.6 9.6" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".25"/>`)}`;
 }
 
-function cup(color, o = {}) {
+export function cup(color, o = {}) {
   const x = EXPLODE.test(o.cls || '');
   return `<svg class="cup ${x ? 'cup-x' : ''} ${o.cls || ''}" viewBox="${x ? WIDE_VIEW : '-2 -6 28 34'}" aria-hidden="true">${cupArt(color, o)}</svg>`;
 }
-const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
-
+export const cupFor = (p, cls = '') => cup(flavor(p.field)[1], { cls, color2: p.field2 ? flavor(p.field2)[1] : '' });
 
 // Toppings are small illustrations in the same style as the cup: a thin
 // dark-brown outline, soft colour with one gentle shade, and a short white
 // highlight. Each is drawn around (x, y) at size s; one unit is about the
 // topping's half-width. Every SVG gets its own gradient ids so they never clash.
-function toppingDefs(id) {
+export function toppingDefs(id) {
   const lin = (name, a, b, angle = '0 0 1 1') => {
     const [x1, y1, x2, y2] = angle.split(' ');
     return `<linearGradient id="${id}-${name}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
@@ -232,23 +150,23 @@ function toppingDefs(id) {
   </defs>`;
 }
 
-const INK = '#2a1d16';
-const ink = (s) => `stroke="#3b2518" stroke-opacity=".12" stroke-width="${(0.06 * s).toFixed(3)}" stroke-linejoin="round" stroke-linecap="round"`;
-const glint = (d) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".11" stroke-linecap="round"/>`;
-const shadow = (x, y, s) => `<ellipse cx="${x}" cy="${y + 0.9 * s}" rx="${0.68 * s}" ry="${0.13 * s}" fill="#3b2518" fill-opacity=".14"/>`;
+export const INK = '#2a1d16';
+export const ink = (s) => `stroke="#3b2518" stroke-opacity=".12" stroke-width="${(0.06 * s).toFixed(3)}" stroke-linejoin="round" stroke-linecap="round"`;
+export const glint = (d) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".11" stroke-linecap="round"/>`;
+export const shadow = (x, y, s) => `<ellipse cx="${x}" cy="${y + 0.9 * s}" rx="${0.68 * s}" ry="${0.13 * s}" fill="#3b2518" fill-opacity=".14"/>`;
 
 // Everything inside a topping is drawn at unit size, then moved and scaled
-const at = (x, y, s, body) => `<g transform="translate(${x} ${y}) scale(${s})">${body}</g>`;
+export const at = (x, y, s, body) => `<g transform="translate(${x} ${y}) scale(${s})">${body}</g>`;
 
 // A soft rounded jelly cube with a lighter core you can see into
-const jelly = (fill, core, coreOpacity, opacity = 1, tilt = -10) => `
+export const jelly = (fill, core, coreOpacity, opacity = 1, tilt = -10) => `
   <g transform="rotate(${tilt})" fill-opacity="${opacity}">
     <rect x="-.75" y="-.72" width="1.5" height="1.44" rx=".34" fill="${fill}" ${ink(1)}/>
     <rect x="-.42" y="-.38" width=".84" height=".76" rx=".2" fill="${core}" fill-opacity="${coreOpacity}"/>
     ${glint('M-.52 -.3 Q-.5 -.52 -.28 -.54')}
   </g>`;
 
-const PIECE = {
+export const PIECE = {
   coconut: (id, x, y, s) => at(x, y, s, jelly(`url(#${id}-coco)`, '#fff', 0.7, 0.97, -12)),
   aloe: (id, x, y, s) => at(x, y, s, `${jelly(`url(#${id}-aloe)`, '#f6fcec', 0.65, 0.95, 8)}<circle cx=".25" cy=".22" r=".08" fill="#fff" fill-opacity=".8"/>`),
   grass: (id, x, y, s) => at(x, y, s, jelly(`url(#${id}-grass)`, '#7a6553', 0.35, 1, -6)),
@@ -294,7 +212,7 @@ const PIECE = {
 };
 
 // Toppings that are not floating pieces get their own picture for chips and gift boxes
-const LAYER_ICON = {
+export const LAYER_ICON = {
   // A swirled dollop of cream cheese foam
   foam: (id) => `
     <path d="M-.92 .5 C-1 .05 -.62 -.12 -.38 -.15 C-.42 -.55 -.05 -.8 .18 -.95 C.14 -.6 .58 -.52 .52 -.16 C.85 -.12 1 .2 .9 .5 Q0 .72 -.92 .5 Z" fill="url(#${id}-foamL)" ${ink(1)}/>
@@ -313,27 +231,5 @@ const LAYER_ICON = {
     ${glint('M-.55 -.3 Q-.35 -.38 -.12 -.38')}`,
 };
 
-const PIECE_SLOTS = [[6.6, 12.6], [12, 11], [17.4, 12.6], [7, 15.4], [17, 15.4], [7.4, 18.3], [16.6, 18.3], [8.8, 11.6], [15.2, 11.6], [18.1, 20.2]];
-const PIECE_SIZE = 1.15;
-
-const field = (name, label, val = '', o = {}) => `
-  <div class="field">
-    <label for="f-${name}">${label}</label>
-    ${o.area
-      ? `<textarea id="f-${name}" name="${name}" rows="${o.rows || 2}" ${o.req ? 'required' : ''} placeholder="${esc(o.ph || '')}">${esc(val)}</textarea>`
-      : `<input id="f-${name}" name="${name}" type="${o.type || 'text'}" value="${esc(val)}" ${o.req ? 'required' : ''} ${o.min ? `min="${o.min}"` : ''} placeholder="${esc(o.ph || '')}">`}
-    ${o.hint ? `<p class="hint">${o.hint}</p>` : ''}
-  </div>`;
-
-const select = (name, label, opts, val, hint = '') => `
-  <div class="field">
-    <label for="f-${name}">${label}</label>
-    <select id="f-${name}" name="${name}">
-      ${opts.map((o) => { const [v, l] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`; }).join('')}
-    </select>
-    ${hint ? `<p class="hint">${hint}</p>` : ''}
-  </div>`;
-
-
-
-const flavorChip = (p) => `<span class="flavor" style="--flavor:${flavor(p.field)[1]};--flavor2:${flavor(p.field2 || p.field)[1]}" title="${esc(L`Flavor = field. ${flavorsLabel(p)} means ${fieldsLabel(p)}.`)}">${esc(flavorsLabel(p))}</span>`;
+export const PIECE_SLOTS = [[6.6, 12.6], [12, 11], [17.4, 12.6], [7, 15.4], [17, 15.4], [7.4, 18.3], [16.6, 18.3], [8.8, 11.6], [15.2, 11.6], [18.1, 20.2]];
+export const PIECE_SIZE = 1.15;

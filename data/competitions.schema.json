@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Half Sugar competitions",
+  "description": "The data contract between the crawler (crawler/run.js) and the team-mode app. Both sides check it in src/shared/contract.js.",
+  "type": "object",
+  "required": ["updatedAt", "sources", "items"],
+  "properties": {
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "url", "count"],
+        "properties": {
+          "id": { "enum": ["devpost", "mlh", "bhuntr"] },
+          "name": { "type": "string" },
+          "url": { "type": "string", "pattern": "^https?://" },
+          "count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "region", "kind", "name", "organizer", "url", "start", "deadline", "where", "tags", "prize", "summary", "team"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z]+-[\\w-]+$", "description": "Source prefix + the source's own id, e.g. dp-31302" },
+          "source": { "enum": ["devpost", "mlh", "bhuntr"] },
+          "region": { "enum": ["tw", "intl"] },
+          "kind": { "type": "string", "description": "Hackathon, Startup & business, Tech, Design, ..." },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "organizer": { "type": "string", "maxLength": 200 },
+          "url": { "type": "string", "pattern": "^https?://", "description": "The official page. Always shown as a link back." },
+          "start": { "type": ["string", "null"], "format": "date-time" },
+          "end": { "type": ["string", "null"], "format": "date-time" },
+          "deadline": { "type": ["string", "null"], "format": "date-time", "description": "Last day to sign up or submit" },
+          "where": { "type": "string", "maxLength": 120 },
+          "tags": { "type": "array", "maxItems": 8, "items": { "type": "string", "maxLength": 60 } },
+          "prize": { "type": "string", "maxLength": 60 },
+          "summary": { "type": "string", "maxLength": 200 },
+          "team": {
+            "type": "object",
+            "description": "People per team. Only team competitions are listed, so max is 2 or more, or null when the rules do not say.",
+            "required": ["min", "max"],
+            "properties": {
+              "min": { "type": ["integer", "null"], "minimum": 1, "maximum": 100 },
+              "max": { "type": ["integer", "null"], "minimum": 2, "maximum": 100 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

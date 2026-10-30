@@ -1,0 +1,15 @@
+{
+  "name": "half-sugar",
+  "private": true,
+  "type": "module",
+  "description": "Half Sugar and Half Sugar Teams: one codebase, plain browser modules, plus a daily competition crawler.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "crawl": "node crawler/run.js",
+    "serve": "python3 -m http.server 8000",
+    "version": "node tools/version.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

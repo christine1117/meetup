@@ -15,7 +15,7 @@ const LANG_KEY = 'halfsugar.lang';
 // Set ZH_ENABLED to true (and add the language buttons back) to turn it on.
 const ZH_ENABLED = false;
 
-let LANG = (() => {
+export let LANG = (() => {
   if (!ZH_ENABLED) return 'en';
   try {
     const saved = localStorage.getItem(LANG_KEY);
@@ -26,7 +26,7 @@ let LANG = (() => {
   return /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
 })();
 
-function setLang(lang) {
+export function setLang(lang) {
   LANG = lang;
   try {
     localStorage.setItem(LANG_KEY, lang);
@@ -35,12 +35,12 @@ function setLang(lang) {
   }
 }
 
-function tr(key, vals = []) {
+export function tr(key, vals = []) {
   const tpl = (LANG === 'zh' && ZH[key]) || key;
   return String(tpl).replace(/\{(\d+)\}/g, (_, i) => vals[i] ?? '');
 }
 
-function L(strings, ...vals) {
+export function L(strings, ...vals) {
   if (typeof strings === 'string') return tr(strings);
   const key = strings.reduce((out, s, i) => out + (i ? `{${i - 1}}` : '') + s, '');
   return tr(key, vals);
@@ -50,7 +50,7 @@ function L(strings, ...vals) {
 // Boba chat, not coffee chat. / Meet the person before the résumé. /
 // Conversation before credentials. / I want to meet someone. /
 // I need someone for something. / You can’t pick the flavor.
-// Product terms also stay in English: Explore, Brew, Mystery Cup, My order,
+// Product terms also stay in English: Explore, Brew, Mystery Cup, Me,
 // First Sip, Pop the seal, Refill, Boba run, Gone cold.
 
 const ZH = {
