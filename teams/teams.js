@@ -78,9 +78,9 @@ const LINES = [
 
 // Teams other people already started (they are still recruiting)
 const SEED_TEAMS = [
-  { id: 'st1', comp: 'c1', name: 'Clear Air', members: ['p1', 'p2'], roles: [{ name: 'Design', by: 'p1' }, { name: 'Data', by: 'p2' }, { name: 'Frontend', by: null }, { name: 'Pitch', by: null }] },
-  { id: 'st2', comp: 'c2', name: 'Night Market Labs', members: ['p3', 'p6'], roles: [{ name: 'Pitch', by: 'p3' }, { name: 'Design', by: 'p6' }, { name: 'Backend', by: null }] },
-  { id: 'st3', comp: 'c5', name: 'Kind Robots', members: ['p7'], roles: [{ name: 'Backend', by: 'p7' }, { name: 'Product', by: null }, { name: 'Design', by: null }] },
+  { id: 'st1', comp: 'c1', name: 'Clear Air', pitch: 'A map that warns parents when the air near their kid\u2019s school gets bad.', members: ['p1', 'p2'], roles: [{ name: 'Design', by: 'p1' }, { name: 'Data', by: 'p2' }, { name: 'Frontend', by: null }, { name: 'Pitch', by: null }] },
+  { id: 'st2', comp: 'c2', name: 'Night Market Labs', pitch: 'Pre-order from night market stalls and skip the line.', members: ['p3', 'p6'], roles: [{ name: 'Pitch', by: 'p3' }, { name: 'Design', by: 'p6' }, { name: 'Backend', by: null }] },
+  { id: 'st3', comp: 'c5', name: 'Kind Robots', pitch: 'A small desk robot that reminds older people to take their medicine.', members: ['p7'], roles: [{ name: 'Backend', by: 'p7' }, { name: 'Product', by: null }, { name: 'Design', by: null }] },
 ];
 
 /* ---------- State ---------- */
@@ -263,8 +263,8 @@ function personCard(p, cid) {
   return `
     <article class="card tcard">
       <div class="tcard__top">
-        ${avatar(p)}
-        <div><strong>${esc(p.alias)}</strong> ${flavorChip(p)}<p class="meta">${esc(p.city)} · ${esc(goalName(p.goal))} · ${esc(hoursName(p.hours))}</p></div>
+        <button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${p.id}" data-comp="${cid}" type="button" tabindex="-1" aria-hidden="true">${cupFor(p)}</button>
+        <div><button class="name-btn" data-act="open" data-kind="person" data-ref="${p.id}" data-comp="${cid}" type="button"><strong>${esc(p.alias)}</strong></button> ${flavorChip(p)}<p class="meta">${esc(p.city)} · ${esc(goalName(p.goal))} · ${esc(hoursName(p.hours))}</p></div>
       </div>
       <dl class="brief">
         <div><dt>Can do</dt><dd class="chips">${roleChips(p.canDo, wanted)}</dd></div>
@@ -282,9 +282,10 @@ function teamCard(t, cid) {
   return `
     <article class="card tcard tcard--team">
       <div class="tcard__top">
-        <span class="team-cups" aria-hidden="true">${t.members.map((m) => cupFor(P[m])).join('')}</span>
-        <div><strong>${esc(t.name)}</strong> <span class="tag">Team of ${t.members.length}</span><p class="meta">${esc(goalName(P[t.members[0]].goal))}</p></div>
+        <button class="team-cups avatar-btn" data-act="open" data-kind="team" data-ref="${t.id}" data-comp="${cid}" type="button" tabindex="-1" aria-hidden="true">${t.members.map((m) => cupFor(P[m])).join('')}</button>
+        <div><button class="name-btn" data-act="open" data-kind="team" data-ref="${t.id}" data-comp="${cid}" type="button"><strong>${esc(t.name)}</strong></button> <span class="tag">Team of ${t.members.length}</span><p class="meta">${esc(goalName(P[t.members[0]].goal))}</p></div>
       </div>
+      ${t.pitch ? `<p class="pitch">${esc(t.pitch)}</p>` : ''}
       <dl class="brief">
         <div><dt>Needs</dt><dd class="chips">${roleChips(openRoles(t), card.canDo)}</dd></div>
         <div><dt>Team can do</dt><dd class="chips">${roleChips(skills)}</dd></div>
@@ -315,6 +316,115 @@ function hiBox(cid, kind, ref, existing, label) {
 }
 
 const roleChecks = (name, picked) => `<div class="checks">${ROLES.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${r}" ${picked.includes(r) ? 'checked' : ''}><span>${r}</span></label>`).join('')}</div>`;
+
+/* ---------- Pop-up: a person or a team ---------- */
+const modalEl = document.createElement('div');
+modalEl.id = 'modal';
+document.body.appendChild(modalEl);
+
+// Names unlock once you are on the same team, or after teaming up in a chat
+const knows = (pid) => S.teams.some((t) => t.members.includes('me') && t.members.includes(pid)) || S.chats.some((c) => c.ref === pid && c.revealed);
+
+// The bottom of the pop-up: say hi right there, or go to the chat you already have
+function modalAction(cid, kind, ref, mineAlready) {
+  if (mineAlready) return '';
+  const c = chatWith(cid, kind, ref);
+  if (c && c.status === 'closed') return '<p class="meta">This chat ended.</p>';
+  if (c) return location.hash === `#/chat/${c.id}` ? '' : `<a class="btn btn--dark btn--sm" href="#/chat/${c.id}">Open chat</a>`;
+  if (!S.cards[cid]) return `<a class="btn btn--dark btn--sm" href="#/comp/${cid}">Join ${esc(COMP[cid].name)} to say hi</a>`;
+  if (kind === 'team' && myTeam(cid)) return '<p class="meta">You are already in a team for this competition.</p>';
+  const team = myTeam(cid);
+  const note = kind === 'team' ? 'Everyone on the team will see this. Names stay hidden until you team up.'
+    : team && team.members.length > 1 ? 'Your whole team will be in this chat. Names stay hidden until you team up.'
+      : 'Say what you can bring. Names stay hidden until you team up.';
+  return `
+    <form class="stack" data-form="hi" data-kind="${kind}" data-ref="${ref}" data-comp="${cid}" novalidate>
+      <label class="sr" for="c-hi">Your message</label>
+      <textarea id="c-hi" name="hi" rows="2" placeholder="${esc(note)}"></textarea>
+      <button class="btn btn--dark btn--sm" type="submit">${kind === 'person' && team ? 'Invite' : 'Say hi'}</button>
+    </form>`;
+}
+
+function personModal(pid, cid) {
+  const p = P[pid];
+  const known = knows(pid);
+  const card = S.cards[cid];
+  const team = myTeam(cid);
+  const wanted = team ? openRoles(team) : card ? card.lookingFor : [];
+  return `
+    <div class="modal__card" tabindex="-1">
+      <button class="modal__x" data-act="modal-close" type="button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+      <div class="pf__top">
+        <div class="pf__cup">${cupFor(p, 'cup--profile')}</div>
+        <div class="pf__who">
+          <h2 id="modal-title">${esc(known ? p.real.name : p.alias)}</h2>
+          <p>${flavorChip(p)}</p>
+          <p class="meta">${esc(p.city)} · ${esc(goalName(p.goal))}</p>
+          <p class="meta">${esc(hoursName(p.hours))}</p>
+        </div>
+      </div>
+      <dl class="brief">
+        <div><dt>Can do</dt><dd class="chips">${roleChips(p.canDo, wanted)}</dd></div>
+        ${p.lookingFor.length ? `<div><dt>Looking for</dt><dd class="chips">${roleChips(p.lookingFor, card ? card.canDo : [])}</dd></div>` : ''}
+        <div><dt>Built</dt><dd>${esc(p.work)}</dd></div>
+        ${p.comps ? `<div><dt>Joined</dt><dd>${p.comps.map((x) => esc(COMP[x].name)).join(', ')}</dd></div>` : ''}
+      </dl>
+      ${known ? `
+      <dl class="brief brief--locked">
+        <div><dt>Name</dt><dd>${esc(p.real.name)}</dd></div>
+        <div><dt>School</dt><dd>${esc(p.real.school)}</dd></div>
+        <div><dt>Contact</dt><dd>${esc(p.real.contact)}</dd></div>
+      </dl>` : '<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>Name and school stay hidden until you team up.</p>'}
+      <div class="pf__actions">${modalAction(cid, 'person', pid, known)}</div>
+    </div>`;
+}
+
+function teamModal(tid, cid) {
+  const t = teamsIn(cid).find((x) => x.id === tid);
+  const mine = t.members.includes('me');
+  const card = S.cards[cid];
+  return `
+    <div class="modal__card" tabindex="-1">
+      <button class="modal__x" data-act="modal-close" type="button" aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+      <div class="pf__top">
+        <span class="team-cups team-cups--big" aria-hidden="true">${t.members.map((m) => cupFor(personOf(m))).join('')}</span>
+        <div class="pf__who">
+          <h2 id="modal-title">${esc(t.name)}</h2>
+          <p class="meta">${esc(COMP[cid].name)} · ${members(t)}</p>
+        </div>
+      </div>
+      ${t.pitch ? `<div class="pf__tags"><p class="field__label">What we’re building</p><p class="pitch pitch--big">${esc(t.pitch)}</p></div>` : ''}
+      ${openRoles(t).length ? `<div class="pf__tags"><p class="field__label">Still need</p><p class="chips">${roleChips(openRoles(t), card ? card.canDo : [])}</p></div>` : ''}
+      <div class="pf__tags">
+        <p class="field__label">Who’s in it</p>
+        <ul class="mates">${t.members.map((m) => {
+          const p = personOf(m);
+          const name = m === 'me' ? 'You' : mine ? p.real.name : p.alias;
+          return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${cid}" type="button" aria-label="${esc(name)}">${cupFor(p)}</button>`}<div><strong>${esc(name)}</strong><p class="chips chips--sm">${roleChips(p.canDo || [])}</p></div></li>`;
+        }).join('')}</ul>
+      </div>
+      ${mine ? '' : '<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>Names stay hidden until you team up.</p>'}
+      <div class="pf__actions">${mine ? `<a class="btn btn--dark btn--sm" href="#/team/${t.id}">Open team</a>` : modalAction(cid, 'team', tid, false)}</div>
+    </div>`;
+}
+
+function renderModal() {
+  const m = U.modal;
+  document.body.classList.toggle('modal-open', !!m);
+  if (!m) { modalEl.innerHTML = ''; return; }
+  const wasOpen = !!modalEl.firstElementChild;
+  modalEl.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal__backdrop" data-act="modal-close"></div>
+      ${m.kind === 'team' ? teamModal(m.ref, m.comp) : personModal(m.ref, m.comp)}
+    </div>`;
+  if (!wasOpen) $('.modal__card', modalEl).focus();
+}
+
+function closeModal() {
+  U.modal = null;
+  renderModal();
+}
 
 /* ---------- Screens ---------- */
 function viewOnboard() {
@@ -374,6 +484,7 @@ function cardForm(cid, withTeam) {
   <form class="panel stack" data-form="card" data-comp="${cid}" data-team="${withTeam ? 1 : ''}" novalidate>
     <h2>${withTeam ? 'Start a team' : 'Your competition card'}</h2>
     ${withTeam ? field('team', 'Team name', '', { req: true, ph: 'e.g. Clear Air' }) : ''}
+    ${withTeam ? field('pitch', 'What are you building?', '', { area: true, ph: 'One or two sentences. You can change it later.' }) : ''}
     <div class="field"><p class="field__label">What you can do</p>${roleChecks('canDo', prev.canDo)}</div>
     <div class="field"><p class="field__label">${withTeam ? 'Roles your team still needs' : 'Roles you are looking for'}</p>${roleChecks('lookingFor', prev.lookingFor)}</div>
     <div class="row2">
@@ -501,7 +612,7 @@ function viewChat(c) {
     <header class="chat__head">
       <a class="back" href="#/chats" aria-label="Back"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
-        <h1>${esc(chatName(c))}</h1>
+        <h1><button class="name-btn name-btn--big" data-act="open" data-kind="${c.kind}" data-ref="${c.ref}" data-comp="${c.comp}" type="button">${esc(chatName(c))}<i class="ph ph-caret-right" aria-hidden="true"></i></button></h1>
         <p class="sub">${esc(COMP[c.comp].name)}${group && p ? ' · with your team' : ''}</p>
         <div class="meta-row">${sugarMeter(sugar)}${live ? `<span class="expiry">${closesText(c)}</span>` : ''}</div>
       </div>
@@ -533,9 +644,13 @@ function viewTeam(t) {
     </header>
     <details class="panel team-info" ${U.teamOpen === t.id ? 'open' : ''} data-team="${t.id}">
       <summary><span>${members(t)} · ${openRoles(t).length ? `still need ${esc(openRoles(t).join(', '))}` : 'team complete'}</span><span class="sec__edit">Details</span></summary>
+      <form class="stack pitch-form" data-form="pitch" data-id="${t.id}" novalidate>
+        ${field('pitch', 'What we’re building', t.pitch || '', { area: true, ph: 'One or two sentences. People looking for a team see this.' })}
+        <button class="btn btn--ghost btn--sm" type="submit">Save</button>
+      </form>
       <ul class="mates">${t.members.map((m) => {
         const p = personOf(m);
-        return `<li>${avatar(p)}<div><strong>${esc(m === 'me' ? `You (${S.me.name || S.me.alias})` : p.real.name)}</strong><p class="meta">${esc(m === 'me' ? S.me.school || '' : p.real.school)}${m === 'me' ? '' : ` · ${esc(p.real.contact)}`}</p></div></li>`;
+        return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${t.comp}" type="button" aria-label="${esc(p.real.name)}">${cupFor(p)}</button>`}<div><strong>${esc(m === 'me' ? `You (${S.me.name || S.me.alias})` : p.real.name)}</strong><p class="meta">${esc(m === 'me' ? S.me.school || '' : p.real.school)}${m === 'me' ? '' : ` · ${esc(p.real.contact)}`}</p></div></li>`;
       }).join('')}</ul>
       <ul class="roles">${t.roles.map((r) => `<li class="role ${r.by ? 'is-filled' : ''}"><i class="ph ${r.by ? 'ph-check-circle' : 'ph-circle'}" aria-hidden="true"></i><span class="role__name">${esc(r.name)}</span><span class="role__tag">${r.by ? esc(r.by === 'me' ? 'You' : P[r.by].real.name) : 'Open'}</span></li>`).join('')}</ul>
       <div class="invite">
@@ -649,7 +764,7 @@ const forms = {
     S.cards[cid] = { canDo, lookingFor, goal: d.goal, hours: Number(d.hours) };
     if (form.dataset.team) {
       const roles = [...canDo.map((name) => ({ name, by: 'me' })), ...lookingFor.filter((r) => !canDo.includes(r)).map((name) => ({ name, by: null }))];
-      S.teams.push({ id: uid(), comp: cid, name: d.team, members: ['me'], roles, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
+      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], roles, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
     }
     U.form = null;
     save();
@@ -666,6 +781,14 @@ const forms = {
     push(c, 'me', d.msg);
     render({ fresh: true, focus: 'c-msg' });
     reply(c, 1300 + Math.random() * 1200);
+  },
+  pitch(form, d) {
+    const t = S.teams.find((x) => x.id === form.dataset.id);
+    if (!t) return;
+    t.pitch = d.pitch;
+    save();
+    toast('Saved');
+    render({ fresh: true });
   },
   teammsg(form, d) {
     const t = S.teams.find((x) => x.id === form.dataset.id);
@@ -689,6 +812,12 @@ const forms = {
 /* ---------- Buttons ---------- */
 const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
+  open(el) {
+    U.hi = null;
+    U.modal = { kind: el.dataset.kind, ref: el.dataset.ref, comp: el.dataset.comp };
+    renderModal();
+  },
+  'modal-close'() { closeModal(); },
   hi(el) { U.hi = el.dataset.key || null; render({ fresh: true, focus: U.hi ? 'c-hi' : null }); },
   teamup(el) {
     const c = chatById(el.dataset.id);
@@ -777,6 +906,14 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
   if (el && acts[el.dataset.act]) acts[el.dataset.act](el);
 });
+// Escape closes the pop-up; tapping the big cup takes it apart
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && U.modal) closeModal();
+});
+document.addEventListener('click', (e) => {
+  const c = e.target.closest('.cup-x');
+  if (c && !c.closest('button, a')) c.classList.toggle('is-apart');
+});
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('[data-form]');
   if (!form) return;
@@ -797,6 +934,7 @@ window.addEventListener('hashchange', () => {
   U.form = null;
   U.hi = null;
   U.leave = null;
+  if (U.modal) closeModal();
   U.confirmReset = false;
   render();
 });

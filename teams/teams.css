@@ -366,3 +366,68 @@
   border-radius: 0 var(--r-input) var(--r-input) 0;
   background: var(--bg);
 }
+
+/* Labels line up with the first row of chips */
+.brief > div {
+  grid-template-columns: 7.5em minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.brief .chips {
+  margin-top: 0;
+}
+
+/* A team's one-line idea */
+.pitch {
+  margin: 10px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.pitch--big {
+  margin-top: 4px;
+  font-size: 1.0625rem;
+}
+
+.pitch-form textarea {
+  min-height: 0;
+}
+
+.pitch-form .btn {
+  justify-self: start;
+}
+
+/* Clickable cups for a team */
+.team-cups.avatar-btn {
+  border: 0;
+  background: none;
+}
+
+.team-cups--big .cup {
+  width: 54px;
+  height: 64px;
+}
+
+.team-cups--big .cup + .cup {
+  margin-left: -16px;
+}
+
+.chips--sm {
+  margin: 4px 0 0;
+}
+
+.chips--sm span {
+  padding: 1px 9px;
+  font-size: 0.8125rem;
+}
+
+.modal .mates {
+  margin-top: 8px;
+}
+
+@media (max-width: 520px) {
+  .brief > div {
+    grid-template-columns: 6.5em minmax(0, 1fr);
+    gap: 8px;
+  }
+}
