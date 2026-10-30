@@ -44,8 +44,8 @@ class FakeCache(dict):
 def test_llm_answer_is_checked_by_pydantic_and_cached():
     answer = {"team_rules": [{"max_members": 8, "individual_allowed": True, "evidence": "可以個人或最多8人的團隊形式參賽"}]}
     ex = llm_mod.ClaudeExtractor.__new__(llm_mod.ClaudeExtractor)
+    llm_mod.Extractor.__init__(ex, "test-model", FakeCache())
     ex.client = SimpleNamespace(messages=FakeMessages(answer))
-    ex.model, ex.cache, ex.calls = "test-model", FakeCache(), 0
     comp = RawCompetition(id="bh-a", source="bhuntr", region="tw", kind="Design", name="Dewan", url="https://example.com")
     got = ex.extract(comp, "text")
     assert isinstance(got, Extraction) and got.team_rules[0].max_members == 8
@@ -53,6 +53,32 @@ def test_llm_answer_is_checked_by_pydantic_and_cached():
     assert sent["tool_choice"] == {"type": "tool", "name": "record_team_rules"}
     ex.extract(comp, "text")
     assert ex.calls == 1, "the second time comes from the cache"
+
+
+def test_openai_answer_goes_through_the_same_checks():
+    args = json.dumps({"team_rules": [{"min_members": 2, "max_members": 4, "evidence": "每隊2至4人"}]}, ensure_ascii=False)
+    calls = []
+
+    def create(**kw):
+        calls.append(kw)
+        call = SimpleNamespace(function=SimpleNamespace(arguments=args))
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(tool_calls=[call]))])
+
+    ex = llm_mod.OpenAIExtractor.__new__(llm_mod.OpenAIExtractor)
+    llm_mod.Extractor.__init__(ex, "test-model", FakeCache())
+    ex.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    comp = RawCompetition(id="bh-b", source="bhuntr", region="tw", kind="Tech", name="T", url="https://example.com")
+    got = ex.extract(comp, "每隊2至4人")
+    assert (got.team_rules[0].min_members, got.team_rules[0].max_members) == (2, 4)
+    assert calls[0]["tool_choice"]["function"]["name"] == "record_team_rules"
+
+
+def test_provider_is_picked_from_the_keys():
+    from crawler.config import Config
+    base = dict(supabase_url=None, supabase_service_key=None, llm_model=None)
+    assert llm_mod.make_extractor(Config(anthropic_api_key=None, openai_api_key=None, **base)) is None
+    picked = llm_mod.make_extractor(Config(anthropic_api_key=None, openai_api_key="sk-test", **base))
+    assert picked.provider == "openai" and picked.model == "gpt-5-mini"
 
 
 def test_bad_llm_answers_are_rejected():

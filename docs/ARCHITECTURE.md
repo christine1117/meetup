@@ -59,7 +59,7 @@ meetup/
 │  ├─ sources/                一個來源一個檔案：devpost.py、mlh.py、bhuntr.py
 │  ├─ extract/
 │  │  ├─ candidates.py        步驟 1：Regex 找「可能相關的段落」（只縮小範圍，不做判斷）
-│  │  ├─ llm.py               步驟 2：LLM（Claude）讀段落，照固定格式回答
+│  │  ├─ llm.py               步驟 2：LLM（OpenAI 或 Claude，看你放哪一把金鑰）讀段落，照固定格式回答
 │  │  ├─ schema.py            步驟 3：Pydantic 定義格式，答案不合格式就拒收
 │  │  └─ validate.py          步驟 4：Validator 檢查（見下表）
 │  ├─ store/                  步驟 5：json_store.py（網站讀的檔案）、supabase_store.py（資料庫）
@@ -116,7 +116,9 @@ LLM 被要求：只抓參賽人數、上下限分開、沒寫就是 null、不�
 | LLM 給的原文在網頁上找不到 | 不公開那條人數 |
 | LLM 自己說不確定 | 不公開人數，人工確認 |
 
-沒有設定 `ANTHROPIC_API_KEY` 時：已公開的比賽維持原樣，黑客松照常列出（人數顯示看官網），其他新比賽先不公開，等可以讀了再說。
+用哪一家 LLM：有 `OPENAI_API_KEY` 就用 OpenAI（預設 gpt-5-mini），有 `ANTHROPIC_API_KEY` 就用 Claude（預設 claude-sonnet-5-5）。想換型號，在 GitHub 設定一個 `LLM_MODEL` 變數。兩家的回答都要通過同樣的 Pydantic 和 Validator 檢查。
+
+兩把金鑰都沒有時：已公開的比賽維持原樣，黑客松照常列出（人數顯示看官網），其他新比賽先不公開，等可以讀了再說。
 
 ## 常用指令
 
@@ -136,7 +138,7 @@ npm run version  部署前蓋版本號
 | 資料庫 | Supabase（Postgres） | 結構在 `supabase/migrations/`；權限用資料庫的 row-level security 檢查 |
 | 即時聊天 | Supabase Realtime | 同一個服務，不用另外架 |
 | 網站 | 靜態網站即可（GitHub Pages、Cloudflare Pages 或 Vercel） | 登入和資料都在 Supabase，網站本身不需要伺服器 |
-| 每天爬蟲 + LLM | GitHub Actions | 每天 06:00 跑，金鑰放 GitHub Secrets |
+| 每天爬蟲 + LLM | GitHub Actions | 每天 06:00 跑，LLM 金鑰（OpenAI 或 Claude）放 GitHub Secrets |
 | 需要藏金鑰的伺服器程式 | Supabase Edge Functions | 例如管理員確認人數的操作 |
 | Docker | 目前不需要 | 沒有自己架的伺服器 |
 

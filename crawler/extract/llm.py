@@ -1,5 +1,6 @@
 """Step 2: an LLM reads the candidate paragraphs and returns the rules.
 
+Works with Claude (ANTHROPIC_API_KEY) or OpenAI (OPENAI_API_KEY).
 The model must answer through a tool whose input schema is the Pydantic
 Extraction model, so the answer always has the same shape. Answers are cached
 by (model, prompt version, text), so a page is only read again when it changes.
@@ -64,41 +65,92 @@ TOOL = {
 }
 
 
-def cache_key(model: str, text: str) -> str:
-    return "llm:" + hashlib.sha256(f"{model}|{PROMPT_VERSION}|{text}".encode()).hexdigest()[:32]
+def cache_key(provider: str, model: str, text: str) -> str:
+    return "llm:" + hashlib.sha256(f"{provider}|{model}|{PROMPT_VERSION}|{text}".encode()).hexdigest()[:32]
 
 
-class ClaudeExtractor:
-    """Uses the Anthropic API. Needs ANTHROPIC_API_KEY."""
+def user_message(comp: RawCompetition, text: str) -> str:
+    return f"Competition: {comp.name}\nOrganizer: {comp.organizer}\n\nSource text:\n{text}"
 
-    def __init__(self, api_key: str, model: str, cache=None):
-        import anthropic  # only needed when an API key is set
 
-        self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = model
-        self.cache = cache
-        self.calls = 0
+class Extractor:
+    """Shared by every provider: cache the answer, and let Pydantic check its shape."""
+
+    provider = "base"
+
+    def __init__(self, model: str, cache=None):
+        self.model, self.cache, self.calls = model, cache, 0
+
+    def ask(self, comp: RawCompetition, text: str) -> Any:  # the provider's raw answer (dict or JSON text)
+        raise NotImplementedError
 
     def extract(self, comp: RawCompetition, text: str) -> Extraction:
-        key = cache_key(self.model, text)
+        key = cache_key(self.provider, self.model, text)
         if self.cache is not None:
             saved = self.cache.get(key, max_age_days=180)
             if saved is not None:
                 return Extraction.model_validate(saved)
+        raw = self.ask(comp, text)
+        self.calls += 1
+        result = Extraction.model_validate_json(raw) if isinstance(raw, str) else Extraction.model_validate(raw)
+        if self.cache is not None:
+            self.cache.set(key, result.model_dump())
+        return result
+
+
+class ClaudeExtractor(Extractor):
+    """Anthropic API. Needs ANTHROPIC_API_KEY."""
+
+    provider = "anthropic"
+
+    def __init__(self, api_key: str, model: str, cache=None):
+        super().__init__(model, cache)
+        import anthropic  # only needed when this provider is used
+
+        self.client = anthropic.Anthropic(api_key=api_key)
+
+    def ask(self, comp, text):
         response = self.client.messages.create(
             model=self.model,
             max_tokens=2000,
             system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
             tools=[TOOL],
             tool_choice={"type": "tool", "name": TOOL["name"]},
-            messages=[{
-                "role": "user",
-                "content": f"Competition: {comp.name}\nOrganizer: {comp.organizer}\n\nSource text:\n{text}",
-            }],
+            messages=[{"role": "user", "content": user_message(comp, text)}],
         )
-        self.calls += 1
-        block = next(b for b in response.content if b.type == "tool_use")
-        result = Extraction.model_validate(block.input)  # Pydantic checks the shape
-        if self.cache is not None:
-            self.cache.set(key, result.model_dump())
-        return result
+        return next(b for b in response.content if b.type == "tool_use").input
+
+
+class OpenAIExtractor(Extractor):
+    """OpenAI API. Needs OPENAI_API_KEY. The same tool schema, sent as a function."""
+
+    provider = "openai"
+
+    def __init__(self, api_key: str, model: str, cache=None):
+        super().__init__(model, cache)
+        import openai  # only needed when this provider is used
+
+        self.client = openai.OpenAI(api_key=api_key)
+
+    def ask(self, comp, text):
+        response = self.client.chat.completions.create(
+            model=self.model,
+            max_completion_tokens=4000,
+            messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": user_message(comp, text)}],
+            tools=[{"type": "function", "function": {"name": TOOL["name"], "description": TOOL["description"],
+                                                     "parameters": TOOL["input_schema"]}}],
+            tool_choice={"type": "function", "function": {"name": TOOL["name"]}},
+        )
+        return response.choices[0].message.tool_calls[0].function.arguments  # JSON text
+
+
+DEFAULT_MODEL = {"anthropic": "claude-sonnet-5-5", "openai": "gpt-5-mini"}
+
+
+def make_extractor(cfg, cache=None) -> Extractor | None:
+    """Claude if ANTHROPIC_API_KEY is set, otherwise OpenAI if OPENAI_API_KEY is set, otherwise none."""
+    if cfg.anthropic_api_key:
+        return ClaudeExtractor(cfg.anthropic_api_key, cfg.llm_model or DEFAULT_MODEL["anthropic"], cache)
+    if cfg.openai_api_key:
+        return OpenAIExtractor(cfg.openai_api_key, cfg.llm_model or DEFAULT_MODEL["openai"], cache)
+    return None

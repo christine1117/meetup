@@ -9,7 +9,7 @@
   4. Saved to data/competitions.json + data/review.json, and to the database
      when SUPABASE_URL is set
 
-Without ANTHROPIC_API_KEY, step 2 is skipped: competitions already published
+Without ANTHROPIC_API_KEY or OPENAI_API_KEY, step 2 is skipped: competitions already published
 stay as they were, hackathons are listed with the size on the official page,
 and other new competitions wait (pending) until they can be read.
 
@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from . import config as config_mod
 from .cache import Cache
 from .extract.candidates import label
-from .extract.llm import ClaudeExtractor
+from .extract.llm import make_extractor
 from .extract.schema import Published
 from .extract.validate import decide, overall
 from .sources import bhuntr, devpost, mlh
@@ -53,8 +53,8 @@ def main() -> int:
     logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per request is too much
     cfg = config_mod.load()
     cache = Cache(cfg.cache_file)
-    llm = ClaudeExtractor(cfg.anthropic_api_key, cfg.llm_model, cache) if cfg.anthropic_api_key else None
-    log.info("LLM: %s", f"{cfg.llm_model}" if llm else "not set (ANTHROPIC_API_KEY missing): rules are not read this run")
+    llm = make_extractor(cfg, cache)
+    log.info("LLM: %s", f"{llm.provider} {llm.model}" if llm else "not set (no ANTHROPIC_API_KEY or OPENAI_API_KEY): rules are not read this run")
     previous = json_store.previous_items(cfg)
 
     items: list[dict] = []
