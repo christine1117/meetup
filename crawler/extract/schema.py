@@ -87,9 +87,15 @@ class TeamRule(BaseModel):
 
 class Eligibility(BaseModel):
     summary: str = Field(
-        ..., min_length=2, max_length=200,
-        description="Who can enter, in one short sentence, in the same language as the source.",
+        ..., min_length=2, max_length=300,
+        description="Who can enter, in one short sentence (under 120 characters), in the same language as the source.",
     )
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def shorten(cls, v):
+        # A long summary is cut, not rejected: the facts are still checked through the quote
+        return v if not isinstance(v, str) or len(v) <= 300 else v[:299].rstrip() + "…"
     evidence: str = Field(..., min_length=2, description="An exact quote from the source text about who can enter.")
 
 

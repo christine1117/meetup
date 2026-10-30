@@ -14,7 +14,7 @@ from typing import Any, Protocol
 
 from .schema import Extraction, RawCompetition
 
-PROMPT_VERSION = "1"
+PROMPT_VERSION = "2"
 
 SYSTEM = """You read competition pages and extract the allowed number of participants per team.
 
@@ -29,12 +29,16 @@ Rules:
    "最多 5 名學生及 1 名指導老師" means max_members 5 and mentors_max 1.
 6. If different tracks or categories (組別) have different rules, return one rule per track.
 7. Every rule needs evidence: an exact quote copied character for character from the source text.
-8. If one person may enter alone (個人或團隊, individually or in teams), set individual_allowed to true.
-   If the text says individuals only, set individual_only to true.
-9. If the text is ambiguous or contradicts itself (for example the overview and the rules give
-   different sizes), set needs_review to true and say why.
-10. Also give a one-sentence summary of who can enter (eligibility), in the language of the source,
-    with an exact quote as evidence, when the text says.
+   Prefer one sentence. Do not join sentences from different places and do not add punctuation.
+8. individual_allowed: true if one person may enter alone (個人或團隊, individually or in teams);
+   false if a team is required (僅接受團體參賽, team required).
+   individual_only: true only if teams are NOT allowed at all (限個人參賽, individuals only, solo only).
+   "僅接受團體參賽" means teams only: individual_only is false.
+9. needs_review is only about team size: set it when the size rules are ambiguous or contradict each
+   other (for example the overview says 2–4 and the rules say 3–5). Do NOT set it because a size is
+   simply not stated (use null), or because of age, eligibility or other details.
+10. Also give a one-sentence summary of who can enter (eligibility), under 120 characters, in the
+    language of the source, with an exact quote as evidence, when the text says.
 Return nothing that is not supported by the text."""
 
 
@@ -133,15 +137,21 @@ class OpenAIExtractor(Extractor):
         self.client = openai.OpenAI(api_key=api_key, timeout=90, max_retries=2)
 
     def ask(self, comp, text):
+        # Reasoning models (gpt-5, o-series) think before answering: give them room, and keep the effort low
+        extra = {"reasoning_effort": "low"} if self.model.startswith(("gpt-5", "o1", "o3", "o4")) else {}
         response = self.client.chat.completions.create(
             model=self.model,
-            max_completion_tokens=4000,
+            max_completion_tokens=8000,
+            **extra,
             messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": user_message(comp, text)}],
             tools=[{"type": "function", "function": {"name": TOOL["name"], "description": TOOL["description"],
                                                      "parameters": TOOL["input_schema"]}}],
             tool_choice={"type": "function", "function": {"name": TOOL["name"]}},
         )
-        return response.choices[0].message.tool_calls[0].function.arguments  # JSON text
+        choice = response.choices[0]
+        if not choice.message.tool_calls:
+            raise ValueError(f"no answer in the expected shape (finish_reason={choice.finish_reason})")
+        return choice.message.tool_calls[0].function.arguments  # JSON text
 
 
 DEFAULT_MODEL = {"anthropic": "claude-sonnet-5-5", "openai": "gpt-5-mini"}

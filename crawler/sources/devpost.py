@@ -37,16 +37,24 @@ def dates(text: str = "") -> tuple[str | None, str | None]:
     return (iso(begin) if begin else None), iso(deadline)
 
 
+# The site's own menus and banners, which repeat on every page and mention "Teams"
+CHROME = re.compile(r"Devpost for Teams|private hackathons|Host a public hackathon|unsupported browser|Drive innovation, collaboration|Webinars & events|Join a hackathon|Log in Sign up", re.I)
+
+
+def strip_chrome(text: str) -> str:
+    return " ".join(s for s in re.split(r"(?<=[.!?])\s+", text) if not CHROME.search(s))
+
+
 def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
     key = f"devpost3:{url}"
     saved = cache.get(key, max_age_days=7)
     if saved is not None:
-        return [PageText(**p) for p in saved]
+        return [PageText(page=p["page"], text=strip_chrome(p["text"])) for p in saved]
     base = url.rstrip("/") + "/"
     out = []
     for name, link in (("overview", base), ("rules", base + "rules")):
         try:
-            out.append(PageText(page=name, text=relevant(clean(http.get(link)))))
+            out.append(PageText(page=name, text=strip_chrome(relevant(clean(http.get(link))))))
             breaker.ok()
         except Exception as err:
             breaker.fail(err)

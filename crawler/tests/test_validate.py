@@ -113,3 +113,36 @@ def test_eligibility_needs_its_quote():
     ex.eligibility = Eligibility(summary="高中生", evidence="限高中生參加")
     d = decide(comp(), ex, src)
     assert d.eligibility is None and "eligibility_evidence_not_found" in [i.code for i in d.issues]
+
+
+# Real cases from the first LLM run
+def test_quote_joined_from_two_places_still_counts_if_every_piece_is_on_the_page():
+    page = "Each team must include 2–4 participants. This challenge is open to everyone. Each team may work with one mentor or faculty advisor."
+    assert quoted("Each team must include 2–4 participants . Each team may work with one mentor or faculty advisor", page)
+    assert quoted("Team required: 2 to 3 members.", "Team required: 2 to 3 members Companies excluded")
+    assert not quoted("Each team must include 2–6 participants. Each team may work with one mentor", page)
+
+
+def test_participants_and_mentors_in_one_sentence():
+    src = "可跨校組隊參加，每隊組員學生人數2-6名，指導老師1-2名。"
+    d = decide(comp(), Extraction(team_rules=[rule("每隊組員學生人數2-6名，指導老師1-2名", min_members=2, max_members=6, mentors_max=2)]), src)
+    assert d.status == "published" and (d.tracks[0].min, d.tracks[0].max, d.tracks[0].mentors) == (2, 6, 2)
+
+
+def test_team_only_is_never_excluded_as_individual_only():
+    src = "參賽資格全國大專校院在學學生可報名。僅接受團體參賽，每組以2至5人為限，每位學生可加入多個團體。"
+    ex = Extraction(individual_only=True, team_rules=[rule("僅接受團體參賽，每組以2至5人為限", min_members=2, max_members=5, individual_allowed=False)])
+    d = decide(comp(), ex, src)
+    assert d.listed and overall(d.tracks) == {"min": 2, "max": 5}
+
+
+def test_overall_size_with_an_individual_track_and_an_open_team_track():
+    from crawler.extract.schema import Track
+    tracks = [Track(name="個人組", max=1, solo=True, evidence="a"), Track(name="團體組", min=2, max=None, evidence="b")]
+    assert overall(tracks) == {"min": 1, "max": None}
+    assert overall([Track(name=None, max=4, evidence="c")]) == {"min": None, "max": 4}
+
+
+def test_long_eligibility_is_cut_not_rejected():
+    ex = Extraction.model_validate({"eligibility": {"summary": "x" * 500, "evidence": "quote"}})
+    assert len(ex.eligibility.summary) <= 300

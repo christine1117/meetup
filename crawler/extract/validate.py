@@ -24,13 +24,18 @@ MENTOR = re.compile(r"指導老師|指導教師|指導教授|老師|教師|顧�
 NUMBER = re.compile(r"\d+|[一二兩三四五六七八九十]+")
 
 
+MENTOR_BEFORE = re.compile(r"(?:指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|coach(?:es)?)\s*(?:人數|為|需|須|:|：)?\s*(?:\d+\s*[-~～至到]\s*)?$", re.I)
+MENTOR_AFTER = re.compile(r"^\s*(?:[-~～至到]\s*\d+\s*)?(?:名|位|人)?\s*(?:的)?\s*(?:指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|coach(?:es)?)", re.I)
+
+
 def only_about_mentors(quote: str) -> bool:
-    """True when every number in the quote sits right next to a mentor word."""
+    """True when every number in the quote is a count of mentors
+    ("指導老師1名", "1 名指導老師", "one mentor"), not of participants."""
     nums = list(NUMBER.finditer(quote))
     if not nums:
         return False
-    near = lambda m: MENTOR.search(quote[max(0, m.start() - 8): m.end() + 8]) is not None
-    return all(near(m) for m in nums)
+    is_mentor = lambda m: bool(MENTOR_BEFORE.search(quote[max(0, m.start() - 10): m.start()]) or MENTOR_AFTER.match(quote[m.end(): m.end() + 10]))
+    return all(is_mentor(m) for m in nums)
 
 
 def norm(text: str) -> str:
@@ -40,9 +45,18 @@ def norm(text: str) -> str:
     return t.replace("～", "~").replace("–", "-").replace("—", "-")
 
 
+QUOTES = str.maketrans({"“": '"', "”": '"', "‘": "'", "’": "'", "「": '"', "」": '"'})
+# Where an LLM joins quotes from different places: "...", "…", a line break, or a sentence end
+PIECES = re.compile(r"\s*(?:\.\.\.|…|\n)\s*|(?<=[。；;!?！？])|(?<=\.)\s+")
+
+
 def quoted(evidence: str, source: str) -> bool:
-    e = norm(evidence)
-    return len(e) >= 2 and e in norm(source)
+    """Every piece of the quote has to be on the page, word for word.
+    (An LLM sometimes joins two sentences that are not next to each other.)"""
+    src = norm((source or "").translate(QUOTES))
+    pieces = [norm(p.translate(QUOTES)).strip(".。,，;；:：") for p in PIECES.split(evidence or "")]
+    pieces = [p for p in pieces if len(p) >= 2]
+    return bool(pieces) and all(p in src for p in pieces)
 
 
 def track_key(name: str | None) -> str:
@@ -133,10 +147,15 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
 
 
 def overall(tracks: list[Track]) -> dict:
-    """One min/max for the list view, across tracks (the detail page shows each track)."""
+    """One min/max for the list view, across tracks (the detail page shows each track).
+    The maximum is only known if every track that allows teams states one."""
+    if not tracks:
+        return {"min": None, "max": None}
     mins = [t.min if t.min is not None else (1 if t.solo else None) for t in tracks]
-    maxes = [t.max for t in tracks]
-    return {
-        "min": min(m for m in mins if m is not None) if any(m is not None for m in mins) else None,
-        "max": max(m for m in maxes if m is not None) if any(m is not None for m in maxes) else None,
-    }
+    team_tracks = [t for t in tracks if t.max is None or t.max >= 2]
+    maxes = [t.max for t in team_tracks]
+    top = max(maxes) if maxes and all(m is not None for m in maxes) else None
+    low = min(m for m in mins if m is not None) if all(m is not None for m in mins) else None
+    if low is not None and top is not None and low > top:
+        low = None
+    return {"min": low, "max": top if top is not None and top >= 2 else None}

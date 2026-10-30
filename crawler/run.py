@@ -18,6 +18,7 @@ Run: npm run crawl   (or: .venv/bin/python -m crawler)"""
 from __future__ import annotations
 
 import logging
+import re
 import sys
 import threading
 import time
@@ -167,6 +168,10 @@ def main() -> int:
     json_store.save(cfg, open_items, sources, reviews)
     remembered = cache.save()
     log.info("Saved %d competitions, %d to review, %d pages remembered", len(open_items), len(reviews), remembered)
+    if cfg.supabase_url and not re.match(r"^https://[a-z0-9]+\.supabase\.co/?$", cfg.supabase_url):
+        log.error("SUPABASE_URL should look like https://abcdefghij.supabase.co (Project Settings > Data API > Project URL). "
+                  "It starts with %r and is %d characters long.", cfg.supabase_url[:8], len(cfg.supabase_url))
+        return 1
     if cfg.supabase_url and cfg.supabase_service_key:
         try:
             SupabaseStore(cfg.supabase_url, cfg.supabase_service_key).save(db)
