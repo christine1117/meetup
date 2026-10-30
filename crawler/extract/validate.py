@@ -90,6 +90,9 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
         if (r.min_members or r.max_members) and only_about_mentors(r.evidence):
             issues.append(Issue(code="mentors_counted", detail=f"The number seems to be about mentors ({where})"))
             continue
+        # A mentor count is only kept if the quote talks about mentors
+        if r.mentors_max is not None and not MENTOR.search(r.evidence):
+            r = r.model_copy(update={"mentors_max": None})
         good.append(r)
 
     # The same track with different sizes on different pages is a conflict

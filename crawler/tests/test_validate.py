@@ -146,3 +146,9 @@ def test_overall_size_with_an_individual_track_and_an_open_team_track():
 def test_long_eligibility_is_cut_not_rejected():
     ex = Extraction.model_validate({"eligibility": {"summary": "x" * 500, "evidence": "quote"}})
     assert len(ex.eligibility.summary) <= 300
+
+
+def test_mentor_count_needs_mentors_in_the_quote():
+    src = "僅接受團體參賽，每組以2至5人為限，每位學生可加入多個團體。"
+    d = decide(comp(), Extraction(team_rules=[rule("僅接受團體參賽，每組以2至5人為限", min_members=2, max_members=5, mentors_max=3)]), src)
+    assert d.tracks[0].mentors is None and (d.tracks[0].min, d.tracks[0].max) == (2, 5)
