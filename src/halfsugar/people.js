@@ -1,6 +1,6 @@
 /* ---------- Simulated people ---------- */
 
-import { L } from '../shared/i18n.js?v=20261030f';
+import { L } from '../shared/i18n.js?v=20261030g';
 
 
 export const PEOPLE = [

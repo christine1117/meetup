@@ -58,3 +58,31 @@ export function trackText(t) {
   const mentors = t.mentors ? `, plus ${t.mentors} mentor${t.mentors > 1 ? 's' : ''}` : '';
   return `${t.name ? `${t.name}: ` : ''}${size}${mentors}`;
 }
+
+/* One size for the list view across tracks (the same rule as the crawler's
+   validate.overall): the maximum is only known if every track that allows
+   teams states one; "one person may enter" counts as a minimum of 1. */
+export function overallSize(tracks = []) {
+  if (!tracks.length) return { min: null, max: null };
+  const mins = tracks.map((t) => (t.min != null ? t.min : t.solo ? 1 : null));
+  const teamTracks = tracks.filter((t) => t.max == null || t.max >= 2);
+  const maxes = teamTracks.map((t) => t.max);
+  let top = maxes.length && maxes.every((m) => m != null) ? Math.max(...maxes) : null;
+  let low = mins.every((m) => m != null) ? Math.min(...mins) : null;
+  if (top != null && top < 2) top = null;
+  if (low != null && top != null && low > top) low = null;
+  return { min: low, max: top };
+}
+
+// A row from the database (competitions + competition_team_rules) in the shape above
+export function competitionFromRow(row) {
+  const tracks = (row.competition_team_rules || []).map((r) => ({
+    name: r.track, min: r.min_members, max: r.max_members, solo: r.individual_allowed, mentors: r.mentors_max, evidence: r.evidence,
+  }));
+  return {
+    id: row.id, source: row.source, region: row.region, kind: row.kind, name: row.name,
+    organizer: row.organizer || '', url: row.url, start: row.start_at, end: row.end_at || null, deadline: row.deadline_at,
+    where: row.location || '', tags: row.tags || [], prize: row.prize || '', summary: row.summary || '',
+    team: overallSize(tracks), tracks, eligibility: row.eligibility || null,
+  };
+}

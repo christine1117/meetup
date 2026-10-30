@@ -3751,3 +3751,23 @@ body.modal-open {
 .mydrink__info {
   min-width: 0;
 }
+
+/* Accounts: a button that reads like a link, and a calm success note */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--orange-deep);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.ok-note {
+  padding: 10px 14px;
+  border-radius: var(--r-input);
+  background: #e7f1e1;
+  color: #2f5a22;
+}

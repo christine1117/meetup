@@ -1,12 +1,13 @@
 /* ---------- Screen: Me ----------
    Your drink and toppings on top, then your profile (shared with team mode). */
 
-import { esc } from '../../shared/core.js?v=20261030f';
-import { L } from '../../shared/i18n.js?v=20261030f';
-import { drinkFor } from '../../shared/flavors.js?v=20261030f';
-import { S, U } from '../state.js?v=20261030f';
-import { MAX_SHOWN, TOPPING, drinkCup, myToppings, shownToppings, toppingIcon, toppingSlots } from '../toppings.js?v=20261030f';
-import { profileForm } from './profile-form.js?v=20261030f';
+import { accountPanel } from './account.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261030g';
+import { L } from '../../shared/i18n.js?v=20261030g';
+import { drinkFor } from '../../shared/flavors.js?v=20261030g';
+import { S, U } from '../state.js?v=20261030g';
+import { MAX_SHOWN, TOPPING, drinkCup, myToppings, shownToppings, toppingIcon, toppingSlots } from '../toppings.js?v=20261030g';
+import { profileForm } from './profile-form.js?v=20261030g';
 
 
 export function viewMe() {
@@ -38,10 +39,11 @@ export function viewMe() {
     </div>
   </section>
   ${profileForm(S.me, false)}
+  ${accountPanel()}
   <section class="panel note">
     <h2>${L`Demo mode`}</h2>
     <p><a class="inline-link" href="#/about">${L`What is Half Sugar?`}</a></p>
-    <p>${L`Not connected to a server yet. Your data stays in this browser, and the other people are simulated.`}</p>
+    <p>${L`Accounts are real. Posts, chats and the other people are still samples, and they stay in this browser.`}</p>
     <button class="btn btn--ghost btn--sm" data-act="dev-box" type="button">Dev: get a gift box</button>
     ${U.confirmReset
       ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`

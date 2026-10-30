@@ -1,17 +1,17 @@
 /* Layout and drawing: the side nav, and render(), which draws the
    current route and shows a way out if something breaks. */
 
-import { esc } from '../shared/core.js?v=20261030f';
-import { LOGO } from '../shared/flavors.js?v=20261030f';
-import { logError } from '../shared/log.js?v=20261030f';
-import { S, U } from './state.js?v=20261030f';
-import { app } from './ui.js?v=20261030f';
-import { route } from './router.js?v=20261030f';
-import { chatById } from './chats.js?v=20261030f';
-import { viewMe, viewOnboard } from './views/profile.js?v=20261030f';
-import { viewComp, viewComps } from './views/competitions.js?v=20261030f';
-import { viewChat, viewChats } from './views/chats.js?v=20261030f';
-import { viewTeam } from './views/team.js?v=20261030f';
+import { esc } from '../shared/core.js?v=20261030g';
+import { LOGO } from '../shared/flavors.js?v=20261030g';
+import { logError } from '../shared/log.js?v=20261030g';
+import { S, U } from './state.js?v=20261030g';
+import { app } from './ui.js?v=20261030g';
+import { route } from './router.js?v=20261030g';
+import { chatById } from './chats.js?v=20261030g';
+import { viewAccount, viewMe, viewOnboard } from './views/profile.js?v=20261030g';
+import { viewComp, viewComps } from './views/competitions.js?v=20261030g';
+import { viewChat, viewChats } from './views/chats.js?v=20261030g';
+import { viewTeam } from './views/team.js?v=20261030g';
 
 export const NAV = [['comps', 'Competitions', 'ph-trophy'], ['chats', 'Teams & chats', 'ph-chats-circle'], ['me', 'Me', 'ph-user']];
 
@@ -44,6 +44,7 @@ export function render(opt = {}) {
       else if (r.name === 'chat') body = chatById(r.id) ? viewChat(chatById(r.id)) : viewChats();
       else if (r.name === 'team') { const t = S.teams.find((x) => x.id === r.id); body = t ? viewTeam(t) : viewChats(); }
       else if (r.name === 'me') body = viewMe();
+      else if (r.name === 'account') body = U.user ? viewMe() : viewAccount();
       else body = viewComps();
       app.innerHTML = shell(r, body);
     }

@@ -48,3 +48,17 @@ test('only http(s) links are let through', () => {
   assert.equal(safeUrl('javascript:alert(1)'), '');
   assert.equal(safeUrl(undefined), '');
 });
+
+test('a database row becomes a contract record', async () => {
+  const { competitionFromRow, overallSize } = await import('../src/shared/contract.js');
+  const row = {
+    id: 'bh-x', source: 'bhuntr', region: 'tw', kind: 'Design', name: 'Dewan', organizer: 'T', url: 'https://bhuntr.com/x',
+    start_at: '2026-03-31T16:00:00+00:00', end_at: null, deadline_at: '2026-10-31T16:00:00+00:00', location: '', tags: ['a'],
+    prize: '', summary: 's', eligibility: '全球建築師', updated_at: '2026-10-30T10:33:00+00:00',
+    competition_team_rules: [{ track: null, min_members: null, max_members: 8, individual_allowed: true, mentors_max: null, evidence: '可以個人或最多8人' }],
+  };
+  const c = competitionFromRow(row);
+  assert.deepEqual(checkCompetition(c), []);
+  assert.deepEqual(c.team, { min: 1, max: 8 });
+  assert.deepEqual(overallSize([{ max: 1, solo: true }, { min: 2, max: null }]), { min: 1, max: null });
+});

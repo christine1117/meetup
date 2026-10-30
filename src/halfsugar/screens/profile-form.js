@@ -1,12 +1,13 @@
 /* ---------- Screen: profile ---------- */
 
-import { esc } from '../../shared/core.js?v=20261030f';
-import { L } from '../../shared/i18n.js?v=20261030f';
-import { FIELDS, fieldName, flavorName, flavorsLabel } from '../../shared/flavors.js?v=20261030f';
-import { field, select } from '../../shared/forms.js?v=20261030f';
-import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030f';
-import { MAX_TAGS, TAG_SUGGESTIONS, myCurious, normTag } from '../matching.js?v=20261030f';
-import { S, U } from '../state.js?v=20261030f';
+import { accountFields, authNote, busyAttr } from './account.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261030g';
+import { L } from '../../shared/i18n.js?v=20261030g';
+import { FIELDS, fieldName, flavorName, flavorsLabel } from '../../shared/flavors.js?v=20261030g';
+import { field, select } from '../../shared/forms.js?v=20261030g';
+import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030g';
+import { MAX_TAGS, TAG_SUGGESTIONS, myCurious, normTag } from '../matching.js?v=20261030g';
+import { S, U } from '../state.js?v=20261030g';
 
 
 // Type tags (Enter or a comma adds one) or tap a suggestion. scope is 'quiz' or 'me'.
@@ -92,7 +93,13 @@ export function profileForm(me, first) {
         ${field('contact', L`Handle or link`, me.contact, { ph: L`e.g. @yourname` })}
       </div>
     ${fold ? '</div></details>' : '</fieldset>'}
+    ${first && !U.user ? `<fieldset class="panel">
+      <legend><i class="ph ph-user-circle" aria-hidden="true"></i>${L`Your account`}</legend>
+      ${accountFields(true)}
+      <p class="hint">${L`One account for Half Sugar and team mode.`}</p>
+    </fieldset>` : ''}
     <p class="error" id="profile-error" hidden>${L`Please add a nickname.`}</p>
-    <button class="btn btn--primary save-btn" type="submit">${first ? L`Start sipping` : L`Save`}</button>
+    ${first ? authNote() : ''}
+    <button class="btn btn--primary save-btn" type="submit" ${first ? busyAttr() : ''}>${first ? (U.busy ? L`One moment…` : L`Start sipping`) : L`Save`}</button>
   </form>`;
 }

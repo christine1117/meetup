@@ -152,3 +152,14 @@ def test_mentor_count_needs_mentors_in_the_quote():
     src = "僅接受團體參賽，每組以2至5人為限，每位學生可加入多個團體。"
     d = decide(comp(), Extraction(team_rules=[rule("僅接受團體參賽，每組以2至5人為限", min_members=2, max_members=5, mentors_max=3)]), src)
     assert d.tracks[0].mentors is None and (d.tracks[0].min, d.tracks[0].max) == (2, 5)
+
+
+def test_mentor_count_must_be_the_number_in_the_quote():
+    src = "每組 1~5 位成員，每隊皆需要 1 位指導老師。"
+    d = decide(comp(), Extraction(team_rules=[rule("每組 1~5 位成員，每隊皆需要 1 位指導老師。", min_members=1, max_members=5, mentors_max=2)]), src)
+    assert d.tracks[0].mentors is None
+    d = decide(comp(), Extraction(team_rules=[rule("每組 1~5 位成員，每隊皆需要 1 位指導老師。", min_members=1, max_members=5, mentors_max=1)]), src)
+    assert d.tracks[0].mentors == 1
+    src2 = "每隊組員學生人數2-6名，指導老師1-2名。"
+    d = decide(comp(), Extraction(team_rules=[rule(src2, min_members=2, max_members=6, mentors_max=2)]), src2)
+    assert d.tracks[0].mentors == 2

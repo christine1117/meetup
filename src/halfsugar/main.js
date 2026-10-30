@@ -16,16 +16,18 @@
    (posts, messages, profiles) stays in the language it was written in.
    ========================================================= */
 
-import '../shared/log.js?v=20261030f';
-import { later } from '../shared/core.js?v=20261030f';
-import { logError } from '../shared/log.js?v=20261030f';
-import { learnWeights } from './matching.js?v=20261030f';
-import { S } from './state.js?v=20261030f';
-import { resolveReveal, scheduleAccept } from './conversations.js?v=20261030f';
-import { scheduleIncoming } from './simulate.js?v=20261030f';
-import { render } from './shell.js?v=20261030f';
+import { loadProfile } from '../shared/account.js?v=20261030g';
+import { signedIn } from './forms.js?v=20261030g';
+import '../shared/log.js?v=20261030g';
+import { later } from '../shared/core.js?v=20261030g';
+import { logError } from '../shared/log.js?v=20261030g';
+import { learnWeights } from './matching.js?v=20261030g';
+import { S, U, save } from './state.js?v=20261030g';
+import { resolveReveal, scheduleAccept } from './conversations.js?v=20261030g';
+import { scheduleIncoming } from './simulate.js?v=20261030g';
+import { render } from './shell.js?v=20261030g';
 // Clicks, typing and timers are wired up here
-import './events.js?v=20261030f';
+import './events.js?v=20261030g';
 
 
 /* ---------- Start ---------- */
@@ -45,3 +47,21 @@ try {
 }
 
 render();
+
+// Already logged in on this browser? Bring the profile back from the account.
+// (The account library only loads when there is a saved login.)
+let hasLogin = false;
+try { hasLogin = !!localStorage.getItem('halfsugar.auth'); } catch { /* storage is off */ }
+if (hasLogin) {
+  signedIn().then(async (user) => {
+    U.user = user;
+    if (user) {
+      const me = await loadProfile();
+      if (me) {
+        S.me = { ...(S.me || {}), ...me };
+        save();
+      }
+    }
+    render();
+  }).catch((err) => logError('account', err));
+}

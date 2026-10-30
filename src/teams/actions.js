@@ -1,17 +1,19 @@
 /* What each button does (buttons carry data-act="name"). */
+import { logOut } from '../shared/account.js?v=20261030g';
+import { clearProfile } from '../shared/profile.js?v=20261030g';
 
-import { later, pick } from '../shared/core.js?v=20261030f';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030f';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261030f';
-import { toast } from './ui.js?v=20261030f';
-import { DAY } from './competitions.js?v=20261030f';
-import { FRIENDS } from './sample-people.js?v=20261030f';
-import { go } from './router.js?v=20261030f';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261030f';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261030f';
-import { closeModal, renderModal } from './views/modal.js?v=20261030f';
-import { PAGE } from './views/competitions.js?v=20261030f';
-import { render } from './render.js?v=20261030f';
+import { later, pick } from '../shared/core.js?v=20261030g';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030g';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261030g';
+import { toast } from './ui.js?v=20261030g';
+import { DAY } from './competitions.js?v=20261030g';
+import { FRIENDS } from './sample-people.js?v=20261030g';
+import { go } from './router.js?v=20261030g';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261030g';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261030g';
+import { closeModal, renderModal } from './views/modal.js?v=20261030g';
+import { PAGE } from './views/competitions.js?v=20261030g';
+import { render } from './render.js?v=20261030g';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
@@ -94,6 +96,18 @@ export const acts = {
   },
   'dev-time'(el) { const c = chatById(el.dataset.id); const before = sugarOf(c); c.devMin = (c.devMin || 0) + 5; if (before < REVEAL_AT && sugarOf(c) >= REVEAL_AT) c.msgs.push({ from: 'sys', text: 'Half sugar! You can team up now.', at: Date.now() }); save(); render(); },
   'dev-days'(el) { const c = chatById(el.dataset.id); c.msgs.forEach((m) => { m.at -= 3 * DAY + 60000; }); c.at -= 3 * DAY + 60000; save(); render(); },
+  'auth-mode'(el) { U.auth = el.dataset.mode; U.authMsg = null; render({ fresh: true }); },
+  async logout() {
+    await logOut();
+    clearProfile();
+    U.user = null;
+    S.me = null;
+    save();
+    U.auth = 'login';
+    U.authMsg = { ok: true, text: 'You are logged out.' };
+    go('comps');
+    render({ fresh: true });
+  },
   'dev-skip'() {
     saveMe({ alias: 'Dev', field: 'Engineering', city: 'Taipei', meet: 'both', curious: ['Climate tech'], fun: 'Has tried every boba shop on one street', name: 'Dev User', title: 'Builder', school: 'Half Sugar U', company: '', contactType: 'instagram', contact: '@devuser' });
     go('comps');

@@ -18,19 +18,22 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
+import { loadProfile } from '../shared/account.js?v=20261030g';
+import { logError } from '../shared/log.js?v=20261030g';
+import { whoAmI } from './forms.js?v=20261030g';
 
-import { $ } from '../shared/core.js?v=20261030f';
-import { at } from '../shared/cup.js?v=20261030f';
-import { closesText } from '../shared/sugar.js?v=20261030f';
-import { S, U } from './state.js?v=20261030f';
-import { loadComps } from './competitions.js?v=20261030f';
-import { go, route } from './router.js?v=20261030f';
-import { chatById } from './chats.js?v=20261030f';
-import { closeModal } from './views/modal.js?v=20261030f';
-import { PAGE } from './views/competitions.js?v=20261030f';
-import { render } from './render.js?v=20261030f';
-import { formData, forms } from './forms.js?v=20261030f';
-import { acts } from './actions.js?v=20261030f';
+import { $ } from '../shared/core.js?v=20261030g';
+import { at } from '../shared/cup.js?v=20261030g';
+import { closesText } from '../shared/sugar.js?v=20261030g';
+import { S, U, saveMe } from './state.js?v=20261030g';
+import { loadComps } from './competitions.js?v=20261030g';
+import { go, route } from './router.js?v=20261030g';
+import { chatById } from './chats.js?v=20261030g';
+import { closeModal } from './views/modal.js?v=20261030g';
+import { PAGE } from './views/competitions.js?v=20261030g';
+import { render } from './render.js?v=20261030g';
+import { formData, forms } from './forms.js?v=20261030g';
+import { acts } from './actions.js?v=20261030g';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -75,6 +78,7 @@ window.addEventListener('hashchange', () => {
   U.leave = null;
   if (U.modal) closeModal();
   U.confirmReset = false;
+  U.authMsg = null;
   render();
 });
 setInterval(() => {
@@ -88,3 +92,19 @@ setInterval(() => {
 
 render();
 loadComps(render);
+
+// Already logged in on this browser? Bring the profile back from the account.
+// (The account library only loads when there is a saved login.)
+let hasLogin = false;
+try { hasLogin = !!localStorage.getItem('halfsugar.auth'); } catch { /* storage is off */ }
+if (hasLogin) {
+  whoAmI().then(async (user) => {
+    U.user = user;
+    if (user) {
+      const me = await loadProfile();
+      if (me) saveMe(me);
+      else if (!S.me) U.needProfile = true;
+    }
+    render();
+  }).catch((err) => logError('account', err));
+}

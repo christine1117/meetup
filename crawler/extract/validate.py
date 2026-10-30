@@ -28,6 +28,21 @@ MENTOR_BEFORE = re.compile(r"(?:指導老師|指導教師|指導教授|老師|�
 MENTOR_AFTER = re.compile(r"^\s*(?:[-~～至到]\s*\d+\s*)?(?:名|位|人)?\s*(?:的)?\s*(?:指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|coach(?:es)?)", re.I)
 
 
+CN_NUM = {"一": 1, "二": 2, "兩": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+EN_NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+
+
+def mentor_counts(quote: str) -> set[int]:
+    """The numbers in a quote that count mentors ("1 位指導老師", "指導老師1-2名", "one mentor")."""
+    found: set[int] = set()
+    for m in re.finditer(r"\d+|[一二兩三四五六七八九十]|\b(?:one|two|three|four|five)\b", quote, re.I):
+        before, after = quote[max(0, m.start() - 10): m.start()], quote[m.end(): m.end() + 10]
+        if MENTOR_BEFORE.search(before) or MENTOR_AFTER.match(after):
+            t = m.group(0).lower()
+            found.add(int(t) if t.isdigit() else CN_NUM.get(t) or EN_NUM.get(t) or 0)
+    return found
+
+
 def only_about_mentors(quote: str) -> bool:
     """True when every number in the quote is a count of mentors
     ("指導老師1名", "1 名指導老師", "one mentor"), not of participants."""
@@ -90,8 +105,8 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
         if (r.min_members or r.max_members) and only_about_mentors(r.evidence):
             issues.append(Issue(code="mentors_counted", detail=f"The number seems to be about mentors ({where})"))
             continue
-        # A mentor count is only kept if the quote talks about mentors
-        if r.mentors_max is not None and not MENTOR.search(r.evidence):
+        # A mentor count is only kept if the quote gives that number for mentors
+        if r.mentors_max is not None and r.mentors_max not in mentor_counts(r.evidence):
             r = r.model_copy(update={"mentors_max": None})
         good.append(r)
 

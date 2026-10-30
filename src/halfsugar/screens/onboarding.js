@@ -2,14 +2,15 @@
    A few quick questions, one per screen, then the profile form.
    Single-choice answers move on by themselves. */
 
-import { esc } from '../../shared/core.js?v=20261030f';
-import { L } from '../../shared/i18n.js?v=20261030f';
-import { FIELDS, LOGO, drinkFor, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030f';
-import { cup, cupFor } from '../../shared/cup.js?v=20261030f';
-import { field } from '../../shared/forms.js?v=20261030f';
-import { MEETS } from '../../shared/profile.js?v=20261030f';
-import { U } from '../state.js?v=20261030f';
-import { profileForm, tagEditor } from './profile-form.js?v=20261030f';
+import { authNote, loginForm } from './account.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261030g';
+import { L } from '../../shared/i18n.js?v=20261030g';
+import { FIELDS, LOGO, drinkFor, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030g';
+import { cup, cupFor } from '../../shared/cup.js?v=20261030g';
+import { field } from '../../shared/forms.js?v=20261030g';
+import { MEETS } from '../../shared/profile.js?v=20261030g';
+import { U } from '../state.js?v=20261030g';
+import { profileForm, tagEditor } from './profile-form.js?v=20261030g';
 
 
 export const QUIZ_STEPS = 3;
@@ -47,6 +48,15 @@ export function quizStep(q) {
 }
 
 export function viewOnboard() {
+  if (U.authView === 'login') {
+    return `
+  <main class="onboard">
+    <div class="onboard__top"><p class="logo">${LOGO}</p></div>
+    <h1 lang="en">${L`Welcome back.`}</h1>
+    ${loginForm()}
+    <p class="hint">${L`New here?`} <button class="link-btn" data-act="auth-view" data-view="" type="button">${L`Start with a few questions`}</button></p>
+  </main>`;
+  }
   const q = U.quiz;
   const shown = U.quizShown;
   U.quizShown = q.step;
@@ -67,7 +77,9 @@ export function viewOnboard() {
       </div>
       ${cup('var(--milk)', { level: 0.5, cls: 'cup--hero' })}
     </div>
-    <p class="onboard__about"><a href="#/about">${L`New here? Read what Half Sugar is and what the boba words mean.`}</a></p>` : ''}
+    <p class="onboard__about"><a href="#/about">${L`New here? Read what Half Sugar is and what the boba words mean.`}</a></p>
+    <p class="hint">${L`Already have an account?`} <button class="link-btn" data-act="auth-view" data-view="login" type="button">${L`Log in`}</button></p>
+    ${authNote()}` : ''}
     <div class="progress" role="progressbar" aria-label="${esc(L`Setup progress`)}" aria-valuemin="1" aria-valuemax="${QUIZ_STEPS + 1}" aria-valuenow="${q.step + 1}"><span style="width:${((q.step + 1) / (QUIZ_STEPS + 1)) * 100}%"></span></div>
     <section class="quiz ${shown === q.step ? '' : 'enter'}">${quizStep(q)}</section>
     <div class="quiz__nav">

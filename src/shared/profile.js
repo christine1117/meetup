@@ -38,3 +38,12 @@ export function writeProfile(me) {
     return false;
   }
 }
+
+// Forget the profile in this browser (logging out on a shared computer)
+export function clearProfile() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    delete saved.me;
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(saved));
+  } catch { /* storage is off */ }
+}

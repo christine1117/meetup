@@ -1,28 +1,39 @@
 /* ---------- Forms ---------- */
 
-import { $, later, uid } from '../shared/core.js?v=20261030f';
-import { L } from '../shared/i18n.js?v=20261030f';
-import { isCold, sugarOf } from '../shared/sugar.js?v=20261030f';
-import { P, SEED_POSTS, hasEvent } from './people.js?v=20261030f';
-import { brewMatches } from './matching.js?v=20261030f';
-import { D, S, U, save } from './state.js?v=20261030f';
-import { go } from './router.js?v=20261030f';
-import { toast } from './ui.js?v=20261030f';
-import { createThread, pushMsg, scheduleAccept, sugarNotes, themReply, thread } from './conversations.js?v=20261030f';
-import { scheduleIncoming } from './simulate.js?v=20261030f';
-import { renderModal } from './modal.js?v=20261030f';
-import { postById } from './screens/explore.js?v=20261030f';
-import { syncRoleDescs } from './screens/brew.js?v=20261030f';
-import { dropReply } from './screens/mystery.js?v=20261030f';
-import { render } from './shell.js?v=20261030f';
+import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261030g';
+import { logError } from '../shared/log.js?v=20261030g';
+import { $, later, uid } from '../shared/core.js?v=20261030g';
+import { L } from '../shared/i18n.js?v=20261030g';
+import { isCold, sugarOf } from '../shared/sugar.js?v=20261030g';
+import { P, SEED_POSTS, hasEvent } from './people.js?v=20261030g';
+import { brewMatches } from './matching.js?v=20261030g';
+import { D, S, U, save } from './state.js?v=20261030g';
+import { go } from './router.js?v=20261030g';
+import { toast } from './ui.js?v=20261030g';
+import { createThread, pushMsg, scheduleAccept, sugarNotes, themReply, thread } from './conversations.js?v=20261030g';
+import { scheduleIncoming } from './simulate.js?v=20261030g';
+import { renderModal } from './modal.js?v=20261030g';
+import { postById } from './screens/explore.js?v=20261030g';
+import { syncRoleDescs } from './screens/brew.js?v=20261030g';
+import { dropReply } from './screens/mystery.js?v=20261030g';
+import { render } from './shell.js?v=20261030g';
 
+
+// The signed-in user, in the small shape the app keeps
+export async function signedIn() {
+  const u = await currentUser();
+  return u ? { id: u.id, email: u.email } : null;
+}
 
 export const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v).trim()]));
 
 export const forms = {
-  profile(form, data) {
+  async profile(form, data) {
     if (!data.alias) { $('#profile-error', form).hidden = false; return; }
     const first = !S.me;
+    const { email, password } = data;
+    delete data.email;
+    delete data.password;
     if (first) {
       const q = U.quiz;
       Object.assign(data, { field: q.field, field2: q.field2, curious: q.curious, meet: q.meet, city: q.city });
@@ -30,9 +41,83 @@ export const forms = {
       data.field2 = '';
     }
     // Keep what the form does not hold, like your tags
-    S.me = first ? data : { ...S.me, ...data };
+    const me = first ? data : { ...S.me, ...data };
+    const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
+
+    if (first && !U.user) {
+      // A new account, with this profile
+      if (!/^\S+@\S+\.\S+$/.test(email || '')) return stop(L`That email does not look right.`);
+      if ((password || '').length < 8) return stop(L`Use a password with at least 8 characters.`);
+      U.busy = true; U.authMsg = null; render();
+      try {
+        const result = await signUp(email, password, me);
+        U.busy = false;
+        if (result.confirm) {
+          U.authView = 'login';
+          U.authMsg = { ok: true, text: L`Almost there: we sent you an email. Confirm it, then log in here.` };
+          render({ fresh: true });
+          return;
+        }
+        U.user = await signedIn();
+      } catch (err) {
+        logError('signup', err);
+        return stop(L(authMessage(err)));
+      }
+    } else if (U.user) {
+      try { await saveProfile(me); } catch (err) { logError('profile', err); toast(L`Saved here, but not to your account. Try again later.`); }
+    }
+    S.me = me;
     save();
+    U.authMsg = null;
     if (first) { U.lastPath = null; go('explore'); render({ fresh: true }); } else { U.openSec = {}; toast(L`Saved`); render({ fresh: true }); }
+  },
+
+  // Log in (from the start screen or from Me)
+  async login(form, data) {
+    const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
+    if (!data.email || !data.password) return stop(L`Please enter your email and password.`);
+    U.busy = true; U.authMsg = null; render();
+    try {
+      const me = await logIn(data.email, data.password);
+      U.busy = false;
+      U.user = await signedIn();
+      U.authView = null;
+      if (me) {
+        S.me = { ...(S.me || {}), ...me };
+        save();
+        U.lastPath = null;
+        go('explore');
+      } else {
+        U.authMsg = { ok: true, text: L`You are signed in. Answer a few questions to set up your profile.` };
+      }
+      render({ fresh: true });
+    } catch (err) {
+      logError('login', err);
+      stop(L(authMessage(err)));
+    }
+  },
+
+  // Make an account for the profile already in this browser (from Me)
+  async signup(form, data) {
+    const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
+    if (!/^\S+@\S+\.\S+$/.test(data.email || '')) return stop(L`That email does not look right.`);
+    if ((data.password || '').length < 8) return stop(L`Use a password with at least 8 characters.`);
+    U.busy = true; U.authMsg = null; render();
+    try {
+      const result = await signUp(data.email, data.password, S.me);
+      U.busy = false;
+      if (result.confirm) {
+        U.authView = 'login';
+        U.authMsg = { ok: true, text: L`Almost there: we sent you an email. Confirm it, then log in here.` };
+      } else {
+        U.user = await signedIn();
+        toast(L`Account created`);
+      }
+      render({ fresh: true });
+    } catch (err) {
+      logError('signup', err);
+      stop(L(authMessage(err)));
+    }
   },
 
   thought(form, data) {

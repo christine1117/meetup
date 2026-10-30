@@ -1,20 +1,21 @@
 /* ---------- Buttons ---------- */
 
-import { $, later } from '../shared/core.js?v=20261030f';
-import { L } from '../shared/i18n.js?v=20261030f';
-import { CLOSE_AFTER_DAYS, REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030f';
-import { MAX_ROLES, P, openRoles, rolesOf } from './people.js?v=20261030f';
-import { MAX_TAGS, normTag } from './matching.js?v=20261030f';
-import { D, KEY, S, U, save } from './state.js?v=20261030f';
-import { go } from './router.js?v=20261030f';
-import { toast } from './ui.js?v=20261030f';
-import { createThread, pushMsg, resolveReveal, sugarNotes, thread } from './conversations.js?v=20261030f';
-import { MAX_SHOWN, earnBox, openNextBox, shownToppings } from './toppings.js?v=20261030f';
-import { REDUCED_MOTION, closeModal, renderModal } from './modal.js?v=20261030f';
-import { syncRoleDescs } from './screens/brew.js?v=20261030f';
-import { dropDecide, dropEnd, dropStart } from './screens/mystery.js?v=20261030f';
-import { render } from './shell.js?v=20261030f';
-import { tagList } from './screens/profile-form.js?v=20261030f';
+import { logOut } from '../shared/account.js?v=20261030g';
+import { $, later } from '../shared/core.js?v=20261030g';
+import { L } from '../shared/i18n.js?v=20261030g';
+import { CLOSE_AFTER_DAYS, REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030g';
+import { MAX_ROLES, P, openRoles, rolesOf } from './people.js?v=20261030g';
+import { MAX_TAGS, normTag } from './matching.js?v=20261030g';
+import { D, KEY, S, U, save } from './state.js?v=20261030g';
+import { go } from './router.js?v=20261030g';
+import { toast } from './ui.js?v=20261030g';
+import { createThread, pushMsg, resolveReveal, sugarNotes, thread } from './conversations.js?v=20261030g';
+import { MAX_SHOWN, earnBox, openNextBox, shownToppings } from './toppings.js?v=20261030g';
+import { REDUCED_MOTION, closeModal, renderModal } from './modal.js?v=20261030g';
+import { syncRoleDescs } from './screens/brew.js?v=20261030g';
+import { dropDecide, dropEnd, dropStart } from './screens/mystery.js?v=20261030g';
+import { render } from './shell.js?v=20261030g';
+import { tagList } from './screens/profile-form.js?v=20261030g';
 
 
 export function takeResponse(el) {
@@ -251,6 +252,17 @@ export const acts = {
   },
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
+  'auth-view'(el) { U.authView = el.dataset.view || null; U.authMsg = null; render({ fresh: true }); },
+  async logout() {
+    await logOut();
+    U.user = null;
+    S.me = null;
+    save();
+    U.authView = 'login';
+    U.authMsg = { ok: true, text: L`You are logged out.` };
+    U.lastPath = null;
+    render({ fresh: true });
+  },
   'dev-skip'() {
     S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', meet: 'both', curious: ['Pricing', 'AI products'], fun: 'Has tried every boba shop on one street', name: 'Dev User', title: 'Builder', school: '', company: '', contactType: 'instagram', contact: '@devuser' };
     save();

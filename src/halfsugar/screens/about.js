@@ -1,12 +1,12 @@
 /* ---------- Screen: About ---------- */
 
-import { esc } from '../../shared/core.js?v=20261030f';
-import { L } from '../../shared/i18n.js?v=20261030f';
-import { FIELDS, LOGO, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030f';
-import { cup } from '../../shared/cup.js?v=20261030f';
-import { CLOSE_AFTER_DAYS } from '../../shared/sugar.js?v=20261030f';
-import { S } from '../state.js?v=20261030f';
-import { TIER_HOW, TIER_NAME, TOPPINGS, toppingChip } from '../toppings.js?v=20261030f';
+import { esc } from '../../shared/core.js?v=20261030g';
+import { L } from '../../shared/i18n.js?v=20261030g';
+import { FIELDS, LOGO, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030g';
+import { cup } from '../../shared/cup.js?v=20261030g';
+import { CLOSE_AFTER_DAYS } from '../../shared/sugar.js?v=20261030g';
+import { S } from '../state.js?v=20261030g';
+import { TIER_HOW, TIER_NAME, TOPPINGS, toppingChip } from '../toppings.js?v=20261030g';
 
 
 // Small grey line that explains a boba word in plain language

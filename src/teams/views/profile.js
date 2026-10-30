@@ -1,9 +1,10 @@
-/* HTML: sign-up and the Me page (the same fields as Half Sugar). */
+/* HTML: create an account, log in, and the Me page (the same profile as Half Sugar). */
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261030f';
-import { field, select } from '../../shared/forms.js?v=20261030f';
-import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030f';
-import { S, U } from '../state.js?v=20261030f';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261030g';
+import { field, select } from '../../shared/forms.js?v=20261030g';
+import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030g';
+import { S, U } from '../state.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261030g';
 
 // The same profile as Half Sugar: visible from the start, then sealed details
 export function profileFields(me) {
@@ -30,6 +31,49 @@ export function profileFields(me) {
     </fieldset>`;
 }
 
+const accountFields = (newAccount) => `
+    <fieldset class="panel stack">
+      <legend><i class="ph ph-user-circle" aria-hidden="true"></i>Your account</legend>
+      <div class="row2">
+        ${field('email', 'Email', '', { type: 'email', req: true, auto: 'email', ph: 'you@example.com' })}
+        ${field('password', 'Password', '', { type: 'password', req: true, auto: newAccount ? 'new-password' : 'current-password', hint: newAccount ? 'At least 8 characters.' : '' })}
+      </div>
+    </fieldset>`;
+
+const note = () => (U.authMsg ? `<p class="${U.authMsg.ok ? 'ok-note' : 'error'}" role="status">${esc(U.authMsg.text)}</p>` : '');
+const busy = (label) => (U.busy ? 'disabled>One moment…' : `>${label}`);
+
+// Sign up (with the profile), log in, or (signed in without a profile yet) fill in the profile
+export function authForms({ withProfile = true } = {}) {
+  if (U.needProfile) {
+    return `
+    <form class="stack" data-form="me" novalidate>
+      <p class="lead">You are signed in. Fill in your profile to start.</p>
+      ${profileFields({})}
+      <p class="error" id="me-error" hidden>Please add a nickname.</p>
+      <button class="btn btn--primary" type="submit">Save profile</button>
+    </form>`;
+  }
+  if (U.auth === 'login') {
+    return `
+    <form class="stack" data-form="login" novalidate>
+      ${accountFields(false)}
+      ${note()}
+      <button class="btn btn--primary" type="submit" ${busy('Log in')}</button>
+      <p class="hint">New here? <button class="link-btn" data-act="auth-mode" data-mode="signup" type="button">Create an account</button></p>
+    </form>`;
+  }
+  return `
+    <form class="stack" data-form="signup" data-local="${withProfile ? '' : '1'}" novalidate>
+      ${accountFields(true)}
+      ${withProfile ? profileFields({}) : ''}
+      <p class="hint">One account and one profile for Half Sugar and team mode.</p>
+      ${note()}
+      <button class="btn btn--primary" type="submit" ${busy('Create account')}</button>
+      <p class="hint">Already have an account? <button class="link-btn" data-act="auth-mode" data-mode="login" type="button">Log in</button></p>
+    </form>`;
+}
+
 export function viewOnboard() {
   return `
   <main class="onboard">
@@ -39,13 +83,15 @@ export function viewOnboard() {
     </div>
     <h1 class="t-hero">Find teammates by what they can do.</h1>
     <p class="lead">Real competitions from Devpost, MLH and 獎金獵人. Names stay hidden until you team up.</p>
-    <form class="stack" data-form="me" novalidate>
-      ${profileFields({})}
-      <p class="hint">One profile for Half Sugar and team mode.</p>
-      <p class="error" id="me-error" hidden>Please add a nickname.</p>
-      <button class="btn btn--primary" type="submit">Start</button>
-    </form>
+    ${authForms()}
   </main>`;
+}
+
+// Signed out, but a profile already lives in this browser: make it an account, or log in
+export function viewAccount() {
+  return `
+  <header class="head"><div><h1>Account</h1><p class="sub">${U.auth === 'login' ? 'Log in to bring back your profile.' : 'Save your profile to an account, so it is there on any device.'}</p></div></header>
+  ${authForms({ withProfile: false })}`;
 }
 
 export function viewMe() {
@@ -57,8 +103,16 @@ export function viewMe() {
     <button class="btn btn--primary" type="submit">Save</button>
   </form>
   <section class="panel note">
+    <h2>Account</h2>
+    ${U.user
+      ? `<p>Signed in as <b>${esc(U.user.email)}</b>. Your profile is saved to your account.</p>
+         <button class="btn btn--ghost" data-act="logout" type="button">Log out</button>`
+      : `<p>Not signed in: your profile is only in this browser.</p>
+         <a class="btn btn--dark btn--sm" href="#/account">Create an account or log in</a>`}
+  </section>
+  <section class="panel note">
     <h2>About this version</h2>
-    <p>Competitions are real and refreshed daily. People and chats are samples until accounts exist, and your data stays in this browser.</p>
+    <p>Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.</p>
     <p><a class="inline-link" href="../">Open Half Sugar</a></p>
     ${U.confirmReset
       ? '<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">Yes, clear it</button><button class="btn btn--ghost" data-act="reset-no" type="button">Cancel</button></div>'

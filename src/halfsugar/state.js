@@ -3,7 +3,7 @@ export const KEY = 'meetup.v1';
 
 /* ---------- State ---------- */
 
-import { P } from './people.js?v=20261030f';
+import { P } from './people.js?v=20261030g';
 
 
 export const blank = () => ({ me: null, myThoughts: [], myPosts: [], threads: [], drops: 0, toppings: {}, boxes: [] });
@@ -37,6 +37,7 @@ export let S = load();
 // Screen state that does not need to be saved
 export const U = {
   compose: null, target: null, booking: null, typing: {}, confirmReset: false,
+  authView: null, authMsg: null, busy: false, user: null,
   cat: 'all', dm: null, typingPost: null, openSec: {},
   draft: { kind: 'side', roles: [] },
   quiz: { step: 0, field: '', field2: '', stage: '', curious: [], share: [], meet: '', city: '' },
