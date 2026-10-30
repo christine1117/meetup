@@ -56,6 +56,7 @@ def main() -> int:
     llm = make_extractor(cfg, cache)
     log.info("LLM: %s", f"{llm.provider} {llm.model}" if llm else "not set (no ANTHROPIC_API_KEY or OPENAI_API_KEY): rules are not read this run")
     previous = json_store.previous_items(cfg)
+    llm_fails_in_row = 0
 
     items: list[dict] = []
     reviews: list[dict] = []
@@ -82,8 +83,14 @@ def main() -> int:
             if llm and text:
                 try:
                     ex = llm.extract(raw, text)
+                    llm_fails_in_row = 0
                 except Exception as err:
                     log.warning("  LLM failed for %s: %s", raw.id, err)
+                    llm_fails_in_row += 1
+                    # Many failures in a row (a wrong model name, no credit left): stop asking, keep going without it
+                    if llm_fails_in_row >= 5:
+                        log.error("LLM failed 5 times in a row; the rest of this run goes without it")
+                        llm = None
             elif not llm and raw.id in previous and text:
                 # No LLM this run: keep what is already published, unchanged
                 items.append(previous[raw.id])

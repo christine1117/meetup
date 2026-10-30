@@ -40,6 +40,7 @@ jobs:
       - name: Test
         run: npm test
       - name: Crawl
+        id: crawl
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -47,7 +48,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run crawl
+      # Runs even if saving to the database failed, so what the LLM read is not lost
       - name: Commit and publish if the list changed
+        if: ${{ !cancelled() && steps.crawl.outcome != 'skipped' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
