@@ -36,11 +36,14 @@ export function checkCompetition(x) {
   return errors;
 }
 
-// "Teams of 2–5", "Up to 4 people", "Teams of 3 or more", or not listed
+// Always a range: "2–5 people", "1–8 people" (no minimum means one person
+// can enter), "3 per team", "2+ people", or not listed
 export function teamSizeText(team) {
   const { min = null, max = null } = team || {};
-  if (min && max) return min === max ? `Teams of ${max}` : `Teams of ${min}–${max}`;
-  if (max) return `Up to ${max} people`;
-  if (min) return `Teams of ${min} or more`;
+  if (max) {
+    const low = min || 1;
+    return low === max ? `${max} per team` : `${low}–${max} people`;
+  }
+  if (min) return `${min}+ people`;
   return 'Team size on the official page';
 }

@@ -2,16 +2,16 @@
    The schedule is a placeholder: every Friday 13:00 UTC, open for 10 minutes.
    Each chat also lasts 10 minutes, which is exactly half sugar (5% a minute). */
 
-import { esc, later, uid } from '../../shared/core.js?v=20261030d';
-import { L, LANG, tr } from '../../shared/i18n.js?v=20261030d';
-import { fieldsLabel, fieldsOf } from '../../shared/flavors.js?v=20261030d';
-import { cup } from '../../shared/cup.js?v=20261030d';
-import { P, PEOPLE } from '../people.js?v=20261030d';
-import { ANCHOR_OPENERS, anchorLabel, anchorOf, sameCity } from '../matching.js?v=20261030d';
-import { D, S, save } from '../state.js?v=20261030d';
-import { createThread } from '../conversations.js?v=20261030d';
-import { earnBox } from '../toppings.js?v=20261030d';
-import { render } from '../shell.js?v=20261030d';
+import { esc, later, uid } from '../../shared/core.js?v=20261030e';
+import { L, LANG, tr } from '../../shared/i18n.js?v=20261030e';
+import { fieldsLabel, fieldsOf } from '../../shared/flavors.js?v=20261030e';
+import { cup } from '../../shared/cup.js?v=20261030e';
+import { P, PEOPLE } from '../people.js?v=20261030e';
+import { ANCHOR_OPENERS, anchorLabel, anchorOf, sameCity } from '../matching.js?v=20261030e';
+import { D, S, save } from '../state.js?v=20261030e';
+import { createThread } from '../conversations.js?v=20261030e';
+import { earnBox } from '../toppings.js?v=20261030e';
+import { render } from '../shell.js?v=20261030e';
 
 
 export const DROP_WEEKDAY_UTC = 5;

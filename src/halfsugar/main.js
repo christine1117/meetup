@@ -16,16 +16,16 @@
    (posts, messages, profiles) stays in the language it was written in.
    ========================================================= */
 
-import '../shared/log.js?v=20261030d';
-import { later } from '../shared/core.js?v=20261030d';
-import { logError } from '../shared/log.js?v=20261030d';
-import { learnWeights } from './matching.js?v=20261030d';
-import { S } from './state.js?v=20261030d';
-import { resolveReveal, scheduleAccept } from './conversations.js?v=20261030d';
-import { scheduleIncoming } from './simulate.js?v=20261030d';
-import { render } from './shell.js?v=20261030d';
+import '../shared/log.js?v=20261030e';
+import { later } from '../shared/core.js?v=20261030e';
+import { logError } from '../shared/log.js?v=20261030e';
+import { learnWeights } from './matching.js?v=20261030e';
+import { S } from './state.js?v=20261030e';
+import { resolveReveal, scheduleAccept } from './conversations.js?v=20261030e';
+import { scheduleIncoming } from './simulate.js?v=20261030e';
+import { render } from './shell.js?v=20261030e';
 // Clicks, typing and timers are wired up here
-import './events.js?v=20261030d';
+import './events.js?v=20261030e';
 
 
 /* ---------- Start ---------- */

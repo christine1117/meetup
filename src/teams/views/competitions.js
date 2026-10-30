@@ -1,16 +1,16 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261030d';
-import { cupFor } from '../../shared/cup.js?v=20261030d';
-import { field, select } from '../../shared/forms.js?v=20261030d';
-import { teamSizeText } from '../../shared/contract.js?v=20261030d';
-import { S, U } from '../state.js?v=20261030d';
-import { roleChips } from '../ui.js?v=20261030d';
-import { GOALS, HOURS, TOPICS, goalName, hoursName } from '../options.js?v=20261030d';
-import { COMP, DATA, REGION_NAME, SOURCE_NAME, compOf, dataState, dateText, whenText } from '../competitions.js?v=20261030d';
-import { P } from '../sample-people.js?v=20261030d';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261030d';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261030d';
+import { esc, safeUrl } from '../../shared/core.js?v=20261030e';
+import { cupFor } from '../../shared/cup.js?v=20261030e';
+import { field, select } from '../../shared/forms.js?v=20261030e';
+import { teamSizeText } from '../../shared/contract.js?v=20261030e';
+import { S, U } from '../state.js?v=20261030e';
+import { roleChips } from '../ui.js?v=20261030e';
+import { GOALS, HOURS, TOPICS, goalName, hoursName } from '../options.js?v=20261030e';
+import { COMP, DATA, REGION_NAME, SOURCE_NAME, compOf, dataState, dateText, whenText } from '../competitions.js?v=20261030e';
+import { P } from '../sample-people.js?v=20261030e';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261030e';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261030e';
 
 export const PAGE = 30;
 export function viewComps() {
@@ -65,7 +65,7 @@ export function cardForm(cid, withTeam) {
       ${select('hours', 'Time each week', HOURS, String(prev.hours))}
     </div>
     <div class="field"><p class="field__label">What you care about <span class="hint-inline">Optional</span></p>${roleChecks('topics', prev.topics || [], TOPICS)}</div>
-    ${withTeam ? select('max', 'Team size limit', SIZE_CHOICES.map((n) => [String(n), `Up to ${n} people`]), String(defaultMax(cid)), compOf(cid).team && compOf(cid).team.max ? `The rules say ${teamSizeText(compOf(cid).team).toLowerCase()}.` : 'Check the official rules.') : ''}
+    ${withTeam ? select('max', 'Team size limit', SIZE_CHOICES.map((n) => [String(n), `${n} people`]), String(defaultMax(cid)), compOf(cid).team && compOf(cid).team.max ? `The rules say ${teamSizeText(compOf(cid).team).toLowerCase()}.` : 'Check the official rules.') : ''}
     ${withTeam ? `<div class="field"><p class="field__label">Still need <span class="hint-inline">Optional. Can include a role you already have.</span></p>${roleChecks('needs', [])}</div>` : ''}
     <p class="error" id="card-error" hidden>Pick 1 or 2 roles${withTeam ? ' and add a team name' : ''}.</p>
     <div class="btnrow">

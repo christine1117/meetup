@@ -1,20 +1,20 @@
 /* ---------- Shell ---------- */
 
-import { $, esc } from '../shared/core.js?v=20261030d';
-import { logError } from '../shared/log.js?v=20261030d';
-import { L, LANG } from '../shared/i18n.js?v=20261030d';
-import { LOGO } from '../shared/flavors.js?v=20261030d';
-import { D, S, U } from './state.js?v=20261030d';
-import { parseRoute } from './router.js?v=20261030d';
-import { app } from './ui.js?v=20261030d';
-import { thread } from './conversations.js?v=20261030d';
-import { viewOnboard } from './screens/onboarding.js?v=20261030d';
-import { viewExplore, viewPost } from './screens/explore.js?v=20261030d';
-import { viewBuild } from './screens/brew.js?v=20261030d';
-import { viewDrop } from './screens/mystery.js?v=20261030d';
-import { viewChats, viewThread } from './screens/chats.js?v=20261030d';
-import { viewAbout } from './screens/about.js?v=20261030d';
-import { viewMe } from './screens/me.js?v=20261030d';
+import { $, esc } from '../shared/core.js?v=20261030e';
+import { logError } from '../shared/log.js?v=20261030e';
+import { L, LANG } from '../shared/i18n.js?v=20261030e';
+import { LOGO } from '../shared/flavors.js?v=20261030e';
+import { D, S, U } from './state.js?v=20261030e';
+import { parseRoute } from './router.js?v=20261030e';
+import { app } from './ui.js?v=20261030e';
+import { thread } from './conversations.js?v=20261030e';
+import { viewOnboard } from './screens/onboarding.js?v=20261030e';
+import { viewExplore, viewPost } from './screens/explore.js?v=20261030e';
+import { viewBuild } from './screens/brew.js?v=20261030e';
+import { viewDrop } from './screens/mystery.js?v=20261030e';
+import { viewChats, viewThread } from './screens/chats.js?v=20261030e';
+import { viewAbout } from './screens/about.js?v=20261030e';
+import { viewMe } from './screens/me.js?v=20261030e';
 
 
 export const NAV = [

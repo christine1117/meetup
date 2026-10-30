@@ -1,14 +1,14 @@
 /* Chats: sending, half sugar notes, teaming up and ending politely.
    reply() plays the other side until there is a server. */
 
-import { later, pick, uid } from '../shared/core.js?v=20261030d';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030d';
-import { S, U, save } from './state.js?v=20261030d';
-import { toast } from './ui.js?v=20261030d';
-import { LINES, MATE_LINES, P } from './sample-people.js?v=20261030d';
-import { go } from './router.js?v=20261030d';
-import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261030d';
-import { render } from './render.js?v=20261030d';
+import { later, pick, uid } from '../shared/core.js?v=20261030e';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030e';
+import { S, U, save } from './state.js?v=20261030e';
+import { toast } from './ui.js?v=20261030e';
+import { LINES, MATE_LINES, P } from './sample-people.js?v=20261030e';
+import { go } from './router.js?v=20261030e';
+import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261030e';
+import { render } from './render.js?v=20261030e';
 
 export const chatById = (id) => S.chats.find((c) => c.id === id);
 export const chatName = (c) => (c.kind === 'team' ? teamsIn(c.comp).find((t) => t.id === c.ref).name : (c.revealed ? P[c.ref].real.name : P[c.ref].alias));

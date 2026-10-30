@@ -5,14 +5,14 @@
    toppings, with a small chance of a secret one.
    A gift box shows three closed boxes; you pick one. */
 
-import { esc, later, pick, uid } from '../shared/core.js?v=20261030d';
-import { L } from '../shared/i18n.js?v=20261030d';
-import { drinkFor, flavor } from '../shared/flavors.js?v=20261030d';
-import { EXPLODE, LAYER_ICON, PIECE, WIDE_VIEW, cupArt, shadow, toppingDefs } from '../shared/cup.js?v=20261030d';
-import { P } from './people.js?v=20261030d';
-import { S, U, save } from './state.js?v=20261030d';
-import { toast } from './ui.js?v=20261030d';
-import { renderModal } from './modal.js?v=20261030d';
+import { esc, later, pick, uid } from '../shared/core.js?v=20261030e';
+import { L } from '../shared/i18n.js?v=20261030e';
+import { drinkFor, flavor } from '../shared/flavors.js?v=20261030e';
+import { EXPLODE, LAYER_ICON, PIECE, WIDE_VIEW, cupArt, shadow, toppingDefs } from '../shared/cup.js?v=20261030e';
+import { P } from './people.js?v=20261030e';
+import { S, U, save } from './state.js?v=20261030e';
+import { toast } from './ui.js?v=20261030e';
+import { renderModal } from './modal.js?v=20261030e';
 
 
 export const TOPPINGS = [

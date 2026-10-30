@@ -8,11 +8,11 @@
       finished, the weights move toward what actually led to good chats
       (reaching half sugar). */
 
-import { L } from '../shared/i18n.js?v=20261030d';
-import { fieldsOf } from '../shared/flavors.js?v=20261030d';
-import { REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030d';
-import { P, PEOPLE, SEED_THOUGHTS, rolesOf } from './people.js?v=20261030d';
-import { S } from './state.js?v=20261030d';
+import { L } from '../shared/i18n.js?v=20261030e';
+import { fieldsOf } from '../shared/flavors.js?v=20261030e';
+import { REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030e';
+import { P, PEOPLE, SEED_THOUGHTS, rolesOf } from './people.js?v=20261030e';
+import { S } from './state.js?v=20261030e';
 
 
 // What people are curious about, and what they can share. Free tags, with suggestions to tap.

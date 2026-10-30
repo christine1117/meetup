@@ -23,11 +23,12 @@ test('broken records are caught', () => {
   assert.ok(checkCompetition({ ...good, name: '' }).includes('name'));
 });
 
-test('team size reads naturally', () => {
-  assert.equal(teamSizeText({ min: 2, max: 5 }), 'Teams of 2–5');
-  assert.equal(teamSizeText({ min: null, max: 4 }), 'Up to 4 people');
-  assert.equal(teamSizeText({ min: 3, max: null }), 'Teams of 3 or more');
-  assert.equal(teamSizeText({ min: 4, max: 4 }), 'Teams of 4');
+test('team size is always shown as a range', () => {
+  assert.equal(teamSizeText({ min: 2, max: 5 }), '2–5 people');
+  assert.equal(teamSizeText({ min: null, max: 4 }), '1–4 people', 'no minimum means one person can enter');
+  assert.equal(teamSizeText({ min: 1, max: 8 }), '1–8 people');
+  assert.equal(teamSizeText({ min: 3, max: null }), '3+ people');
+  assert.equal(teamSizeText({ min: 4, max: 4 }), '4 per team');
   assert.equal(teamSizeText({ min: null, max: null }), 'Team size on the official page');
 });
 

@@ -3,7 +3,7 @@ export const KEY = 'meetup.v1';
 
 /* ---------- State ---------- */
 
-import { P } from './people.js?v=20261030d';
+import { P } from './people.js?v=20261030e';
 
 
 export const blank = () => ({ me: null, myThoughts: [], myPosts: [], threads: [], drops: 0, toppings: {}, boxes: [] });

@@ -1,14 +1,14 @@
 /* ---------- Pop-up window: gift boxes and profiles ---------- */
 
-import { $, esc } from '../shared/core.js?v=20261030d';
-import { L, tr } from '../shared/i18n.js?v=20261030d';
-import { drinkFor, flavorChip } from '../shared/flavors.js?v=20261030d';
-import { contactOf } from '../shared/profile.js?v=20261030d';
-import { P } from './people.js?v=20261030d';
-import { STAGES, myCurious, myShare } from './matching.js?v=20261030d';
-import { S, U } from './state.js?v=20261030d';
-import { MAX_SHOWN, TIER_NAME, TOPPING, drinkCup, toppingIcon, toppingSlots, toppingsOf } from './toppings.js?v=20261030d';
-import { render } from './shell.js?v=20261030d';
+import { $, esc } from '../shared/core.js?v=20261030e';
+import { L, tr } from '../shared/i18n.js?v=20261030e';
+import { drinkFor, flavorChip } from '../shared/flavors.js?v=20261030e';
+import { contactOf } from '../shared/profile.js?v=20261030e';
+import { P } from './people.js?v=20261030e';
+import { STAGES, myCurious, myShare } from './matching.js?v=20261030e';
+import { S, U } from './state.js?v=20261030e';
+import { MAX_SHOWN, TIER_NAME, TOPPING, drinkCup, toppingIcon, toppingSlots, toppingsOf } from './toppings.js?v=20261030e';
+import { render } from './shell.js?v=20261030e';
 
 
 export const modalEl = document.createElement('div');

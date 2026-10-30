@@ -19,18 +19,18 @@
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
 
-import { $ } from '../shared/core.js?v=20261030d';
-import { at } from '../shared/cup.js?v=20261030d';
-import { closesText } from '../shared/sugar.js?v=20261030d';
-import { S, U } from './state.js?v=20261030d';
-import { loadComps } from './competitions.js?v=20261030d';
-import { go, route } from './router.js?v=20261030d';
-import { chatById } from './chats.js?v=20261030d';
-import { closeModal } from './views/modal.js?v=20261030d';
-import { PAGE } from './views/competitions.js?v=20261030d';
-import { render } from './render.js?v=20261030d';
-import { formData, forms } from './forms.js?v=20261030d';
-import { acts } from './actions.js?v=20261030d';
+import { $ } from '../shared/core.js?v=20261030e';
+import { at } from '../shared/cup.js?v=20261030e';
+import { closesText } from '../shared/sugar.js?v=20261030e';
+import { S, U } from './state.js?v=20261030e';
+import { loadComps } from './competitions.js?v=20261030e';
+import { go, route } from './router.js?v=20261030e';
+import { chatById } from './chats.js?v=20261030e';
+import { closeModal } from './views/modal.js?v=20261030e';
+import { PAGE } from './views/competitions.js?v=20261030e';
+import { render } from './render.js?v=20261030e';
+import { formData, forms } from './forms.js?v=20261030e';
+import { acts } from './actions.js?v=20261030e';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');

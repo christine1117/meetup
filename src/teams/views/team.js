@@ -1,15 +1,15 @@
 /* HTML: your team page with its group chat. */
 
-import { esc } from '../../shared/core.js?v=20261030d';
-import { cupFor } from '../../shared/cup.js?v=20261030d';
-import { field, select } from '../../shared/forms.js?v=20261030d';
-import { S, U } from '../state.js?v=20261030d';
-import { avatar, roleChips } from '../ui.js?v=20261030d';
-import { compOf } from '../competitions.js?v=20261030d';
-import { P } from '../sample-people.js?v=20261030d';
-import { SIZE_CHOICES, isFull, myRoles, needsOf, personOf, spots, teamMax } from '../rules.js?v=20261030d';
-import { roleChecks } from './cards.js?v=20261030d';
-import { bubbles } from './chats.js?v=20261030d';
+import { esc } from '../../shared/core.js?v=20261030e';
+import { cupFor } from '../../shared/cup.js?v=20261030e';
+import { field, select } from '../../shared/forms.js?v=20261030e';
+import { S, U } from '../state.js?v=20261030e';
+import { avatar, roleChips } from '../ui.js?v=20261030e';
+import { compOf } from '../competitions.js?v=20261030e';
+import { P } from '../sample-people.js?v=20261030e';
+import { SIZE_CHOICES, isFull, myRoles, needsOf, personOf, spots, teamMax } from '../rules.js?v=20261030e';
+import { roleChecks } from './cards.js?v=20261030e';
+import { bubbles } from './chats.js?v=20261030e';
 
 export function viewTeam(t) {
   const link = `${location.origin}${location.pathname}#/join/${t.code}`;
@@ -29,7 +29,7 @@ export function viewTeam(t) {
       }).join('')}</ul>
       <form class="stack pitch-form" data-form="teamedit" data-id="${t.id}" novalidate>
         ${field('pitch', 'What we’re building', t.pitch || '', { area: true, ph: 'One or two sentences. People looking for a team see this.' })}
-        ${select('max', 'Team size limit', SIZE_CHOICES.filter((n) => n >= t.members.length).map((n) => [String(n), `Up to ${n} people`]), String(teamMax(t)))}
+        ${select('max', 'Team size limit', SIZE_CHOICES.filter((n) => n >= t.members.length).map((n) => [String(n), `${n} people`]), String(teamMax(t)))}
         ${isFull(t) ? '' : `<div class="field"><p class="field__label">Still need <span class="hint-inline">Optional</span></p>${roleChecks('needs', needsOf(t))}</div>`}
         <button class="btn btn--ghost btn--sm" type="submit">Save</button>
       </form>

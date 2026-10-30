@@ -1,14 +1,14 @@
 /* ---------- Screen: chats ---------- */
 
-import { esc } from '../../shared/core.js?v=20261030d';
-import { L, LANG, tr } from '../../shared/i18n.js?v=20261030d';
-import { cup, cupFor } from '../../shared/cup.js?v=20261030d';
-import { CLOSE_AFTER_DAYS, REVEAL_AT, closesText, isCold, sugarMeter, sugarOf } from '../../shared/sugar.js?v=20261030d';
-import { field, select } from '../../shared/forms.js?v=20261030d';
-import { P } from '../people.js?v=20261030d';
-import { S, U } from '../state.js?v=20261030d';
-import { originName } from '../ui.js?v=20261030d';
-import { bubbles } from './mystery.js?v=20261030d';
+import { esc } from '../../shared/core.js?v=20261030e';
+import { L, LANG, tr } from '../../shared/i18n.js?v=20261030e';
+import { cup, cupFor } from '../../shared/cup.js?v=20261030e';
+import { CLOSE_AFTER_DAYS, REVEAL_AT, closesText, isCold, sugarMeter, sugarOf } from '../../shared/sugar.js?v=20261030e';
+import { field, select } from '../../shared/forms.js?v=20261030e';
+import { P } from '../people.js?v=20261030e';
+import { S, U } from '../state.js?v=20261030e';
+import { originName } from '../ui.js?v=20261030e';
+import { bubbles } from './mystery.js?v=20261030e';
 
 
 export const shownName = (t) => (t.reveal.them ? P[t.pid].real.name : P[t.pid].alias);

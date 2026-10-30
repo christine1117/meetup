@@ -1,11 +1,11 @@
 /* ---------- Simulated people responding to what you post ---------- */
 
-import { later, pick } from '../shared/core.js?v=20261030d';
-import { L } from '../shared/i18n.js?v=20261030d';
-import { PEOPLE, openRoles } from './people.js?v=20261030d';
-import { S, save } from './state.js?v=20261030d';
-import { toast } from './ui.js?v=20261030d';
-import { render } from './shell.js?v=20261030d';
+import { later, pick } from '../shared/core.js?v=20261030e';
+import { L } from '../shared/i18n.js?v=20261030e';
+import { PEOPLE, openRoles } from './people.js?v=20261030e';
+import { S, save } from './state.js?v=20261030e';
+import { toast } from './ui.js?v=20261030e';
+import { render } from './shell.js?v=20261030e';
 
 
 export function scheduleIncoming(item, key) {

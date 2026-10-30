@@ -1,17 +1,17 @@
 /* What each button does (buttons carry data-act="name"). */
 
-import { later, pick } from '../shared/core.js?v=20261030d';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030d';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261030d';
-import { toast } from './ui.js?v=20261030d';
-import { DAY } from './competitions.js?v=20261030d';
-import { FRIENDS } from './sample-people.js?v=20261030d';
-import { go } from './router.js?v=20261030d';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261030d';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261030d';
-import { closeModal, renderModal } from './views/modal.js?v=20261030d';
-import { PAGE } from './views/competitions.js?v=20261030d';
-import { render } from './render.js?v=20261030d';
+import { later, pick } from '../shared/core.js?v=20261030e';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030e';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261030e';
+import { toast } from './ui.js?v=20261030e';
+import { DAY } from './competitions.js?v=20261030e';
+import { FRIENDS } from './sample-people.js?v=20261030e';
+import { go } from './router.js?v=20261030e';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261030e';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261030e';
+import { closeModal, renderModal } from './views/modal.js?v=20261030e';
+import { PAGE } from './views/competitions.js?v=20261030e';
+import { render } from './render.js?v=20261030e';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },

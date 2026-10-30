@@ -4,9 +4,9 @@
    its official page. Once you join one, a copy is kept so your team still
    works after it drops off the list. */
 
-import { logError } from '../shared/log.js?v=20261030d';
-import { checkCompetition } from '../shared/contract.js?v=20261030d';
-import { S } from './state.js?v=20261030d';
+import { logError } from '../shared/log.js?v=20261030e';
+import { checkCompetition } from '../shared/contract.js?v=20261030e';
+import { S } from './state.js?v=20261030e';
 
 export const DAY = 86400000;
 export const SOURCE_NAME = { devpost: 'Devpost', mlh: 'MLH', bhuntr: '獎金獵人' };

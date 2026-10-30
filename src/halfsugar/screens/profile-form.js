@@ -1,12 +1,12 @@
 /* ---------- Screen: profile ---------- */
 
-import { esc } from '../../shared/core.js?v=20261030d';
-import { L } from '../../shared/i18n.js?v=20261030d';
-import { FIELDS, fieldName, flavorName, flavorsLabel } from '../../shared/flavors.js?v=20261030d';
-import { field, select } from '../../shared/forms.js?v=20261030d';
-import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030d';
-import { MAX_TAGS, TAG_SUGGESTIONS, myCurious, normTag } from '../matching.js?v=20261030d';
-import { S, U } from '../state.js?v=20261030d';
+import { esc } from '../../shared/core.js?v=20261030e';
+import { L } from '../../shared/i18n.js?v=20261030e';
+import { FIELDS, fieldName, flavorName, flavorsLabel } from '../../shared/flavors.js?v=20261030e';
+import { field, select } from '../../shared/forms.js?v=20261030e';
+import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030e';
+import { MAX_TAGS, TAG_SUGGESTIONS, myCurious, normTag } from '../matching.js?v=20261030e';
+import { S, U } from '../state.js?v=20261030e';
 
 
 // Type tags (Enter or a comma adds one) or tap a suggestion. scope is 'quiz' or 'me'.

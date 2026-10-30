@@ -1,20 +1,20 @@
 /* ---------- Forms ---------- */
 
-import { $, later, uid } from '../shared/core.js?v=20261030d';
-import { L } from '../shared/i18n.js?v=20261030d';
-import { isCold, sugarOf } from '../shared/sugar.js?v=20261030d';
-import { P, SEED_POSTS, hasEvent } from './people.js?v=20261030d';
-import { brewMatches } from './matching.js?v=20261030d';
-import { D, S, U, save } from './state.js?v=20261030d';
-import { go } from './router.js?v=20261030d';
-import { toast } from './ui.js?v=20261030d';
-import { createThread, pushMsg, scheduleAccept, sugarNotes, themReply, thread } from './conversations.js?v=20261030d';
-import { scheduleIncoming } from './simulate.js?v=20261030d';
-import { renderModal } from './modal.js?v=20261030d';
-import { postById } from './screens/explore.js?v=20261030d';
-import { syncRoleDescs } from './screens/brew.js?v=20261030d';
-import { dropReply } from './screens/mystery.js?v=20261030d';
-import { render } from './shell.js?v=20261030d';
+import { $, later, uid } from '../shared/core.js?v=20261030e';
+import { L } from '../shared/i18n.js?v=20261030e';
+import { isCold, sugarOf } from '../shared/sugar.js?v=20261030e';
+import { P, SEED_POSTS, hasEvent } from './people.js?v=20261030e';
+import { brewMatches } from './matching.js?v=20261030e';
+import { D, S, U, save } from './state.js?v=20261030e';
+import { go } from './router.js?v=20261030e';
+import { toast } from './ui.js?v=20261030e';
+import { createThread, pushMsg, scheduleAccept, sugarNotes, themReply, thread } from './conversations.js?v=20261030e';
+import { scheduleIncoming } from './simulate.js?v=20261030e';
+import { renderModal } from './modal.js?v=20261030e';
+import { postById } from './screens/explore.js?v=20261030e';
+import { syncRoleDescs } from './screens/brew.js?v=20261030e';
+import { dropReply } from './screens/mystery.js?v=20261030e';
+import { render } from './shell.js?v=20261030e';
 
 
 export const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v).trim()]));

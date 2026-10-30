@@ -8,7 +8,7 @@
 
 import { get, sleep } from '../lib/http.js';
 import { clean, cut, meta, jsonLd } from '../lib/text.js';
-import { parseTeamSize, teamPolicy } from '../lib/team-size.js';
+import { parseTeamSize, teamPolicy, teamText } from '../lib/team-size.js';
 
 const MAX_FAILS_IN_ROW = 5;
 
@@ -31,8 +31,10 @@ export function kindOf(words) {
 // Drop a leading heading like "一、活動簡介" or "前言" so the summary starts with the point
 const HEADING = /^([一二三四五六七八九十]+[、.．]\s*)?(活動|比賽|競賽|計畫)?(簡介|介紹|前言|緣起|宗旨|說明|目的|背景)\s*[:：]?\s*/;
 
+// Fetch a contest page (or reuse it from the cache while its last-modified date is the same).
+// Returns { skip } or { record, text }: the listing, plus the sentences about teams.
 async function readContest(id, mod, cache) {
-  const key = `bhuntr:${id}`;
+  const key = `bhuntr2:${id}`;
   const saved = cache.get(key, { mod });
   if (saved) return saved;
   const html = await get(`https://bhuntr.com/tw/competitions/${id}`);
@@ -45,31 +47,27 @@ async function readContest(id, mod, cache) {
   else if (!end || end - Date.now() < 2 * 3600000) value = { skip: 'closed' };
   else {
     const desc = clean(meta(html, 'description'));
-    const policy = teamPolicy(parseTeamSize(`${ev.name} ${desc}`));
-    if (!policy.keep) value = { skip: policy.reason };
-    else {
-      const words = String(ev.keywords || '').split(',').map((w) => w.trim()).filter(Boolean);
-      const mode = String(ev.eventAttendanceMode || '');
-      value = {
-        record: {
-          id: `bh-${id}`,
-          source: 'bhuntr',
-          region: words.some((w) => /國外|國際/.test(w)) ? 'intl' : 'tw',
-          kind: kindOf(words),
-          name: cut(clean(ev.name), 200),
-          organizer: cut(clean(ev.organizer?.name || ''), 200),
-          url: `https://bhuntr.com/tw/competitions/${id}`,
-          start: ev.startDate ? new Date(ev.startDate).toISOString() : null,
-          deadline: new Date(end).toISOString(),
-          // Nearly every page says "mixed", which tells us nothing, so only clear answers are kept
-          where: /Online/.test(mode) ? 'Online' : /Offline/.test(mode) ? 'In person' : '',
-          tags: words.filter((w) => !GENERIC.has(w)).slice(0, 5).map((w) => cut(w, 60)),
-          prize: '',
-          summary: cut(desc.replace(HEADING, ''), 120),
-          team: policy.team,
-        },
-      };
-    }
+    const words = String(ev.keywords || '').split(',').map((w) => w.trim()).filter(Boolean);
+    const mode = String(ev.eventAttendanceMode || '');
+    value = {
+      text: teamText(`${ev.name}。${desc}`),
+      record: {
+        id: `bh-${id}`,
+        source: 'bhuntr',
+        region: words.some((w) => /國外|國際/.test(w)) ? 'intl' : 'tw',
+        kind: kindOf(words),
+        name: cut(clean(ev.name), 200),
+        organizer: cut(clean(ev.organizer?.name || ''), 200),
+        url: `https://bhuntr.com/tw/competitions/${id}`,
+        start: ev.startDate ? new Date(ev.startDate).toISOString() : null,
+        deadline: new Date(end).toISOString(),
+        // Nearly every page says "mixed", which tells us nothing, so only clear answers are kept
+        where: /Online/.test(mode) ? 'Online' : /Offline/.test(mode) ? 'In person' : '',
+        tags: words.filter((w) => !GENERIC.has(w)).slice(0, 5).map((w) => cut(w, 60)),
+        prize: '',
+        summary: cut(desc.replace(HEADING, ''), 120),
+      },
+    };
   }
   cache.set(key, value, mod);
   return value;
@@ -98,8 +96,11 @@ export async function collect({ cache, progress = () => {} }) {
       if (failsInRow >= MAX_FAILS_IN_ROW) throw new Error(`${failsInRow} pages failed in a row (${err.message})`);
       continue;
     }
-    if (got.record) items.push(got.record);
-    else skipped[got.skip] = (skipped[got.skip] || 0) + 1;
+    if (got.skip) { skipped[got.skip] = (skipped[got.skip] || 0) + 1; continue; }
+    // Only team competitions: the rules have to allow 2 or more people
+    const policy = teamPolicy(parseTeamSize(got.text));
+    if (!policy.keep) { skipped[policy.reason] = (skipped[policy.reason] || 0) + 1; continue; }
+    items.push({ ...got.record, team: policy.team });
   }
   return { items, skipped };
 }

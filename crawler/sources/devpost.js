@@ -6,7 +6,7 @@
 
 import { get, sleep } from '../lib/http.js';
 import { clean } from '../lib/text.js';
-import { parseTeamSize, teamPolicy } from '../lib/team-size.js';
+import { parseTeamSize, teamPolicy, teamText } from '../lib/team-size.js';
 
 const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 
@@ -25,20 +25,23 @@ export function devpostDates(text = '') {
   return { start: startDate ? startDate.toISOString() : null, deadline: endDate.toISOString() };
 }
 
+// The sentences about teams from the overview and rules pages, cached for a week,
+// then read with the current team-size rules
 async function teamInfo(url, cache) {
-  const key = `devpost:${url}`;
-  const saved = cache.get(key, { maxAgeDays: 7 });
-  if (saved) return saved;
-  const base = url.replace(/\/?$/, '/');
-  const pages = await Promise.allSettled([get(base), get(`${base}rules`)]);
-  const text = pages.filter((p) => p.status === 'fulfilled').map((p) => clean(p.value)).join(' ');
-  await sleep(700);
-  // Pages we could not read: keep the hackathon, say the size is unknown, and report it
-  if (!text) return { team: { min: null, max: null }, unread: true };
+  const key = `devpost2:${url}`;
+  let text = cache.get(key, { maxAgeDays: 7 });
+  if (text == null) {
+    const base = url.replace(/\/?$/, '/');
+    const pages = await Promise.allSettled([get(base), get(`${base}rules`)]);
+    await sleep(700);
+    const read = pages.filter((p) => p.status === 'fulfilled').map((p) => clean(p.value));
+    // Pages we could not read: keep the hackathon, say the size is unknown, and report it
+    if (!read.length) return { team: { min: null, max: null }, unread: true };
+    text = teamText(read.join(' '), 4000);
+    cache.set(key, text);
+  }
   const policy = teamPolicy(parseTeamSize(text), { onPlatform: true });
-  const value = policy.keep ? { team: policy.team } : { skip: policy.reason };
-  cache.set(key, value);
-  return value;
+  return policy.keep ? { team: policy.team } : { skip: policy.reason };
 }
 
 export async function collect({ cache, progress = () => {} }) {
