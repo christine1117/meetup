@@ -99,6 +99,12 @@ def test_published_contract():
         Published.model_validate({**ok, "team": {"min": None, "max": 1}})
 
 
+def test_both_kinds_of_supabase_keys():
+    assert "Authorization" in SupabaseStore("https://abc.supabase.co", "eyJhbGciOi.legacy").headers
+    new = SupabaseStore("https://abc.supabase.co", "sb_secret_abc123").headers
+    assert new["apikey"] == "sb_secret_abc123" and "Authorization" not in new
+
+
 def test_supabase_store_sends_rows():
     seen = []
 

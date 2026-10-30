@@ -14,7 +14,11 @@ class SupabaseStore:
     def __init__(self, url: str, service_key: str, client: httpx.Client | None = None):
         self.client = client or httpx.Client(timeout=30)
         self.base = url.rstrip("/") + "/rest/v1"
-        self.headers = {"apikey": service_key, "Authorization": f"Bearer {service_key}", "Content-Type": "application/json"}
+        # Older "service_role" keys are JWTs and also go in Authorization; newer
+        # "sb_secret_..." keys are not JWTs and only go in the apikey header
+        self.headers = {"apikey": service_key, "Content-Type": "application/json"}
+        if service_key.startswith("eyJ"):
+            self.headers["Authorization"] = f"Bearer {service_key}"
 
     def _post(self, table: str, rows: list[dict], upsert: bool = True) -> None:
         if not rows:
