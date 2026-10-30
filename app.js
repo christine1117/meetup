@@ -469,6 +469,15 @@ const STAGES = [
   ['exploring', 'Still figuring it out'],
 ];
 const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
+// How to reach you once the seal is popped
+const CONTACTS = [['instagram', 'Instagram'], ['linkedin', 'LinkedIn'], ['other', 'Other']];
+const contactName = (type) => (CONTACTS.find(([v]) => v === type) || CONTACTS[2])[1];
+// [label, value] for a person's contact, or null. Older data only had LinkedIn.
+function contactOf(r) {
+  if (r && r.contact) return [contactName(r.contactType), r.contact];
+  if (r && r.linkedin) return ['LinkedIn', r.linkedin];
+  return null;
+}
 
 // relevance: they can share what you are curious about, shared curiosity, the same stage, shared work words.
 // complement: different fields. reliable: how often they reply. active: visited recently.
@@ -696,6 +705,8 @@ function load() {
     ['myThoughts', 'myPosts', 'threads', 'boxes'].forEach((k) => { if (!Array.isArray(saved[k])) saved[k] = []; });
     if (!saved.toppings || typeof saved.toppings !== 'object') saved.toppings = {};
     if (saved.me && typeof saved.me !== 'object') saved.me = null;
+    // Older profiles kept only a LinkedIn link; it is now one contact of any kind
+    if (saved.me && saved.me.linkedin && !saved.me.contact) Object.assign(saved.me, { contactType: 'linkedin', contact: saved.me.linkedin });
     saved.threads = saved.threads.filter((t) => t && P[t.pid] && Array.isArray(t.msgs));
     return saved;
   } catch {
@@ -1125,7 +1136,7 @@ function profileModal(pid) {
       </div>
       <div class="slots-row">${toppingSlots(ids.slice(0, MAX_SHOWN))}</div>
       <dl class="brief">
-        <div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>
+        ${p.doing ? `<div><dt>${L`Working on`}</dt><dd>${esc(p.doing)}</dd></div>` : ''}
         ${fun ? `<div><dt>${L`Fun fact`}</dt><dd>${esc(fun)}</dd></div>` : ''}
       </dl>
       ${p.curious && p.curious.length ? `<div class="pf__tags"><p class="field__label">${L`Curious about`}</p><p class="chips">${chips(p.curious)}</p></div>` : ''}
@@ -1136,7 +1147,7 @@ function profileModal(pid) {
         <div><dt>${L`School`}</dt><dd>${esc(p.real.school)}</dd></div>
         <div><dt>${L`Company`}</dt><dd>${esc(p.real.company)}</dd></div>
         <div><dt>${L`Job title`}</dt><dd>${esc(p.real.title)}</dd></div>
-        <div><dt>LinkedIn</dt><dd>${esc(p.real.linkedin)}</dd></div>
+        ${contactOf(p.real) ? `<div><dt>${esc(L(contactOf(p.real)[0]))}</dt><dd>${esc(contactOf(p.real)[1])}</dd></div>` : ''}
       </dl>` : `<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Name, school and company stay sealed until you both pop the seal.`}</p>`}
       <div class="pf__actions">
         ${me
@@ -1196,7 +1207,7 @@ function tagList(scope, key) {
 }
 
 // The first-time form skips what the quick questions already asked
-// In My order each half of the card folds into a short summary; tap Edit to open it
+// On Me each half of the card folds into a short summary; tap Edit to open it
 function secStart(key, icon, title, summary) {
   return `<details class="panel sec ${key === 'sealed' ? 'panel--locked' : ''}" data-sec="${key}" ${U.openSec[key] ? 'open' : ''}>
       <summary class="sec__head">
@@ -1210,11 +1221,12 @@ function secStart(key, icon, title, summary) {
 function publicSummary(me) {
   const line = [me.alias, flavorsLabel(me), me.city].filter(Boolean).map(esc).join(' · ');
   const tags = (label, list) => (list.length ? `<p class="meta">${label}: ${esc(list.join(', '))}</p>` : '');
-  return `<p><strong>${line}</strong></p><p>${esc(me.doing || '')}</p>${tags(L`Curious`, myCurious())}${tags(L`Can share`, myShare())}`;
+  const meet = (MEETS.find(([v]) => v === me.meet) || [])[1];
+  return `<p><strong>${line}</strong></p>${meet ? `<p class="meta">${L`Meet`}: ${esc(L(meet))}</p>` : ''}${tags(L`Curious`, myCurious())}${me.fun ? `<p class="meta">${L`Fun fact`}: ${esc(me.fun)}</p>` : ''}`;
 }
 
 function sealedSummary(me) {
-  const keys = [['name', L`name`], ['title', L`title`], ['school', L`school`], ['company', L`company`], ['linkedin', 'LinkedIn']];
+  const keys = [['name', L`name`], ['title', L`title`], ['school', L`school`], ['company', L`company`], ['contact', L`contact`]];
   const filled = keys.filter(([k]) => me[k]);
   return `<p class="meta">${filled.length ? L`${filled.length} of 5 filled: ${filled.map(([, l]) => l).join(', ')}` : L`Nothing added yet.`}</p>`;
 }
@@ -1232,14 +1244,11 @@ function profileForm(me, first) {
         ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || FIELDS[0])}
         ${select('field2', L`Second field (optional)`, [['', L`None`], ...FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`])], me.field2 || '')}
       </div>
-      ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
       <div class="row2">
-        ${select('stage', L`What you are doing these days`, STAGES.map(([v, l]) => [v, L(l)]), me.stage || 'exploring')}
+        ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
         ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
       </div>
-      ${tagEditor('me', 'curious', myCurious(), L`Curious about`)}
-      ${tagEditor('me', 'share', myShare(), L`Can share`)}`}
-      ${field('doing', L`What I'm working on`, me.doing, { area: true, req: true, ph: L`e.g. A sign-up system for a community college` })}
+      ${tagEditor('me', 'curious', myCurious(), L`Curious about`)}`}
       ${field('fun', L`Fun fact`, me.fun ?? me.proof, { ph: L`Something people would not guess about you` })}
     ${fold ? '</div></details>' : '</fieldset>'}
     ${fold ? secStart('sealed', 'ph-lock-simple', L`Sealed until you both pop the seal`, sealedSummary(me)) : `<fieldset class="panel panel--locked">
@@ -1252,18 +1261,21 @@ function profileForm(me, first) {
         ${field('school', L`School`, me.school)}
         ${field('company', L`Company`, me.company)}
       </div>
-      ${field('linkedin', 'LinkedIn', me.linkedin)}
+      <div class="row2 row2--contact">
+        ${select('contactType', L`Contact`, CONTACTS.map(([v, l]) => [v, L(l)]), me.contactType || 'instagram')}
+        ${field('contact', L`Handle or link`, me.contact, { ph: L`e.g. @yourname` })}
+      </div>
     ${fold ? '</div></details>' : '</fieldset>'}
-    <p class="error" id="profile-error" hidden>${L`Please add a nickname and what you're working on.`}</p>
-    <button class="btn btn--primary save-btn" type="submit">${first ? L`Start sipping` : L`Save my order`}</button>
+    <p class="error" id="profile-error" hidden>${L`Please add a nickname.`}</p>
+    <button class="btn btn--primary save-btn" type="submit">${first ? L`Start sipping` : L`Save`}</button>
   </form>`;
 }
 
 /* ---------- Screen: onboarding ----------
-   A few quick questions, one per screen, then the order form.
+   A few quick questions, one per screen, then the profile form.
    Single-choice answers move on by themselves. */
 
-const QUIZ_STEPS = 5;
+const QUIZ_STEPS = 3;
 
 function quizStep(q) {
   const option = (key, value, label, art = '') => `
@@ -1282,8 +1294,9 @@ function quizStep(q) {
   }
   if (q.step === 1) {
     return `
-    <h2 class="quiz__q">${L`What are you doing these days?`}</h2>
-    <div class="options">${STAGES.map(([v, l]) => option('stage', v, L(l))).join('')}</div>`;
+    <h2 class="quiz__q">${L`How do you like to meet?`}</h2>
+    <div class="options">${MEETS.map(([v, l]) => option('meet', v, L(l))).join('')}</div>
+    ${field('city', L`Which city are you in?`, q.city, { ph: L`e.g. Taipei` })}`;
   }
   if (q.step === 2) {
     return `
@@ -1291,20 +1304,8 @@ function quizStep(q) {
     <p class="quiz__hint">${L`Things you would love to hear about. Type your own or tap one.`}</p>
     ${tagEditor('quiz', 'curious', q.curious, L`Curious about`)}`;
   }
-  if (q.step === 3) {
-    return `
-    <h2 class="quiz__q">${L`What can you share?`}</h2>
-    <p class="quiz__hint">${L`Things you know well enough to talk about for an hour.`}</p>
-    ${tagEditor('quiz', 'share', q.share, L`Can share`)}`;
-  }
-  if (q.step === 4) {
-    return `
-    <h2 class="quiz__q">${L`How do you like to meet?`}</h2>
-    <div class="options">${MEETS.map(([v, l]) => option('meet', v, L(l))).join('')}</div>
-    ${field('city', L`Which city are you in?`, q.city, { ph: L`e.g. Taipei` })}`;
-  }
   return `
-    <h2 class="quiz__q">${L`Last step: fill in your order.`}</h2>
+    <h2 class="quiz__q">${L`Last step: a little about you.`}</h2>
     ${profileForm(null, true)}`;
 }
 
@@ -1312,7 +1313,7 @@ function viewOnboard() {
   const q = U.quiz;
   const shown = U.quizShown;
   U.quizShown = q.step;
-  const canNext = [q.field, q.stage, q.curious.length, q.share.length, q.meet][q.step];
+  const canNext = [q.field, q.meet, q.curious.length][q.step];
   return `
   <main class="onboard">
     <div class="onboard__top">
@@ -1342,7 +1343,7 @@ function viewOnboard() {
 function viewMe() {
   return `
   <header class="head">
-    <div><h1 lang="en">${L`My order`}</h1><p class="sub">${L`Your usual. Change it any time.`}</p></div>
+    <div><h1 lang="en">${L`Me`}</h1><p class="sub">${L`Your profile and your usual. Change them any time.`}</p></div>
   </header>
   <section class="receipt mydrink">
     <div class="mydrink__cup">${drinkCup(S.me, shownToppings(), 'cup--profile')}</div>
@@ -2046,7 +2047,7 @@ function bookingLabel(b) {
 const explain = (html) => `<p class="explain"><i class="ph ph-info" aria-hidden="true"></i><span>${html}</span></p>`;
 
 const GLOSSARY = [
-  ['My order', 'ph-receipt', 'Your profile. It shows what you are working on, never your titles.'],
+  ['Me', 'ph-user', 'Your profile and your usual drink. It shows your flavor and what you are curious about, never your titles.'],
   ['Flavor', 'ph-drop', 'Your field. Each field is a boba flavor and sets the colour of your cup. Two fields make a two-flavor cup.'],
   ['Sugar', 'ph-chart-line-up', 'How long you two have talked. Every minute adds 5%, so 10 minutes is half sugar (50%), when you can pop the seal. Long pauses do not count.'],
   ['Explore', 'ph-compass', 'A forum by topic. Comment in public, or message someone privately. Top picks come first.'],
@@ -2094,7 +2095,7 @@ function viewAbout() {
     <section class="about__block">
       <h2>${L`How it works`}</h2>
       <ol class="steps">
-        <li><strong>${L`Fill in your order.`}</strong> ${L`Say what you are working on. Your titles stay sealed.`}</li>
+        <li><strong>${L`Set up Me.`}</strong> ${L`Pick your flavor and what you are curious about. Your name, titles and contact stay sealed.`}</li>
         <li><strong>${L`Take a first sip.`}</strong> ${L`Comment or message someone in Explore, apply to a Brew, or join the weekly Mystery Cup.`}</li>
         <li><strong>${L`Reach half sugar, then pop the seal.`}</strong> ${L`Sugar goes up as you talk. At 50%, if you both want to, show each other who you are.`}</li>
         <li><strong>${L`Keep it warm.`}</strong> ${L`Keep talking, build something, or go on a boba run and meet in person. A chat goes cold after 3 days with no reply.`}</li>
@@ -2146,7 +2147,7 @@ const NAV = [
   ['build', 'Brew', 'ph-hammer', 'Build together'],
   ['drop', 'Mystery Cup', 'ph-sparkle', 'Weekly surprise match'],
   ['chats', 'Chats', 'ph-chat-circle', 'Your conversations'],
-  ['me', 'My order', 'ph-receipt', 'Your profile'],
+  ['me', 'Me', 'ph-user', 'Your profile'],
 ];
 
 function shell(route, body) {
@@ -2237,11 +2238,11 @@ const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v
 
 const forms = {
   profile(form, data) {
-    if (!data.alias || !data.doing) { $('#profile-error', form).hidden = false; return; }
+    if (!data.alias) { $('#profile-error', form).hidden = false; return; }
     const first = !S.me;
     if (first) {
       const q = U.quiz;
-      Object.assign(data, { field: q.field, field2: q.field2, stage: q.stage, curious: q.curious, share: q.share, meet: q.meet, city: q.city });
+      Object.assign(data, { field: q.field, field2: q.field2, curious: q.curious, meet: q.meet, city: q.city });
     } else if (data.field2 === data.field) {
       data.field2 = '';
     }
@@ -2577,13 +2578,13 @@ const acts = {
   },
   'quiz-next'() {
     const city = document.getElementById('f-city');
-    if (U.quiz.step === 4 && city) U.quiz.city = city.value.trim();
+    if (U.quiz.step === 1 && city) U.quiz.city = city.value.trim();
     U.quiz.step += 1;
     render({ fresh: true });
   },
   'quiz-back'() {
     const city = document.getElementById('f-city');
-    if (U.quiz.step === 4 && city) U.quiz.city = city.value.trim();
+    if (U.quiz.step === 1 && city) U.quiz.city = city.value.trim();
     U.quiz.step = Math.max(0, U.quiz.step - 1);
     render({ fresh: true });
   },
@@ -2610,7 +2611,7 @@ const acts = {
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
   'dev-skip'() {
-    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', stage: 'side', meet: 'both', curious: ['Pricing', 'AI products'], share: ['Product design', 'User research'], doing: 'Testing Half Sugar', fun: 'Has tried every boba shop on one street', name: 'Dev User', title: 'Builder', school: '', company: '', linkedin: '' };
+    S.me = { alias: 'Dev', city: 'Taipei', field: 'Design', meet: 'both', curious: ['Pricing', 'AI products'], fun: 'Has tried every boba shop on one street', name: 'Dev User', title: 'Builder', school: '', company: '', contactType: 'instagram', contact: '@devuser' };
     save();
     lastPath = null;
     go('explore');
@@ -2644,7 +2645,7 @@ document.addEventListener('wheel', (event) => {
   row.scrollLeft = Math.max(0, Math.min(max, row.scrollLeft + event.deltaY));
 }, { passive: false });
 
-// Remember which My order sections are open
+// Remember which sections on Me are open
 document.addEventListener('toggle', (event) => {
   const d = event.target;
   if (d.matches && d.matches('details[data-sec]')) U.openSec[d.dataset.sec] = d.open;

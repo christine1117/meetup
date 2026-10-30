@@ -9,8 +9,10 @@
    4. Both tap it: names are revealed and you become a team with a group chat
    Friends join a team through an invite link, no chat needed.
 
-   Demo mode: no backend. Data stays in this browser and the other
-   people are simulated. Shared drawing code lives in kit.js.
+   Competitions are real: scripts/fetch-competitions.mjs collects them once a
+   day from Devpost, MLH and 獎金獵人 into data/competitions.json.
+   People and chats are still samples until accounts exist; your data stays in
+   this browser. Your profile is shared with Half Sugar. Drawing code is in kit.js.
    ========================================================= */
 
 const KEY = 'halfsugar.teams.v1';
@@ -28,33 +30,54 @@ const TOPICS = ['Environment', 'Health', 'Education', 'Money', 'Food', 'Transpor
 const MAX_ROLES = 2;
 
 /* ---------- Competitions ----------
-   Three ways a competition gets here: an organizer sets it up (a partner),
-   a public listing we link to, or someone in the community adds it. */
-const SOURCES = { organizer: 'Partner organizer', public: 'Public listing', community: 'Added by the community' };
-const COMPS = [
-  { id: 'c1', name: 'Taipei Climate Hackathon', kind: 'Hackathon', source: 'organizer', days: 12, size: [3, 5], who: 'Open to everyone', where: 'Taipei, in person' },
-  { id: 'c2', name: 'Campus Startup Cup', kind: 'Startup competition', source: 'organizer', days: 25, size: [2, 4], who: 'Students only', where: 'Online' },
-  { id: 'c3', name: 'Open Data Challenge', kind: 'Hackathon', source: 'public', days: 18, size: [2, 5], who: 'Open to everyone', where: 'Online' },
-  { id: 'c4', name: 'Social Impact Design Jam', kind: 'Design competition', source: 'community', days: 8, size: [2, 4], who: 'Open to everyone', where: 'Taichung, in person' },
-  { id: 'c5', name: 'AI for Good Sprint', kind: 'Hackathon', source: 'public', days: 30, size: [3, 5], who: 'Open to everyone', where: 'Online' },
-];
-const COMP = Object.fromEntries(COMPS.map((c) => [c.id, c]));
-const LOADED_AT = Date.now();
-const deadlineOf = (c) => LOADED_AT + c.days * DAY;
+   Real listings, refreshed daily. Each one links back to its official page.
+   Once you join one, a copy is kept so your team still works after it
+   drops off the list. */
+const SOURCE_NAME = { devpost: 'Devpost', mlh: 'MLH', bhuntr: '獎金獵人' };
+const REGION_NAME = { tw: 'Taiwan', intl: 'International' };
+let DATA = { items: [], sources: [], updatedAt: null };
+let COMP = {};
+let dataState = 'loading';
+const compOf = (id) => COMP[id] || (S.compCache || {})[id] || { id, name: 'A past competition', kind: 'Competition', source: '', tags: [] };
 const dateText = (ms) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// XHR rather than fetch, so the page also works when opened as a local file
+function loadComps() {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', `data/competitions.json?d=${new Date().toISOString().slice(0, 10)}`);
+  xhr.onload = () => {
+    try {
+      DATA = JSON.parse(xhr.responseText);
+      COMP = Object.fromEntries(DATA.items.map((c) => [c.id, c]));
+      dataState = 'ready';
+    } catch { dataState = 'error'; }
+    render();
+  };
+  xhr.onerror = () => { dataState = 'error'; render(); };
+  xhr.send();
+}
+
+function whenText(c) {
+  if (c.deadline) {
+    const days = Math.ceil((Date.parse(c.deadline) - Date.now()) / DAY);
+    return `Closes ${dateText(Date.parse(c.deadline))} · ${days <= 1 ? 'last day' : `${days} days left`}`;
+  }
+  if (c.start) return `Starts ${dateText(Date.parse(c.start))}`;
+  return 'Dates on the official page';
+}
 
 /* ---------- Simulated people ---------- */
 const PEOPLE = [
-  { id: 'p1', alias: 'Mochi', field: 'Design', city: 'Taipei', comps: ['c1', 'c4'], canDo: ['Design', 'Research'], topics: ['Environment', 'Transport'], goal: 'win', hours: 10, work: 'Redesigned a bus app used by 2,000 riders', reply: 0.9, real: { name: 'Yen Shu-Wei', school: 'NCKU, Industrial Design', contact: 'shuwei@example.com' } },
-  { id: 'p2', alias: 'Kite', field: 'Engineering', city: 'Taipei', comps: ['c1', 'c3', 'c5'], canDo: ['Backend', 'Data'], topics: ['Transport', 'Environment'], goal: 'win', hours: 10, work: 'Built an open bike-lane map from GPS data', reply: 0.75, real: { name: 'Lin Kai-Wen', school: 'NTU, Computer Science', contact: 'kaiwen@example.com' } },
-  { id: 'p3', alias: 'Sol', field: 'Founder', city: 'Taipei', comps: ['c2', 'c5'], canDo: ['Pitch', 'Product', 'Marketing'], topics: ['Money', 'Food'], goal: 'win', hours: 6, work: 'Ran a savings app with 1,300 weekly users', reply: 0.85, real: { name: 'Chen Yu-Ting', school: 'NCCU, Business', contact: 'yuting@example.com' } },
-  { id: 'p4', alias: 'Nori', field: 'Content', city: 'Taichung', comps: ['c4', 'c2'], canDo: ['Writing', 'Marketing'], topics: ['Education', 'Social good'], goal: 'learn', hours: 6, work: 'Writes a newsletter with 4,200 readers', reply: 0.6, real: { name: 'Huang Pei-Shan', school: 'Tunghai, Sociology', contact: 'peishan@example.com' } },
-  { id: 'p5', alias: 'Pim', field: 'Research', city: 'Hsinchu', comps: ['c3', 'c1', 'c5'], canDo: ['Data', 'Research'], topics: ['Environment', 'Health'], goal: 'learn', hours: 6, work: 'Measured indoor air in 23 homes, data on GitHub', reply: 0.8, real: { name: 'Tsou Ting-An', school: 'NTHU, Environmental Engineering', contact: 'tingan@example.com' } },
-  { id: 'p6', alias: 'Rue', field: 'Design', city: 'Taipei', comps: ['c2', 'c4'], canDo: ['Design', 'Frontend'], topics: ['Food', 'Money'], goal: 'win', hours: 10, work: 'Booking app for tattoo artists, 35 on the waitlist', reply: 0.8, real: { name: 'Wu Ruo-Xi', school: 'Shih Chien, Communication Design', contact: 'ruoxi@example.com' } },
-  { id: 'p7', alias: 'Tavi', field: 'Engineering', city: 'Taipei', comps: ['c5', 'c1'], canDo: ['Backend', 'Data', 'Hardware'], topics: ['Health', 'AI'], goal: 'fun', hours: 3, work: 'Speech-to-notes tool piloted in 3 clinics', reply: 0.95, real: { name: 'Hsu Chih-Hao', school: 'NYCU, Electrical Engineering', contact: 'chihhao@example.com' } },
-  { id: 'p8', alias: 'Ode', field: 'Business', city: 'Taichung', comps: ['c2', 'c3'], canDo: ['Marketing', 'Pitch'], topics: ['Food', 'Social good'], goal: 'learn', hours: 6, work: 'Supplies 9 restaurants with farm produce', reply: 0.65, real: { name: 'Lai Po-Jui', school: 'Tunghai, International Business', contact: 'pojui@example.com' } },
-  { id: 'p9', alias: 'Juno', field: 'Engineering', city: 'Tainan', comps: ['c3', 'c4', 'c5'], canDo: ['Frontend'], topics: ['Education', 'AI'], goal: 'learn', hours: 10, work: 'Shipped three small web apps for local shops', reply: 0.9, real: { name: 'Kuo Yi-Jun', school: 'NCKU, Computer Science', contact: 'yijun@example.com' } },
-  { id: 'p10', alias: 'Bao', field: 'Founder', city: 'Taipei', comps: ['c1', 'c2'], canDo: ['Product', 'Pitch'], topics: ['Food', 'Education'], goal: 'win', hours: 6, work: 'Took a campus food app to 800 users', reply: 0.7, real: { name: 'Tsai Wei-Lun', school: 'NTU, Economics', contact: 'weilun@example.com' } },
+  { id: 'p1', alias: 'Mochi', field: 'Design', city: 'Taipei', canDo: ['Design', 'Research'], topics: ['Environment', 'Transport'], goal: 'win', hours: 10, work: 'Redesigned a bus app used by 2,000 riders', reply: 0.9, real: { name: 'Yen Shu-Wei', school: 'NCKU, Industrial Design', contact: 'shuwei@example.com' } },
+  { id: 'p2', alias: 'Kite', field: 'Engineering', city: 'Taipei', canDo: ['Backend', 'Data'], topics: ['Transport', 'Environment'], goal: 'win', hours: 10, work: 'Built an open bike-lane map from GPS data', reply: 0.75, real: { name: 'Lin Kai-Wen', school: 'NTU, Computer Science', contact: 'kaiwen@example.com' } },
+  { id: 'p3', alias: 'Sol', field: 'Founder', city: 'Taipei', canDo: ['Pitch', 'Product', 'Marketing'], topics: ['Money', 'Food'], goal: 'win', hours: 6, work: 'Ran a savings app with 1,300 weekly users', reply: 0.85, real: { name: 'Chen Yu-Ting', school: 'NCCU, Business', contact: 'yuting@example.com' } },
+  { id: 'p4', alias: 'Nori', field: 'Content', city: 'Taichung', canDo: ['Writing', 'Marketing'], topics: ['Education', 'Social good'], goal: 'learn', hours: 6, work: 'Writes a newsletter with 4,200 readers', reply: 0.6, real: { name: 'Huang Pei-Shan', school: 'Tunghai, Sociology', contact: 'peishan@example.com' } },
+  { id: 'p5', alias: 'Pim', field: 'Research', city: 'Hsinchu', canDo: ['Data', 'Research'], topics: ['Environment', 'Health'], goal: 'learn', hours: 6, work: 'Measured indoor air in 23 homes, data on GitHub', reply: 0.8, real: { name: 'Tsou Ting-An', school: 'NTHU, Environmental Engineering', contact: 'tingan@example.com' } },
+  { id: 'p6', alias: 'Rue', field: 'Design', city: 'Taipei', canDo: ['Design', 'Frontend'], topics: ['Food', 'Money'], goal: 'win', hours: 10, work: 'Booking app for tattoo artists, 35 on the waitlist', reply: 0.8, real: { name: 'Wu Ruo-Xi', school: 'Shih Chien, Communication Design', contact: 'ruoxi@example.com' } },
+  { id: 'p7', alias: 'Tavi', field: 'Engineering', city: 'Taipei', canDo: ['Backend', 'Data', 'Hardware'], topics: ['Health', 'AI'], goal: 'fun', hours: 3, work: 'Speech-to-notes tool piloted in 3 clinics', reply: 0.95, real: { name: 'Hsu Chih-Hao', school: 'NYCU, Electrical Engineering', contact: 'chihhao@example.com' } },
+  { id: 'p8', alias: 'Ode', field: 'Business', city: 'Taichung', canDo: ['Marketing', 'Pitch'], topics: ['Food', 'Social good'], goal: 'learn', hours: 6, work: 'Supplies 9 restaurants with farm produce', reply: 0.65, real: { name: 'Lai Po-Jui', school: 'Tunghai, International Business', contact: 'pojui@example.com' } },
+  { id: 'p9', alias: 'Juno', field: 'Engineering', city: 'Tainan', canDo: ['Frontend'], topics: ['Education', 'AI'], goal: 'learn', hours: 10, work: 'Shipped three small web apps for local shops', reply: 0.9, real: { name: 'Kuo Yi-Jun', school: 'NCKU, Computer Science', contact: 'yijun@example.com' } },
+  { id: 'p10', alias: 'Bao', field: 'Founder', city: 'Taipei', canDo: ['Product', 'Pitch'], topics: ['Food', 'Education'], goal: 'win', hours: 6, work: 'Took a campus food app to 800 users', reply: 0.7, real: { name: 'Tsai Wei-Lun', school: 'NTU, Economics', contact: 'weilun@example.com' } },
 ];
 // Friends that join through an invite link in the demo
 const FRIENDS = [
@@ -78,15 +101,29 @@ const LINES = [
   'Let us split the first week: you take the idea, I take the build.',
 ];
 
-// Teams other people already started (they are still recruiting)
-const SEED_TEAMS = [
-  { id: 'st1', comp: 'c1', name: 'Clear Air', pitch: 'A map that warns parents when the air near their kid\u2019s school gets bad.', members: ['p1', 'p2'], needs: ['Frontend'] },
-  { id: 'st2', comp: 'c2', name: 'Night Market Labs', pitch: 'Pre-order from night market stalls and skip the line.', members: ['p3', 'p6'], needs: [] },
-  { id: 'st3', comp: 'c5', name: 'Kind Robots', pitch: 'A small desk robot that reminds older people to take their medicine.', members: ['p7'], needs: ['Product'] },
+/* Sample people and teams. Until real sign-ups exist, each competition
+   gets a steady handful of sample people, and most get one sample team. */
+const hashOf = (str) => [...str].reduce((h, ch) => (h * 31 + ch.codePointAt(0)) >>> 0, 7);
+const demoPeople = (cid) => [...PEOPLE].sort((a, b) => hashOf(cid + a.id) - hashOf(cid + b.id)).slice(0, 6);
+const TEAM_NAMES = ['Clear Air', 'Night Market Labs', 'Kind Robots', 'Tiny Giants', 'Open Loop', 'Late Night Build'];
+const PITCHES = [
+  'A map that warns parents when the air near their kid’s school gets bad.',
+  'Pre-order from night market stalls and skip the line.',
+  'A small desk robot that reminds older people to take their medicine.',
+  'Helping small shops turn receipts into simple sales charts.',
+  'A study buddy that turns lecture notes into quick quizzes.',
+  'Showing renters which flats get the most sunlight.',
 ];
+const NEEDS = [['Frontend'], ['Design'], ['Pitch'], ['Data'], ['Backend', 'Design'], []];
+function seedTeam(cid) {
+  const h = hashOf(cid);
+  if (h % 3 === 0) return null;
+  const [a, b] = demoPeople(cid);
+  return { id: `st-${cid}`, comp: cid, name: TEAM_NAMES[h % TEAM_NAMES.length], pitch: PITCHES[(h >> 3) % PITCHES.length], members: [a.id, b.id], needs: NEEDS[(h >> 5) % NEEDS.length], max: 5, seed: true };
+}
 
 /* ---------- State ---------- */
-const blank = () => ({ me: null, cards: {}, chats: [], teams: [] });
+const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {} });
 function load() {
   try {
     const s = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
@@ -95,6 +132,7 @@ function load() {
     // Older versions stored role slots; now a team just has an optional "still need" list
     s.teams.forEach((t) => { if (!t.needs) t.needs = (t.roles || []).filter((r) => !r.by).map((r) => r.name); delete t.roles; });
     Object.values(s.cards).forEach((c) => { c.topics = c.topics || []; c.canDo = (c.canDo || []).slice(0, MAX_ROLES); });
+    if (!s.compCache || typeof s.compCache !== 'object') s.compCache = {};
     return s;
   } catch {
     return blank();
@@ -104,6 +142,30 @@ function save() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage is off; the page still works */ }
 }
 let S = load();
+
+/* One profile for Half Sugar and team mode. It lives in Half Sugar's saved
+   data, so signing up in either app signs you up in both. */
+const MAIN_KEY = 'meetup.v1';
+const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
+const CONTACTS = [['instagram', 'Instagram'], ['linkedin', 'LinkedIn'], ['other', 'Other']];
+const contactName = (type) => (CONTACTS.find(([v]) => v === type) || CONTACTS[2])[1];
+function mainState() {
+  try { return JSON.parse(localStorage.getItem(MAIN_KEY)) || {}; } catch { return {}; }
+}
+function syncMe() {
+  const m = mainState().me;
+  if (m && m.alias) S.me = m;
+}
+function saveMe(me) {
+  S.me = me;
+  save();
+  try {
+    const st = mainState();
+    st.me = { ...(st.me || {}), ...me };
+    localStorage.setItem(MAIN_KEY, JSON.stringify(st));
+  } catch { /* storage is off */ }
+}
+syncMe();
 const U = { form: null, hi: null, typing: {}, confirmReset: false };
 let lastPath = null;
 
@@ -124,13 +186,17 @@ const toast = (msg) => {
 const roleChips = (list, match = []) => list.map((r) => `<span class="${match.includes(r) ? 'is-match' : ''}">${esc(r)}</span>`).join('');
 
 // Every team in a competition: other people's, plus the ones you are in
-const teamsIn = (cid) => [...SEED_TEAMS.filter((t) => t.comp === cid && !S.teams.some((x) => x.id === t.id)), ...S.teams.filter((t) => t.comp === cid)];
+const teamsIn = (cid) => {
+  const seed = seedTeam(cid);
+  return [...(seed && !S.teams.some((x) => x.id === seed.id) ? [seed] : []), ...S.teams.filter((t) => t.comp === cid)];
+};
 const myTeam = (cid) => S.teams.find((t) => t.comp === cid && t.members.includes('me'));
 const members = (t) => `${t.members.length} ${t.members.length === 1 ? 'member' : 'members'}`;
-// Teams have a size limit set by the competition
-const maxSize = (cid) => COMP[cid].size[1];
-const isFull = (t) => t.members.length >= maxSize(t.comp);
-const spots = (t) => `${t.members.length} of ${maxSize(t.comp)} spots`;
+// Each team sets its own size limit (the rules differ per competition)
+const DEFAULT_MAX = 5;
+const teamMax = (t) => t.max || DEFAULT_MAX;
+const isFull = (t) => t.members.length >= teamMax(t);
+const spots = (t) => `${t.members.length} of ${teamMax(t)} spots`;
 const myRoles = (cid) => (S.cards[cid] ? S.cards[cid].canDo : []);
 const teamRoles = (t) => [...new Set(t.members.flatMap((m) => (m === 'me' ? myRoles(t.comp) : P[m].canDo)))];
 const needsOf = (t) => t.needs || [];
@@ -186,7 +252,7 @@ function recommendations(cid) {
   const mine = myTeam(cid);
   if (mine && isFull(mine)) return [];
   // Anyone you (or they) passed on is not shown again in this competition
-  const people = PEOPLE.filter((p) => p.comps.includes(cid) && !inATeam(p.id, cid) && !passed(cid, 'person', p.id))
+  const people = demoPeople(cid).filter((p) => !inATeam(p.id, cid) && !passed(cid, 'person', p.id))
     .map((p) => ({ kind: 'person', ref: p.id, score: personScore(p, cid) }));
   const teams = mine ? [] : teamsIn(cid).filter((t) => !t.members.includes('me') && !isFull(t) && !passed(cid, 'team', t.id))
     .map((t) => ({ kind: 'team', ref: t.id, score: teamScore(t, cid) }));
@@ -240,7 +306,7 @@ function startChat(cid, kind, ref, text) {
 
 // How big the team would be after this chat ends in a team up
 const sizeAfter = (c) => voters(c).length;
-const tooBig = (c) => sizeAfter(c) > maxSize(c.comp);
+const tooBig = (c) => sizeAfter(c) > (sideTeam(c) ? teamMax(sideTeam(c)) : DEFAULT_MAX);
 
 // End a chat for a reason nobody has to explain
 function endChat(c, text, mine = true) {
@@ -256,14 +322,14 @@ function formTeam(c) {
   let fresh = false;
   const newcomer = c.kind === 'team' ? 'me' : c.ref;
   if (c.kind === 'team') {
-    team = S.teams.find((t) => t.id === c.ref) || JSON.parse(JSON.stringify(SEED_TEAMS.find((t) => t.id === c.ref)));
+    team = S.teams.find((t) => t.id === c.ref) || JSON.parse(JSON.stringify(teamsIn(cid).find((t) => t.id === c.ref)));
     if (!S.teams.includes(team)) S.teams.push(team);
     team.members.push('me');
   } else {
     team = myTeam(cid);
     if (team) team.members.push(c.ref);
     else {
-      team = { id: uid(), comp: cid, name: `${S.me.alias} & ${P[c.ref].alias}`, pitch: '', members: ['me', c.ref], needs: [], msgs: [], code: uid() };
+      team = { id: uid(), comp: cid, name: `${S.me.alias} & ${P[c.ref].alias}`, pitch: '', members: ['me', c.ref], needs: [], max: DEFAULT_MAX, msgs: [], code: uid() };
       fresh = true;
       S.teams.push(team);
     }
@@ -371,7 +437,7 @@ function modalAction(cid, kind, ref, mineAlready) {
   const c = chatWith(cid, kind, ref);
   if (c && c.status === 'closed') return '<p class="meta">This chat ended.</p>';
   if (c) return location.hash === `#/chat/${c.id}` ? '' : `<a class="btn btn--dark btn--sm" href="#/chat/${c.id}">Open chat</a>`;
-  if (!S.cards[cid]) return `<a class="btn btn--dark btn--sm" href="#/comp/${cid}">Join ${esc(COMP[cid].name)} to say hi</a>`;
+  if (!S.cards[cid]) return `<a class="btn btn--dark btn--sm" href="#/comp/${cid}">Join ${esc(compOf(cid).name)} to say hi</a>`;
   if (kind === 'team' && myTeam(cid)) return '<p class="meta">You are already in a team for this competition.</p>';
   const team = myTeam(cid);
   const full = kind === 'team' ? isFull(teamsIn(cid).find((t) => t.id === ref)) : team && isFull(team);
@@ -409,7 +475,6 @@ function personModal(pid, cid) {
         <div><dt>Role</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
         ${p.topics.length ? `<div><dt>Cares about</dt><dd class="chips">${roleChips(p.topics, card ? card.topics : [])}</dd></div>` : ''}
         <div><dt>Built</dt><dd>${esc(p.work)}</dd></div>
-        ${p.comps ? `<div><dt>Joined</dt><dd>${p.comps.map((x) => esc(COMP[x].name)).join(', ')}</dd></div>` : ''}
       </dl>
       ${known ? `
       <dl class="brief brief--locked">
@@ -432,7 +497,7 @@ function teamModal(tid, cid) {
         <span class="team-cups team-cups--big" aria-hidden="true">${t.members.map((m) => cupFor(personOf(m))).join('')}</span>
         <div class="pf__who">
           <h2 id="modal-title">${esc(t.name)}</h2>
-          <p class="meta">${esc(COMP[cid].name)} · ${spots(t)}</p>
+          <p class="meta">${esc(compOf(cid).name)} · ${spots(t)}</p>
         </div>
       </div>
       ${t.pitch ? `<div class="pf__tags"><p class="field__label">What we’re building</p><p class="pitch pitch--big">${esc(t.pitch)}</p></div>` : ''}
@@ -469,6 +534,31 @@ function closeModal() {
 }
 
 /* ---------- Screens ---------- */
+// The same profile as Half Sugar: visible from the start, then sealed details
+function profileFields(me) {
+  return `
+    <fieldset class="panel stack">
+      <legend><i class="ph ph-eye" aria-hidden="true"></i>Visible from the start</legend>
+      ${field('alias', 'Nickname', me.alias, { req: true, hint: 'Not your real name.' })}
+      <div class="row2">
+        ${select('field', 'Field (your flavor)', FIELDS.map((f) => [f, `${fieldName(f)}, ${flavorName(f)}`]), me.field || 'Design')}
+        ${field('city', 'City', me.city, { ph: 'e.g. Taipei' })}
+      </div>
+      ${select('meet', 'How you like to meet', MEETS, me.meet || 'both')}
+      ${field('curious', 'Curious about', (me.curious || []).join(', '), { ph: 'e.g. Climate tech, Pricing', hint: 'Separate with commas.' })}
+      ${field('fun', 'Fun fact', me.fun, { ph: 'Something people would not guess about you' })}
+    </fieldset>
+    <fieldset class="panel panel--locked stack">
+      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>Sealed until you team up</legend>
+      <div class="row2">${field('name', 'Real name', me.name)}${field('title', 'Job title', me.title)}</div>
+      <div class="row2">${field('school', 'School', me.school)}${field('company', 'Company', me.company)}</div>
+      <div class="row2">
+        ${select('contactType', 'Contact', CONTACTS, me.contactType || 'instagram')}
+        ${field('contact', 'Handle or link', me.contact, { ph: 'e.g. @yourname' })}
+      </div>
+    </fieldset>`;
+}
+
 function viewOnboard() {
   return `
   <main class="onboard">
@@ -477,47 +567,53 @@ function viewOnboard() {
       <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button">Dev: skip</button>
     </div>
     <h1 class="t-hero">Find teammates by what they can do.</h1>
-    <p class="lead">For competitions and hackathons. Schools and companies stay hidden until you team up.</p>
-    <form class="panel stack" data-form="me" novalidate>
-      ${field('alias', 'Nickname', '', { req: true, hint: 'Not your real name.' })}
-      <div class="row2">
-        ${select('field', 'Your field (your flavor)', FIELDS.map((f) => [f, `${fieldName(f)}, ${flavorName(f)}`]), 'Design')}
-        ${field('city', 'City', '', { ph: 'e.g. Taipei' })}
-      </div>
-      ${field('work', 'Something you built', '', { ph: 'e.g. A booking app used by 40 shops' })}
-      <p class="field__label">Revealed when you team up</p>
-      <div class="row2">
-        ${field('name', 'Real name', '')}
-        ${field('school', 'School or company', '')}
-      </div>
+    <p class="lead">Real competitions from Devpost, MLH and 獎金獵人. Names stay hidden until you team up.</p>
+    <form class="stack" data-form="me" novalidate>
+      ${profileFields({})}
+      <p class="hint">One profile for Half Sugar and team mode.</p>
       <p class="error" id="me-error" hidden>Please add a nickname.</p>
       <button class="btn btn--primary" type="submit">Start</button>
     </form>
   </main>`;
 }
 
+const PAGE = 30;
 function viewComps() {
-  return `
-  <header class="head"><div><h1>Competitions</h1><p class="sub">Pick one to find a team.</p></div></header>
-  <ul class="comp-list">${COMPS.map((c) => {
-    const joined = S.cards[c.id];
-    const team = myTeam(c.id);
-    const solo = PEOPLE.filter((p) => p.comps.includes(c.id) && !inATeam(p.id, c.id)).length;
-    const recruiting = teamsIn(c.id).filter((t) => !isFull(t) && !t.members.includes('me')).length;
-    return `
+  if (dataState === 'loading') return '<p class="empty">Loading competitions…</p>';
+  if (dataState === 'error') return '<p class="empty">Could not load competitions. Refresh to try again.</p>';
+  const q = (U.q || '').trim().toLowerCase();
+  const region = U.region || 'all';
+  const list = DATA.items.filter((c) => (region === 'all' || c.region === region)
+    && (!q || [c.name, c.organizer, c.kind, ...(c.tags || [])].join(' ').toLowerCase().includes(q)));
+  const mine = Object.keys(S.cards).filter((id) => COMP[id]);
+  const shown = U.shown || PAGE;
+  const updated = DATA.updatedAt ? dateText(Date.parse(DATA.updatedAt)) : '';
+  const row = (c) => `
     <li>
-      <a class="card comp" href="#/comp/${c.id}">
+      <a class="card comp" href="#/comp/${esc(c.id)}">
         <div class="comp__top">
           <span class="kind-chip">${esc(c.kind)}</span>
-          <span class="src src--${c.source}">${esc(SOURCES[c.source])}</span>
-          ${team ? '<span class="tag">In a team</span>' : joined ? '<span class="tag">Joined</span>' : ''}
+          <span class="src">${esc(REGION_NAME[c.region] || '')} · ${esc(SOURCE_NAME[c.source] || '')}</span>
+          ${myTeam(c.id) ? '<span class="tag">In a team</span>' : S.cards[c.id] ? '<span class="tag">Joined</span>' : ''}
         </div>
         <h2>${esc(c.name)}</h2>
-        <p class="meta">Sign up by ${dateText(deadlineOf(c))} · Teams of ${c.size[0]}–${c.size[1]} · ${esc(c.who)} · ${esc(c.where)}</p>
-        <p class="comp__counts"><span><b>${solo}</b> looking for a team</span><span><b>${recruiting}</b> teams recruiting</span></p>
+        ${c.organizer ? `<p class="meta">${esc(c.organizer)}</p>` : ''}
+        <p class="comp__when"><i class="ph ph-calendar-blank" aria-hidden="true"></i>${esc(whenText(c))}${c.where ? ` · ${esc(c.where)}` : ''}${c.prize ? ` · ${esc(c.prize)} in prizes` : ''}</p>
       </a>
     </li>`;
-  }).join('')}</ul>`;
+  return `
+  <header class="head"><div><h1>Competitions</h1><p class="sub">Open now. Pick one to find a team.</p></div></header>
+  <div class="comp-tools">
+    <div class="seg" role="group" aria-label="Where">
+      ${[['all', 'All'], ['tw', 'Taiwan'], ['intl', 'International']].map(([v, l]) => `<button class="seg__btn ${region === v ? 'is-on' : ''}" data-act="region" data-value="${v}" type="button" aria-pressed="${region === v}">${l}</button>`).join('')}
+    </div>
+    <label class="sr" for="c-search">Search competitions</label>
+    <input class="comp-search" id="c-search" type="search" placeholder="Search: AI, design, 創業…" value="${esc(U.q || '')}" autocomplete="off">
+  </div>
+  ${mine.length && !q ? `<h2 class="sec-title">You joined</h2><ul class="comp-list">${mine.map((id) => row(COMP[id])).join('')}</ul><h2 class="sec-title">All open competitions</h2>` : ''}
+  ${list.length ? `<ul class="comp-list">${list.slice(0, shown).map(row).join('')}</ul>` : '<p class="empty">Nothing matches. Try another word.</p>'}
+  ${list.length > shown ? `<button class="btn btn--ghost more-btn" data-act="more" type="button">Show more (${list.length - shown} left)</button>` : ''}
+  <p class="credit">${list.length} open · Updated ${esc(updated)} from ${DATA.sources.map((x) => `<a class="inline-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join(', ')}. Details and sign-up are on each official page.</p>`;
 }
 
 function cardForm(cid, withTeam) {
@@ -533,6 +629,7 @@ function cardForm(cid, withTeam) {
       ${select('hours', 'Time each week', HOURS, String(prev.hours))}
     </div>
     <div class="field"><p class="field__label">What you care about <span class="hint-inline">Optional</span></p>${roleChecks('topics', prev.topics || [], TOPICS)}</div>
+    ${withTeam ? select('max', 'Team size limit', [2, 3, 4, 5, 6, 8].map((n) => [String(n), `Up to ${n} people`]), '5', 'Check the official rules.') : ''}
     ${withTeam ? `<div class="field"><p class="field__label">Still need <span class="hint-inline">Optional. Can include a role you already have.</span></p>${roleChecks('needs', [])}</div>` : ''}
     <p class="error" id="card-error" hidden>Pick 1 or 2 roles${withTeam ? ' and add a team name' : ''}.</p>
     <div class="btnrow">
@@ -543,17 +640,21 @@ function cardForm(cid, withTeam) {
 }
 
 function viewComp(cid) {
-  const c = COMP[cid];
-  if (!c) return viewComps();
+  if (dataState === 'loading' && !S.compCache[cid]) return '<p class="empty">Loading…</p>';
+  const c = compOf(cid);
   const card = S.cards[cid];
   const team = myTeam(cid);
   const recs = card ? recommendations(cid) : [];
   return `
   <a class="back-link" href="#/comps"><i class="ph ph-arrow-left" aria-hidden="true"></i>All competitions</a>
   <section class="card comp comp--head">
-    <div class="comp__top"><span class="kind-chip">${esc(c.kind)}</span><span class="src src--${c.source}">${esc(SOURCES[c.source])}</span></div>
+    <div class="comp__top"><span class="kind-chip">${esc(c.kind)}</span><span class="src">${esc(REGION_NAME[c.region] || '')}</span></div>
     <h1>${esc(c.name)}</h1>
-    <p class="meta">Sign up by ${dateText(deadlineOf(c))} · Teams of ${c.size[0]}–${c.size[1]} · ${esc(c.who)} · ${esc(c.where)}</p>
+    ${c.organizer ? `<p class="meta">${esc(c.organizer)}</p>` : ''}
+    ${c.url ? `<p class="comp__when"><i class="ph ph-calendar-blank" aria-hidden="true"></i>${esc(whenText(c))}${c.where ? ` · ${esc(c.where)}` : ''}${c.prize ? ` · ${esc(c.prize)} in prizes` : ''}</p>` : ''}
+    ${c.summary ? `<p class="comp__sum">${esc(c.summary)}</p>` : ''}
+    ${(c.tags || []).length ? `<p class="chips">${roleChips(c.tags)}</p>` : ''}
+    ${c.url ? `<div class="btnrow"><a class="btn btn--ghost btn--sm" href="${esc(c.url)}" target="_blank" rel="noopener">Official page<i class="ph ph-arrow-up-right" aria-hidden="true"></i></a><span class="meta">Listed on ${esc(SOURCE_NAME[c.source] || '')}. Sign up there too.</span></div>` : ''}
   </section>
 
   ${!card ? (U.form ? cardForm(cid, U.form === 'team') : `
@@ -575,6 +676,7 @@ function viewComp(cid) {
   </section>`}
   ${team && isFull(team) ? `<p class="empty">Your team is full (${spots(team)}). Good luck!</p>` : `
   <h2 class="sec-title">${team ? 'People for your team' : 'Recommended for you'}</h2>
+  <p class="meta sample-note">Sample people for now. Real profiles show up here once sign-ups open.</p>
   ${recs.length ? recs.map((r) => (r.kind === 'person' ? personCard(P[r.ref], cid) : teamCard(teamsIn(cid).find((t) => t.id === r.ref), cid))).join('') : '<p class="empty">No one else is looking right now.</p>'}`}`}`;
 }
 
@@ -588,7 +690,7 @@ function viewChats() {
   ${S.teams.map((t) => `
   <a class="card my-team" href="#/team/${t.id}">
     <span class="team-cups" aria-hidden="true">${t.members.map((m) => cupFor(personOf(m))).join('')}</span>
-    <div><strong>${esc(t.name)}</strong><p class="meta">${esc(COMP[t.comp].name)} · ${spots(t)}</p></div>
+    <div><strong>${esc(t.name)}</strong><p class="meta">${esc(compOf(t.comp).name)} · ${spots(t)}</p></div>
     <i class="ph ph-caret-right" aria-hidden="true"></i>
   </a>`).join('')}` : ''}
   <h2 class="sec-title">Chats</h2>
@@ -596,7 +698,7 @@ function viewChats() {
     const last = c.msgs[c.msgs.length - 1];
     return `<li class="${done(c) ? 'is-cold' : ''}"><a href="#/chat/${c.id}">
       <span class="avatar avatar--cup" aria-hidden="true">${c.kind === 'team' ? cupFor(P[teamsIn(c.comp).find((t) => t.id === c.ref).members[0]]) : cupFor(P[c.ref])}</span>
-      <span class="threads__body"><strong>${esc(chatName(c))}</strong><small>${esc(COMP[c.comp].name)} · ${c.teamed ? 'Teamed up' : c.status === 'closed' ? 'Ended' : isCold(c) ? 'Gone cold' : `${sugarOf(c)}% sugar`}</small><span class="threads__last">${esc(last ? last.text : '')}</span></span>
+      <span class="threads__body"><strong>${esc(chatName(c))}</strong><small>${esc(compOf(c.comp).name)} · ${c.teamed ? 'Teamed up' : c.status === 'closed' ? 'Ended' : isCold(c) ? 'Gone cold' : `${sugarOf(c)}% sugar`}</small><span class="threads__last">${esc(last ? last.text : '')}</span></span>
     </a></li>`;
   }).join('')}</ul>` : '<p class="empty">No chats yet. Pick a competition and say hi to someone.</p>'}`;
 }
@@ -657,7 +759,7 @@ function viewChat(c) {
       <a class="back" href="#/chats" aria-label="Back"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
       <div>
         <h1><button class="name-btn name-btn--big" data-act="open" data-kind="${c.kind}" data-ref="${c.ref}" data-comp="${c.comp}" type="button">${esc(chatName(c))}<i class="ph ph-caret-right" aria-hidden="true"></i></button></h1>
-        <p class="sub">${esc(COMP[c.comp].name)}${group && p ? ' · with your team' : ''}</p>
+        <p class="sub">${esc(compOf(c.comp).name)}${group && p ? ' · with your team' : ''}</p>
         <div class="meta-row">${sugarMeter(sugar)}${live ? `<span class="expiry">${closesText(c)}</span>` : ''}</div>
       </div>
       <div class="chat__tools">
@@ -683,7 +785,7 @@ function viewTeam(t) {
   <section class="chat">
     <header class="chat__head">
       <a class="back" href="#/chats" aria-label="Back"><i class="ph ph-arrow-left" aria-hidden="true"></i></a>
-      <div><h1>${esc(t.name)}</h1><p class="sub">${esc(COMP[t.comp].name)}</p></div>
+      <div><h1>${esc(t.name)}</h1><p class="sub">${esc(compOf(t.comp).name)}</p></div>
       <div class="chat__tools"><button class="btn btn--ghost btn--sm" data-act="call" data-id="${t.id}" type="button"><i class="ph ph-video-camera" aria-hidden="true"></i>Team call</button></div>
     </header>
     <details class="panel team-info" ${U.teamOpen === t.id ? 'open' : ''} data-team="${t.id}">
@@ -691,10 +793,11 @@ function viewTeam(t) {
       <ul class="mates">${t.members.map((m) => {
         const p = personOf(m);
         const roles = m === 'me' ? myRoles(t.comp) : p.canDo;
-        return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${t.comp}" type="button" aria-label="${esc(p.real.name)}">${cupFor(p)}</button>`}<div><strong>${esc(m === 'me' ? `You (${S.me.name || S.me.alias})` : p.real.name)}</strong><p class="chips chips--sm">${roleChips(roles)}</p><p class="meta">${esc(m === 'me' ? S.me.school || '' : p.real.school)}${m === 'me' ? '' : ` · ${esc(p.real.contact)}`}</p></div></li>`;
+        return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${t.comp}" type="button" aria-label="${esc(p.real.name)}">${cupFor(p)}</button>`}<div><strong>${esc(m === 'me' ? `You (${S.me.name || S.me.alias})` : p.real.name)}</strong><p class="chips chips--sm">${roleChips(roles)}</p><p class="meta">${esc(m === 'me' ? [S.me.title, S.me.school, S.me.company].filter(Boolean).join(' · ') : p.real.school)}${m === 'me' ? '' : ` · ${esc(p.real.contact)}`}</p></div></li>`;
       }).join('')}</ul>
       <form class="stack pitch-form" data-form="teamedit" data-id="${t.id}" novalidate>
         ${field('pitch', 'What we’re building', t.pitch || '', { area: true, ph: 'One or two sentences. People looking for a team see this.' })}
+        ${select('max', 'Team size limit', [2, 3, 4, 5, 6, 8].filter((n) => n >= t.members.length).map((n) => [String(n), `Up to ${n} people`]), String(teamMax(t)))}
         ${isFull(t) ? '' : `<div class="field"><p class="field__label">Still need <span class="hint-inline">Optional</span></p>${roleChecks('needs', needsOf(t))}</div>`}
         <button class="btn btn--ghost btn--sm" type="submit">Save</button>
       </form>
@@ -715,28 +818,20 @@ function viewTeam(t) {
 }
 
 function viewMe() {
-  const me = S.me;
   return `
-  <header class="head"><div><h1>Me</h1><p class="sub">Others see the top half. The rest unlocks when you team up.</p></div></header>
-  <form class="panel stack" data-form="me" novalidate>
-    ${field('alias', 'Nickname', me.alias, { req: true })}
-    <div class="row2">
-      ${select('field', 'Your field (your flavor)', FIELDS.map((f) => [f, `${fieldName(f)}, ${flavorName(f)}`]), me.field)}
-      ${field('city', 'City', me.city)}
-    </div>
-    ${field('work', 'Something you built', me.work)}
-    <p class="field__label">Revealed when you team up</p>
-    <div class="row2">${field('name', 'Real name', me.name)}${field('school', 'School or company', me.school)}</div>
+  <header class="head"><div><h1>Me</h1><p class="sub">Shared with Half Sugar. The sealed part unlocks when you team up.</p></div></header>
+  <form class="stack" data-form="me" novalidate>
+    ${profileFields(S.me)}
     <p class="error" id="me-error" hidden>Please add a nickname.</p>
     <button class="btn btn--primary" type="submit">Save</button>
   </form>
   <section class="panel note">
-    <h2>Demo mode</h2>
-    <p>Not connected to a server. Data stays in this browser and the other people are simulated.</p>
-    <p><a class="inline-link" href="../">Back to the Half Sugar app</a></p>
+    <h2>About this version</h2>
+    <p>Competitions are real and refreshed daily. People and chats are samples until accounts exist, and your data stays in this browser.</p>
+    <p><a class="inline-link" href="../">Open Half Sugar</a></p>
     ${U.confirmReset
       ? '<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">Yes, clear it</button><button class="btn btn--ghost" data-act="reset-no" type="button">Cancel</button></div>'
-      : '<button class="btn btn--ghost" data-act="reset" type="button">Clear all data</button>'}
+      : '<button class="btn btn--ghost" data-act="reset" type="button">Clear team data</button>'}
   </section>`;
 }
 
@@ -794,8 +889,8 @@ const forms = {
   me(form, d) {
     if (!d.alias) { $('#me-error', form).hidden = false; return; }
     const first = !S.me;
-    S.me = { ...S.me, ...d };
-    save();
+    const curious = d.curious.split(/[,，、]/).map((t) => t.trim()).filter(Boolean).slice(0, 8);
+    saveMe({ ...(S.me || {}), ...d, curious });
     if (first) go('comps');
     else toast('Saved');
     render({ fresh: true });
@@ -806,8 +901,9 @@ const forms = {
     const canDo = fd.getAll('canDo');
     if (!canDo.length || canDo.length > MAX_ROLES || (form.dataset.team && !d.team)) { $('#card-error', form).hidden = false; return; }
     S.cards[cid] = { canDo, topics: fd.getAll('topics'), goal: d.goal, hours: Number(d.hours) };
+    if (COMP[cid]) S.compCache[cid] = COMP[cid];
     if (form.dataset.team) {
-      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], needs: fd.getAll('needs'), code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
+      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], needs: fd.getAll('needs'), max: Number(d.max) || DEFAULT_MAX, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
     }
     U.form = null;
     save();
@@ -829,6 +925,7 @@ const forms = {
     const t = S.teams.find((x) => x.id === form.dataset.id);
     if (!t) return;
     t.pitch = d.pitch;
+    t.max = Math.max(Number(d.max) || DEFAULT_MAX, t.members.length);
     if (!isFull(t)) t.needs = new FormData(form).getAll('needs');
     save();
     toast('Saved');
@@ -856,6 +953,8 @@ const forms = {
 /* ---------- Buttons ---------- */
 const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
+  region(el) { U.region = el.dataset.value; U.shown = PAGE; render(); },
+  more() { U.shown = (U.shown || PAGE) + PAGE; render(); },
   open(el) {
     U.hi = null;
     U.modal = { kind: el.dataset.kind, ref: el.dataset.ref, comp: el.dataset.comp };
@@ -934,13 +1033,13 @@ const acts = {
   'dev-time'(el) { const c = chatById(el.dataset.id); const before = sugarOf(c); c.devMin = (c.devMin || 0) + 5; if (before < REVEAL_AT && sugarOf(c) >= REVEAL_AT) c.msgs.push({ from: 'sys', text: 'Half sugar! You can team up now.', at: Date.now() }); save(); render(); },
   'dev-days'(el) { const c = chatById(el.dataset.id); c.msgs.forEach((m) => { m.at -= 3 * DAY + 60000; }); c.at -= 3 * DAY + 60000; save(); render(); },
   'dev-skip'() {
-    S.me = { alias: 'Dev', field: 'Engineering', city: 'Taipei', work: 'Built a team-up app', name: 'Dev User', school: 'Half Sugar U' };
-    save();
+    saveMe({ alias: 'Dev', field: 'Engineering', city: 'Taipei', meet: 'both', curious: ['Climate tech'], fun: 'Has tried every boba shop on one street', name: 'Dev User', title: 'Builder', school: 'Half Sugar U', company: '', contactType: 'instagram', contact: '@devuser' });
     go('comps');
     render({ fresh: true });
   },
   reset() { U.confirmReset = true; render(); },
   'reset-no'() { U.confirmReset = false; render(); },
+  // Clears teams, cards and chats. Your profile stays, since Half Sugar uses it too.
   'reset-yes'() { try { localStorage.removeItem(KEY); } catch { /* nothing */ } location.hash = ''; location.reload(); },
 };
 
@@ -956,6 +1055,15 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => {
   const c = e.target.closest('.cup-x');
   if (c && !c.closest('button, a')) c.classList.toggle('is-apart');
+});
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'c-search') return;
+  U.q = e.target.value;
+  U.shown = PAGE;
+  const at = e.target.selectionStart;
+  render({ focus: 'c-search' });
+  const el = document.getElementById('c-search');
+  if (el) el.setSelectionRange(at, at);
 });
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('[data-form]');
@@ -991,3 +1099,4 @@ setInterval(() => {
 }, 30000);
 
 render();
+loadComps();

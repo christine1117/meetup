@@ -438,3 +438,108 @@
   font-size: 0.8125rem;
   font-weight: 400;
 }
+
+/* Competition list: where switch and search */
+.comp-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+}
+
+.seg__btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.seg__btn.is-on {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.seg__btn:focus-visible {
+  outline: 2px solid var(--orange-deep);
+  outline-offset: 2px;
+}
+
+.comp-search {
+  flex: 1;
+  min-width: 200px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: #fffdf8;
+  font: inherit;
+}
+
+.comp h2 {
+  overflow-wrap: anywhere;
+}
+
+.comp__when {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--ink);
+  font-size: 0.875rem;
+}
+
+.comp__when i {
+  margin-right: 6px;
+  color: var(--orange-deep);
+  vertical-align: -2px;
+}
+
+.comp__sum {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.comp--head .chips,
+.comp--head .btnrow {
+  margin-top: 12px;
+}
+
+.comp--head .btnrow {
+  align-items: center;
+}
+
+.comp--head .btn i {
+  margin-left: 4px;
+}
+
+.more-btn {
+  display: flex;
+  margin: 16px auto 0;
+}
+
+.credit {
+  margin: 24px 0 8px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.sample-note {
+  margin: -6px 0 12px;
+  font-size: 0.8125rem;
+}
