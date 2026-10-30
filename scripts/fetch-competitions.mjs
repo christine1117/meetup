@@ -137,10 +137,9 @@ function bhKind(words) {
   if (/音樂|歌唱|舞蹈|表演/.test(all)) return 'Music & stage';
   return 'Competition';
 }
-function bhSummary(desc) {
-  const text = clean(desc).replace(/^[一二三四五六七八九十]+、\s*[^\s「」]{0,8}(簡介|緣起|宗旨|說明|目的)\s*/, '');
-  return cut(text, 120);
-}
+// Drop a leading heading like "一、活動簡介" or "前言" so the summary starts with the point
+const BH_HEADING = /^([一二三四五六七八九十]+[、.．]\s*)?(活動|比賽|競賽|計畫)?(簡介|介紹|前言|緣起|宗旨|說明|目的|背景)\s*[:：]?\s*/;
+const bhSummary = (desc) => cut(clean(desc).replace(BH_HEADING, ''), 120);
 
 async function bhuntr() {
   const xml = await get('https://bhuntr.com/sitemap_v2_contest_latest.xml');
@@ -176,7 +175,8 @@ async function bhuntr() {
       url: `https://bhuntr.com/tw/competitions/${e.id}`,
       start: ev.startDate ? new Date(ev.startDate).toISOString() : null,
       deadline: new Date(end).toISOString(),
-      where: /Online/.test(mode) ? 'Online' : /Mixed/.test(mode) ? 'Online + in person' : /Offline/.test(mode) ? 'In person' : '',
+      // Nearly every bhuntr page says "mixed", which tells us nothing, so only clear answers are kept
+      where: /Online/.test(mode) ? 'Online' : /Offline/.test(mode) ? 'In person' : '',
       tags: words.filter((w) => !BH_GENERIC.has(w)).slice(0, 5),
       prize: '',
       summary: bhSummary(desc),
