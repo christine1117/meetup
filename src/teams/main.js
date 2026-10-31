@@ -18,24 +18,24 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031m';
-import { L } from '../shared/i18n.js?v=20261031m';
-import { logError } from '../shared/log.js?v=20261031m';
-import { whoAmI } from './forms.js?v=20261031m';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031n';
+import { L } from '../shared/i18n.js?v=20261031n';
+import { logError } from '../shared/log.js?v=20261031n';
+import { whoAmI } from './forms.js?v=20261031n';
 
-import { $ } from '../shared/core.js?v=20261031m';
-import { at } from '../shared/cup.js?v=20261031m';
-import { closesText } from '../shared/sugar.js?v=20261031m';
-import { S, U, saveMe } from './state.js?v=20261031m';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031m';
-import { loadComps } from './competitions.js?v=20261031m';
-import { go, route } from './router.js?v=20261031m';
-import { chatById } from './chats.js?v=20261031m';
-import { closeModal } from './views/modal.js?v=20261031m';
-import { curiousChecks } from './views/profile.js?v=20261031m';
-import { render } from './render.js?v=20261031m';
-import { autosave, formData, forms } from './forms.js?v=20261031m';
-import { acts } from './actions.js?v=20261031m';
+import { $ } from '../shared/core.js?v=20261031n';
+import { at } from '../shared/cup.js?v=20261031n';
+import { closesText } from '../shared/sugar.js?v=20261031n';
+import { S, U, saveMe } from './state.js?v=20261031n';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031n';
+import { loadComps } from './competitions.js?v=20261031n';
+import { go, route } from './router.js?v=20261031n';
+import { chatById } from './chats.js?v=20261031n';
+import { closeModal } from './views/modal.js?v=20261031n';
+import { curiousChecks } from './views/profile.js?v=20261031n';
+import { render } from './render.js?v=20261031n';
+import { autosave, formData, forms } from './forms.js?v=20261031n';
+import { acts } from './actions.js?v=20261031n';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -98,7 +98,6 @@ window.addEventListener('hashchange', () => {
   U.hi = null;
   U.leave = null;
   if (U.modal) closeModal();
-  U.confirmReset = false;
   U.authMsg = null;
   render();
 });

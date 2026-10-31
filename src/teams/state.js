@@ -1,8 +1,8 @@
 /* Saved data for team mode: your competition cards, teams and chats.
    Your profile is saved separately (see ../shared/profile.js). */
 
-import { readProfile, writeProfile } from '../shared/profile.js?v=20261031m';
-import { MAX_ROLES } from './options.js?v=20261031m';
+import { readProfile, writeProfile } from '../shared/profile.js?v=20261031n';
+import { MAX_ROLES } from './options.js?v=20261031n';
 
 export const KEY = 'halfsugar.teams.v1';
 export const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {} });
@@ -36,5 +36,5 @@ export function saveMe(me) {
   writeProfile(me);
 }
 syncMe();
-export const U = { form: null, hi: null, typing: {}, confirmReset: false, authMsg: null, busy: false, user: null, needProfile: false };
+export const U = { form: null, hi: null, typing: {}, authMsg: null, busy: false, user: null, needProfile: false };
 U.lastPath = null;

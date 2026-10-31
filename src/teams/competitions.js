@@ -4,12 +4,12 @@
    (../shared/contract.js), and formats dates. Each listing links back to
    its official page. Once you join one, a copy is kept so your team still
    works after it drops off the list. */
-import { L, LANG } from '../shared/i18n.js?v=20261031m';
+import { L, LANG } from '../shared/i18n.js?v=20261031n';
 
-import { logError } from '../shared/log.js?v=20261031m';
-import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031m';
-import { rest } from '../shared/supabase.js?v=20261031m';
-import { S } from './state.js?v=20261031m';
+import { logError } from '../shared/log.js?v=20261031n';
+import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031n';
+import { rest } from '../shared/supabase.js?v=20261031n';
+import { S } from './state.js?v=20261031n';
 
 export const DAY = 86400000;
 export const SOURCE_NAME = { devpost: 'Devpost', mlh: 'MLH', bhuntr: '獎金獵人' };

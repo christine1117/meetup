@@ -1,19 +1,19 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031m';
-import { logError } from '../shared/log.js?v=20261031m';
-import { L } from '../shared/i18n.js?v=20261031m';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031m';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031n';
+import { logError } from '../shared/log.js?v=20261031n';
+import { L } from '../shared/i18n.js?v=20261031n';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031n';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031m';
-import { isCold } from '../shared/sugar.js?v=20261031m';
-import { S, U, save, saveMe } from './state.js?v=20261031m';
-import { toast } from './ui.js?v=20261031m';
-import { MAX_ROLES } from './options.js?v=20261031m';
-import { COMP } from './competitions.js?v=20261031m';
-import { go } from './router.js?v=20261031m';
-import { isFull, withinRules } from './rules.js?v=20261031m';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031m';
-import { render } from './render.js?v=20261031m';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031n';
+import { isCold } from '../shared/sugar.js?v=20261031n';
+import { S, U, save, saveMe } from './state.js?v=20261031n';
+import { toast } from './ui.js?v=20261031n';
+import { MAX_ROLES } from './options.js?v=20261031n';
+import { COMP } from './competitions.js?v=20261031n';
+import { go } from './router.js?v=20261031n';
+import { isFull, withinRules } from './rules.js?v=20261031n';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031n';
+import { render } from './render.js?v=20261031n';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({

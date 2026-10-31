@@ -1,20 +1,20 @@
 /* What each button does (buttons carry data-act="name"). */
-import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031m';
-import { clearProfile } from '../shared/profile.js?v=20261031m';
-import { L, setLang } from '../shared/i18n.js?v=20261031m';
-import { logError } from '../shared/log.js?v=20261031m';
+import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031n';
+import { clearProfile } from '../shared/profile.js?v=20261031n';
+import { L, setLang } from '../shared/i18n.js?v=20261031n';
+import { logError } from '../shared/log.js?v=20261031n';
 
-import { later, pick } from '../shared/core.js?v=20261031m';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031m';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261031m';
-import { toast } from './ui.js?v=20261031m';
-import { DAY } from './competitions.js?v=20261031m';
-import { FRIENDS } from './sample-people.js?v=20261031m';
-import { go } from './router.js?v=20261031m';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031m';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031m';
-import { closeModal, renderModal } from './views/modal.js?v=20261031m';
-import { render } from './render.js?v=20261031m';
+import { later, pick } from '../shared/core.js?v=20261031n';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031n';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031n';
+import { toast } from './ui.js?v=20261031n';
+import { DAY } from './competitions.js?v=20261031n';
+import { FRIENDS } from './sample-people.js?v=20261031n';
+import { go } from './router.js?v=20261031n';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031n';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031n';
+import { closeModal, renderModal } from './views/modal.js?v=20261031n';
+import { render } from './render.js?v=20261031n';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
@@ -129,8 +129,6 @@ export const acts = {
     go('comps');
     render({ fresh: true });
   },
-  reset() { U.confirmReset = true; render(); },
-  'reset-no'() { U.confirmReset = false; render(); },
   // Clears teams, cards and chats. Your profile stays (it is saved separately).
   'reset-yes'() { try { localStorage.removeItem(KEY); } catch { /* nothing */ } location.hash = ''; location.reload(); },
 };

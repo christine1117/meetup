@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031m';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031n';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031m';
-import { field, select } from '../../shared/forms.js?v=20261031m';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031m';
-import { S, U } from '../state.js?v=20261031m';
-import { PROVIDERS } from '../../shared/account.js?v=20261031m';
-import { esc } from '../../shared/core.js?v=20261031m';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031n';
+import { field, select } from '../../shared/forms.js?v=20261031n';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031n';
+import { S, U } from '../state.js?v=20261031n';
+import { PROVIDERS } from '../../shared/account.js?v=20261031n';
+import { esc } from '../../shared/core.js?v=20261031n';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -31,9 +31,9 @@ export function profileFields(me) {
   return `
     <fieldset class="panel stack">
       <legend><i class="ph ph-eye" aria-hidden="true"></i>${L`Visible from the start`}</legend>
-      ${field('alias', L`Nickname`, me.alias, { req: true, hint: L`Not your real name.` })}
+      ${field('alias', L`Nickname`, me.alias, { req: true })}
       <div class="row2">
-        ${select('field', L`Field (your flavor)`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || 'Design')}
+        ${select('field', L`Field`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || 'Design')}
         ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
       </div>
       ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
@@ -113,12 +113,6 @@ export function viewMe() {
          <button class="btn btn--ghost" data-act="logout" type="button">${L`Log out`}</button>`
       : `<p>${L`Not signed in.`}</p>
          <a class="btn btn--dark btn--sm" href="#/account">${L`Sign in with Google or LinkedIn`}</a>`}
-  </section>
-  <section class="panel note">
-    <h2>${L`About this version`}</h2>
-    <p>${L`Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.`} <a class="inline-link" href="privacy.html">${L`Privacy`}</a></p>
-    ${U.confirmReset
-      ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
-      : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear team data`}</button>`}
+    <p class="hint"><a class="inline-link" href="privacy.html">${L`Privacy`}</a></p>
   </section>`;
 }

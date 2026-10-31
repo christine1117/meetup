@@ -29,14 +29,15 @@ HEADER = """/* Traditional Chinese for the interface. One line per English text.
 """
 
 # Names and slogans that stay in English in the Chinese interface
-KEEP_ENGLISH = ["Half Sugar", "My order", "Explore", "Brew", "Mystery Cup", "First Sip", "Pop the seal", "Refill", "Boba run",
+KEEP_ENGLISH = ["Half Sugar", "Explore", "Brew", "Mystery Cup", "First Sip", "Pop the seal", "Refill", "Boba run",
                 "Gone cold", "Devpost", "MLH", "LinkedIn", "Instagram", "Email"]
 SLOGANS = ["Boba chat, not coffee chat.", "Meet the person before the résumé.", "Conversation before credentials.",
            "I want to meet someone.", "I need someone for something.", "You can’t pick the flavor."]
 
 STYLE = f"""You translate a website's interface from English into Traditional Chinese as used in Taiwan.
-Write like a Taiwanese product team would: short, natural, everyday words, friendly but not cute.
-Avoid stiff or machine-sounding phrasing. Use full-width Chinese punctuation.
+Write like a Taiwanese product team would: short, clear, standard interface wording that is polite and
+neutral. Not chatty or spoken: avoid particles and fillers like 吧、啦、喔、一下、試試、就好.
+Avoid stiff or machine-sounding phrasing too. Use full-width Chinese punctuation.
 Keep these names in English exactly as they are: {", ".join(KEEP_ENGLISH)}.
 Keep {{0}}, {{1}}... placeholders exactly; they are filled with names or numbers.
 Keep any HTML tags as they are. Translate the meaning, not word for word.
