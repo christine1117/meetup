@@ -59,8 +59,8 @@ Rules:
     up to 5 short tags. en is always written in English and zh always in Traditional Chinese, whatever
     the language of the source: translate, never copy Chinese into en. If eligibility is given above,
     give it in both languages too. Write naturally, like a person from that place would, not word for word.
-    Keep brand and proper names as they are. For each team rule also give the track name and the quote
-    in both languages (track_en, track_zh, evidence_en, evidence_zh).
+    Keep brand and proper names as they are. For each team rule also give the track name in both
+    languages (track_en, track_zh).
 Return nothing that is not supported by the text."""
 
 
@@ -111,16 +111,15 @@ class Extractor:
 
     provider = "base"
 
-    def __init__(self, model: str, cache=None):
-        self.model, self.cache, self.calls = model, cache, 0
+    def __init__(self, model: str, cache=None, effort: str = "low"):
+        self.model, self.cache, self.calls, self.effort = model, cache, 0, effort
 
     def call(self, system: str, tool: dict, user: str, effort: str) -> Any:
         """One forced tool call; the provider's raw answer (dict or JSON text)."""
         raise NotImplementedError
 
     def ask(self, comp: RawCompetition, text: str) -> Any:
-        # One reading does many things at once (sizes per track, eligibility, two languages): room to think
-        return self.call(SYSTEM, TOOL, user_message(comp, text), "medium")
+        return self.call(SYSTEM, TOOL, user_message(comp, text), self.effort)
 
     def extract(self, comp: RawCompetition, text: str) -> Extraction:
         key = cache_key(self.provider, self.model, text)
@@ -141,8 +140,8 @@ class ClaudeExtractor(Extractor):
 
     provider = "anthropic"
 
-    def __init__(self, api_key: str, model: str, cache=None):
-        super().__init__(model, cache)
+    def __init__(self, api_key: str, model: str, cache=None, effort: str = "low"):
+        super().__init__(model, cache, effort)
         import anthropic  # only needed when this provider is used
 
         self.client = anthropic.Anthropic(api_key=api_key, timeout=90, max_retries=2)
@@ -164,24 +163,37 @@ class OpenAIExtractor(Extractor):
 
     provider = "openai"
 
-    def __init__(self, api_key: str, model: str, cache=None):
-        super().__init__(model, cache)
+    def __init__(self, api_key: str, model: str, cache=None, effort: str = "low"):
+        super().__init__(model, cache, effort)
         import openai  # only needed when this provider is used
 
-        self.client = openai.OpenAI(api_key=api_key, timeout=90, max_retries=2)
+        # The flex tier can take minutes to answer: a long timeout
+        self.client = openai.OpenAI(api_key=api_key, timeout=600, max_retries=2)
+        self.flex_ok = True
 
     def call(self, system, tool, user, effort):
-        # Reasoning models (gpt-5, o-series) think before answering: give them room
-        extra = {"reasoning_effort": effort} if self.model.startswith(("gpt-5", "o1", "o3", "o4")) else {}
-        response = self.client.chat.completions.create(
+        reasoning = self.model.startswith(("gpt-5", "o1", "o3", "o4"))
+        request = dict(
             model=self.model,
             max_completion_tokens=16000,
-            **extra,
+            # Reasoning models think before answering; that thinking is billed like the answer
+            **({"reasoning_effort": effort} if reasoning else {}),
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             tools=[{"type": "function", "function": {"name": tool["name"], "description": tool["description"],
                                                      "parameters": tool["input_schema"]}}],
             tool_choice={"type": "function", "function": {"name": tool["name"]}},
         )
+        response = None
+        if reasoning and self.flex_ok:
+            # Flex: the same model and answer at about half the price, only slower (fine for a nightly crawl)
+            try:
+                response = self.client.chat.completions.create(**request, service_tier="flex")
+            except Exception as err:
+                if "service_tier" in str(err) or "flex" in str(err).lower():
+                    self.flex_ok = False  # not offered for this model: stop trying
+                response = None           # busy or not offered: ask again at the normal price
+        if response is None:
+            response = self.client.chat.completions.create(**request)
         choice = response.choices[0]
         if not choice.message.tool_calls:
             raise ValueError(f"no answer in the expected shape (finish_reason={choice.finish_reason})")
@@ -194,7 +206,7 @@ DEFAULT_MODEL = {"anthropic": "claude-sonnet-5-5", "openai": "gpt-5-mini"}
 def make_extractor(cfg, cache=None) -> Extractor | None:
     """Claude if ANTHROPIC_API_KEY is set, otherwise OpenAI if OPENAI_API_KEY is set, otherwise none."""
     if cfg.anthropic_api_key:
-        return ClaudeExtractor(cfg.anthropic_api_key, cfg.llm_model or DEFAULT_MODEL["anthropic"], cache)
+        return ClaudeExtractor(cfg.anthropic_api_key, cfg.llm_model or DEFAULT_MODEL["anthropic"], cache, cfg.llm_effort)
     if cfg.openai_api_key:
-        return OpenAIExtractor(cfg.openai_api_key, cfg.llm_model or DEFAULT_MODEL["openai"], cache)
+        return OpenAIExtractor(cfg.openai_api_key, cfg.llm_model or DEFAULT_MODEL["openai"], cache, cfg.llm_effort)
     return None

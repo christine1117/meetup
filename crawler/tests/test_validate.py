@@ -149,13 +149,13 @@ def test_listing_category_region_and_languages_reach_the_website():
     lst = Listing(category="design", region="tw",
                   en=Texts(name="Tsinghua Mask Teaching Award", organizer="National Tsing Hua University", summary="Teaching awards."),
                   zh=Texts(name="清華光罩教學獎", organizer="國立清華大學", summary="教學獎項。"))
-    ex = Extraction(team_rules=[rule("每隊2至4人", min_members=2, max_members=4, track_en=None, evidence_en="2 to 4 people per team")], listing=lst)
+    ex = Extraction(team_rules=[rule("每隊2至4人", min_members=2, max_members=4, track_en=None)], listing=lst)
     c = comp(region="intl")
     rec = listing_record(c, decide(c, ex, src))
     assert rec["region"] == "tw", "the LLM's region wins over the old keyword guess"
     assert rec["category"] == "design" and rec["kind"] == "Design"
     assert rec["i18n"]["en"]["name"] == "Tsinghua Mask Teaching Award"
-    assert rec["tracks"][0]["evidence_en"] == "2 to 4 people per team"
+    assert rec["tracks"][0]["max"] == 4
 
 
 def test_no_limit_on_team_size():

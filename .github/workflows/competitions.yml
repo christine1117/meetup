@@ -5,6 +5,7 @@
 #   OPENAI_API_KEY or ANTHROPIC_API_KEY   lets an LLM read team-size rules (one is enough;
 #                                         without either, rules are not read)
 #   LLM_MODEL (a variable, optional)      a different model, e.g. gpt-5 instead of gpt-5-mini
+#   LLM_EFFORT (a variable, optional)     how much it thinks first: minimal, low (default), medium, high
 #   SUPABASE_URL               the database, once it is set up (optional)
 #   SUPABASE_SERVICE_ROLE_KEY  the database key for the crawler (optional)
 # The run log (what was listed, skipped, sent for review, and why) stays in the Actions tab.
@@ -23,7 +24,7 @@ concurrency: competitions
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,6 +52,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_EFFORT: ${{ vars.LLM_EFFORT }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run crawl

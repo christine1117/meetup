@@ -108,8 +108,7 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
         merged: dict[str, Track] = {}
         for r in good:
             k = track_key(r.track)
-            t = merged.get(k) or Track(name=r.track, evidence=r.evidence, name_en=r.track_en, name_zh=r.track_zh,
-                                       evidence_en=r.evidence_en, evidence_zh=r.evidence_zh)
+            t = merged.get(k) or Track(name=r.track, evidence=r.evidence, name_en=r.track_en, name_zh=r.track_zh)
             t.min = t.min if t.min is not None else r.min_members
             t.max = t.max if t.max is not None else r.max_members
             t.solo = t.solo if t.solo is not None else r.individual_allowed

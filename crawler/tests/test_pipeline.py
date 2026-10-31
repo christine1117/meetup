@@ -199,3 +199,33 @@ def test_long_pages_keep_eligibility_and_team_size_first():
     assert text.index("第0組") < text.index("參賽資格"), "still in page order"
     short = "我們歡迎組隊。每隊 2 至 5 人。"
     assert relevant(short) == "我們歡迎組隊。 每隊 2 至 5 人。", "short pages read as before"
+
+
+def test_openai_flex_tier_first_then_the_normal_price_if_busy():
+    args = json.dumps({"team_rules": []})
+    calls = []
+
+    def create(**kw):
+        calls.append(kw)
+        if kw.get("service_tier") == "flex" and len(calls) == 1:
+            raise RuntimeError("429 Resource unavailable, try again later")
+        call = SimpleNamespace(function=SimpleNamespace(arguments=args))
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(tool_calls=[call]))])
+
+    ex = llm_mod.OpenAIExtractor.__new__(llm_mod.OpenAIExtractor)
+    llm_mod.Extractor.__init__(ex, "gpt-5", FakeCache(), "low")
+    ex.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    ex.flex_ok = True
+    comp = RawCompetition(id="bh-f", source="bhuntr", region="tw", kind="Tech", name="F", url="https://example.com")
+    ex.extract(comp, "a")
+    assert calls[0]["service_tier"] == "flex" and calls[0]["reasoning_effort"] == "low"
+    assert "service_tier" not in calls[1], "busy: asked again at the normal price"
+    ex.extract(comp, "b")
+    assert calls[2]["service_tier"] == "flex", "busy once does not stop flex"
+
+
+def test_devpost_daily_counts_do_not_make_a_page_new():
+    from crawler.sources.devpost import strip_chrome
+    day1 = "Who can participate\n Ages 14 to 18 only\n 80 participants\n Teams of up to 4."
+    day2 = "Who can participate\n Ages 14 to 18 only\n 1,204 participants\n Teams of up to 4."
+    assert strip_chrome(day1) == strip_chrome(day2) and "participants" not in strip_chrome(day1)

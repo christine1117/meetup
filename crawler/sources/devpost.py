@@ -43,7 +43,9 @@ CHROME = re.compile(r"Devpost for Teams|private hackathons|Host a public hackath
                     r"|Best practices for planning|Upcoming events and on-demand", re.I)
 # Whole lines that are menu items: "Log in", "My projects", "Participants (80)", ...
 MENU = re.compile(r"^(?:Log in|Sign up|Overview|My projects|Participants \(\d+\)|Resources|Rules|Project gallery|Updates|Discussions"
-                  r"|Find more hackathons|View full rules|Planning guides|Hackathons|Projects|Portfolio)$", re.I)
+                  r"|Find more hackathons|View full rules|Planning guides|Hackathons|Projects|Portfolio"
+                  # counts that change every day: kept out, so an unchanged page is not read again
+                  r"|\d[\d,]* (?:participants?|projects?|submissions?))$", re.I)
 
 
 def strip_chrome(text: str) -> str:
@@ -71,7 +73,7 @@ def who_can_enter(text: str) -> PageText | None:
 
 
 def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
-    key = f"devpost5:{url}"
+    key = f"devpost6:{url}"
     saved = cache.get(key, max_age_days=7)
     if saved is not None:
         return [PageText(page=p["page"], text=strip_chrome(p["text"])) for p in saved]

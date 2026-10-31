@@ -98,8 +98,6 @@ class TeamRule(BaseModel):
     page: Optional[str] = Field(None, description="Which page the quote comes from, as labelled in the source text.")
     track_en: Optional[str] = Field(None, description="The track name in English (null if no track).")
     track_zh: Optional[str] = Field(None, description="The track name in Traditional Chinese as used in Taiwan (null if no track).")
-    evidence_en: Optional[str] = Field(None, description="The quote translated into English (the same as the quote if it is English).")
-    evidence_zh: Optional[str] = Field(None, description="The quote translated into Traditional Chinese (the same as the quote if it is Chinese).")
 
 
 class Eligibility(BaseModel):
