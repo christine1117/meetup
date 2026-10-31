@@ -1,0 +1,31 @@
+# Demo people in the database, by hand (Actions > Demo data > Run workflow):
+# "seed" adds 8 demo accounts with cards in the competitions you have cards in;
+# "clean" deletes every demo account again. Emails are made up (example.com).
+name: Demo data
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "seed: add demo people · clean: delete them all"
+        type: choice
+        options: [seed, clean]
+        default: seed
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q httpx
+      - env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python tools/demo_data.py ${{ inputs.action }}
