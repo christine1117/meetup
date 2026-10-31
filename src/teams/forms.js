@@ -1,19 +1,20 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031n';
-import { logError } from '../shared/log.js?v=20261031n';
-import { L } from '../shared/i18n.js?v=20261031n';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031n';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031p';
+import { logError } from '../shared/log.js?v=20261031p';
+import { L } from '../shared/i18n.js?v=20261031p';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031p';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031n';
-import { isCold } from '../shared/sugar.js?v=20261031n';
-import { S, U, save, saveMe } from './state.js?v=20261031n';
-import { toast } from './ui.js?v=20261031n';
-import { MAX_ROLES } from './options.js?v=20261031n';
-import { COMP } from './competitions.js?v=20261031n';
-import { go } from './router.js?v=20261031n';
-import { isFull, withinRules } from './rules.js?v=20261031n';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031n';
-import { render } from './render.js?v=20261031n';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031p';
+import { isCold } from '../shared/sugar.js?v=20261031p';
+import { S, U, save, saveMe } from './state.js?v=20261031p';
+import { toast } from './ui.js?v=20261031p';
+import { MAX_ROLES } from './options.js?v=20261031p';
+import { COMP } from './competitions.js?v=20261031p';
+import { go } from './router.js?v=20261031p';
+import { isFull, withinRules } from './rules.js?v=20261031p';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031p';
+import { render } from './render.js?v=20261031p';
+import { savedNote } from './views/profile.js?v=20261031p';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -55,7 +56,13 @@ async function keep(me) {
 // The Me page saves as you go (a ticked topic, a field you leave), so leaving the page loses nothing
 export async function autosave(form) {
   const d = formData(form);
-  if (d.alias) await keep(meFrom(d, form));
+  const error = $('#me-error', form);
+  if (error) error.hidden = !!d.alias;
+  if (!d.alias) return;
+  await keep(meFrom(d, form));
+  U.saved = true;
+  const state = $('#save-state');
+  if (state) state.innerHTML = savedNote();
 }
 
 export const forms = {

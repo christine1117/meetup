@@ -731,3 +731,84 @@
   font-weight: 600;
   color: var(--muted);
 }
+
+/* ---------- Settings card (My order): sections with the title on the left ---------- */
+
+.settings {
+  container-type: inline-size;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.set {
+  display: grid;
+  gap: 16px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.set + .set,
+.settings > form + .set {
+  border-top: 1px solid var(--line);
+}
+
+@container (min-width: 700px) {
+  .set {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 32px;
+  }
+}
+
+.set__info h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.set__info h2 i {
+  color: var(--orange-deep);
+}
+
+.set__info p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.set__body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.set__body > p {
+  margin: 0;
+}
+
+.set__body .btnrow {
+  align-items: center;
+  gap: 16px;
+}
+
+.set__error {
+  margin: 0;
+  padding: 0 clamp(18px, 3vw, 28px) 18px;
+}
+
+.save-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.save-state i {
+  color: #3f7d4e;
+}

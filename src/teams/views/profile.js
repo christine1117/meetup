@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031n';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031p';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031n';
-import { field, select } from '../../shared/forms.js?v=20261031n';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031n';
-import { S, U } from '../state.js?v=20261031n';
-import { PROVIDERS } from '../../shared/account.js?v=20261031n';
-import { esc } from '../../shared/core.js?v=20261031n';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031p';
+import { field, select } from '../../shared/forms.js?v=20261031p';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031p';
+import { S, U } from '../state.js?v=20261031p';
+import { PROVIDERS } from '../../shared/account.js?v=20261031p';
+import { esc } from '../../shared/core.js?v=20261031p';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -26,29 +26,36 @@ export function curiousChecks(picked, open = false) {
     <p class="hint" id="curious-full" hidden>${L`You can pick up to ${MAX_CURIOUS}. Untick one to choose another.`}</p>`;
 }
 
-// The profile: visible from the start, then sealed details
+// "Saved", once something on this page has been saved
+export const savedNote = () => (U.saved ? `<i class="ph ph-check" aria-hidden="true"></i>${L`Saved`}` : '');
+
+// One part of a settings card: its title and a short note on the left, its fields on the right
+const section = (icon, title, note, body) => `
+    <section class="set">
+      <div class="set__info"><h2><i class="ph ${icon}" aria-hidden="true"></i>${title}</h2>${note ? `<p>${note}</p>` : ''}</div>
+      <div class="set__body">${body}</div>
+    </section>`;
+
+// The profile: visible from the start, then sealed until you team up
 export function profileFields(me) {
-  return `
-    <fieldset class="panel stack">
-      <legend><i class="ph ph-eye" aria-hidden="true"></i>${L`Visible from the start`}</legend>
-      ${field('alias', L`Nickname`, me.alias, { req: true })}
-      <div class="row2">
-        ${select('field', L`Field`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || 'Design')}
-        ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
-      </div>
-      ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
-      <div class="field"><p class="field__label">${L`Curious about`} <span class="hint-inline">${L`Up to ${MAX_CURIOUS}`}</span></p><div data-curious>${curiousChecks(me.curious || [])}</div></div>
-      ${field('fun', L`Fun fact`, me.fun, { ph: L`Something people would not guess about you` })}
-    </fieldset>
-    <fieldset class="panel panel--locked stack">
-      <legend><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Sealed until you team up`}</legend>
-      <div class="row2">${field('name', L`Real name`, me.name)}${field('title', L`Job title`, me.title)}</div>
-      <div class="row2">${field('school', L`School`, me.school)}${field('company', L`Company`, me.company)}</div>
-      <div class="row2">
-        ${select('contactType', L`Contact`, CONTACTS.map(([v, l]) => [v, L(l)]), me.contactType || 'instagram')}
-        ${field('contact', L`Handle or link`, me.contact, { ph: L`e.g. @yourname` })}
-      </div>
-    </fieldset>`;
+  return section('ph-eye', L`Visible from the start`, L`Everyone can see this.`, `
+        <div class="row2">
+          ${field('alias', L`Nickname`, me.alias, { req: true })}
+          ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
+        </div>
+        <div class="row2">
+          ${select('field', L`Field`, FIELDS.map((f) => [f, L`${fieldName(f)}, ${flavorName(f)}`]), me.field || 'Design')}
+          ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
+        </div>
+        <div class="field"><p class="field__label">${L`Curious about`} <span class="hint-inline">${L`Up to ${MAX_CURIOUS}`}</span></p><div data-curious>${curiousChecks(me.curious || [])}</div></div>
+        ${field('fun', L`Fun fact`, me.fun, { ph: L`Something people would not guess about you` })}`)
+    + section('ph-lock-simple', L`Sealed until you team up`, L`Only your teammates see this, after you team up.`, `
+        <div class="row2">${field('name', L`Real name`, me.name)}${field('title', L`Job title`, me.title)}</div>
+        <div class="row2">${field('school', L`School`, me.school)}${field('company', L`Company`, me.company)}</div>
+        <div class="row2">
+          ${select('contactType', L`Contact`, CONTACTS.map(([v, l]) => [v, L(l)]), me.contactType || 'instagram')}
+          ${field('contact', L`Handle or link`, me.contact, { ph: L`e.g. @yourname` })}
+        </div>`);
 }
 
 // Sign in with Google or LinkedIn (no passwords)
@@ -65,7 +72,7 @@ export function authForms() {
     return `
     <form class="stack" data-form="me" novalidate>
       <p class="lead">${L`You are signed in. Fill in your profile to start.`}</p>
-      ${profileFields({ name: (U.user && U.user.name) || '' })}
+      <div class="settings">${profileFields({ name: (U.user && U.user.name) || '' })}</div>
       <p class="error" id="me-error" hidden>${L`Please add a nickname.`}</p>
       <button class="btn btn--primary" type="submit">${L`Save profile`}</button>
       <p class="hint">${L`Signed in as ${esc((U.user && U.user.email) || '')}.`} <button class="link-btn" data-act="logout" type="button">${L`Not you? Log out`}</button></p>
@@ -100,19 +107,16 @@ export function viewAccount() {
 
 export function viewMe() {
   return `
-  <header class="head"><div><h1>${L`My order`}</h1><p class="sub">${L`The sealed part unlocks when you team up.`}</p></div></header>
-  <form class="stack" data-form="me" data-auto="1" novalidate>
-    ${profileFields(S.me)}
-    <p class="error" id="me-error" hidden>${L`Please add a nickname.`}</p>
-    <button class="btn btn--primary" type="submit">${L`Save`}</button>
-  </form>
-  <section class="panel note">
-    <h2>${L`Account`}</h2>
-    ${U.user
+  <header class="head"><h1>${L`My order`}</h1><p class="save-state" id="save-state" role="status">${savedNote()}</p></header>
+  <div class="settings">
+    <form data-form="me" data-auto="1" novalidate>
+      ${profileFields(S.me)}
+      <p class="error set__error" id="me-error" hidden>${L`Please add a nickname.`}</p>
+    </form>
+    ${section('ph-user-circle', L`Account`, '', U.user
       ? `<p>${L`Signed in as ${`<b>${esc(U.user.email)}</b>`}. Your profile is saved to your account.`}</p>
-         <button class="btn btn--ghost" data-act="logout" type="button">${L`Log out`}</button>`
+         <div class="btnrow"><button class="btn btn--ghost btn--sm" data-act="logout" type="button">${L`Log out`}</button><a class="inline-link" href="privacy.html">${L`Privacy`}</a></div>`
       : `<p>${L`Not signed in.`}</p>
-         <a class="btn btn--dark btn--sm" href="#/account">${L`Sign in with Google or LinkedIn`}</a>`}
-    <p class="hint"><a class="inline-link" href="privacy.html">${L`Privacy`}</a></p>
-  </section>`;
+         <div class="btnrow"><a class="btn btn--dark btn--sm" href="#/account">${L`Sign in with Google or LinkedIn`}</a><a class="inline-link" href="privacy.html">${L`Privacy`}</a></div>`)}
+  </div>`;
 }

@@ -18,24 +18,24 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031n';
-import { L } from '../shared/i18n.js?v=20261031n';
-import { logError } from '../shared/log.js?v=20261031n';
-import { whoAmI } from './forms.js?v=20261031n';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031p';
+import { L } from '../shared/i18n.js?v=20261031p';
+import { logError } from '../shared/log.js?v=20261031p';
+import { whoAmI } from './forms.js?v=20261031p';
 
-import { $ } from '../shared/core.js?v=20261031n';
-import { at } from '../shared/cup.js?v=20261031n';
-import { closesText } from '../shared/sugar.js?v=20261031n';
-import { S, U, saveMe } from './state.js?v=20261031n';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031n';
-import { loadComps } from './competitions.js?v=20261031n';
-import { go, route } from './router.js?v=20261031n';
-import { chatById } from './chats.js?v=20261031n';
-import { closeModal } from './views/modal.js?v=20261031n';
-import { curiousChecks } from './views/profile.js?v=20261031n';
-import { render } from './render.js?v=20261031n';
-import { autosave, formData, forms } from './forms.js?v=20261031n';
-import { acts } from './actions.js?v=20261031n';
+import { $ } from '../shared/core.js?v=20261031p';
+import { at } from '../shared/cup.js?v=20261031p';
+import { closesText } from '../shared/sugar.js?v=20261031p';
+import { S, U, saveMe } from './state.js?v=20261031p';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031p';
+import { loadComps } from './competitions.js?v=20261031p';
+import { go, route } from './router.js?v=20261031p';
+import { chatById } from './chats.js?v=20261031p';
+import { closeModal } from './views/modal.js?v=20261031p';
+import { curiousChecks } from './views/profile.js?v=20261031p';
+import { render } from './render.js?v=20261031p';
+import { autosave, formData, forms } from './forms.js?v=20261031p';
+import { acts } from './actions.js?v=20261031p';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -48,6 +48,15 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => {
   const c = e.target.closest('.cup-x');
   if (c && !c.closest('button, a')) c.classList.toggle('is-apart');
+});
+// The My order page also saves while you type, once you pause
+let typingPause;
+document.addEventListener('input', (e) => {
+  const auto = e.target.form && e.target.form.dataset.auto && e.target.name !== 'curious' ? e.target.form : null;
+  if (auto) {
+    clearTimeout(typingPause);
+    typingPause = setTimeout(() => autosave(auto), 700);
+  }
 });
 document.addEventListener('input', (e) => {
   if (e.target.id !== 'c-search') return;
@@ -99,6 +108,7 @@ window.addEventListener('hashchange', () => {
   U.leave = null;
   if (U.modal) closeModal();
   U.authMsg = null;
+  U.saved = false;
   render();
 });
 setInterval(() => {

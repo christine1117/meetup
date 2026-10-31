@@ -1,20 +1,20 @@
 /* What each button does (buttons carry data-act="name"). */
-import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031n';
-import { clearProfile } from '../shared/profile.js?v=20261031n';
-import { L, setLang } from '../shared/i18n.js?v=20261031n';
-import { logError } from '../shared/log.js?v=20261031n';
+import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031p';
+import { clearProfile } from '../shared/profile.js?v=20261031p';
+import { L, setLang } from '../shared/i18n.js?v=20261031p';
+import { logError } from '../shared/log.js?v=20261031p';
 
-import { later, pick } from '../shared/core.js?v=20261031n';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031n';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261031n';
-import { toast } from './ui.js?v=20261031n';
-import { DAY } from './competitions.js?v=20261031n';
-import { FRIENDS } from './sample-people.js?v=20261031n';
-import { go } from './router.js?v=20261031n';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031n';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031n';
-import { closeModal, renderModal } from './views/modal.js?v=20261031n';
-import { render } from './render.js?v=20261031n';
+import { later, pick } from '../shared/core.js?v=20261031p';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031p';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031p';
+import { toast } from './ui.js?v=20261031p';
+import { DAY } from './competitions.js?v=20261031p';
+import { FRIENDS } from './sample-people.js?v=20261031p';
+import { go } from './router.js?v=20261031p';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031p';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031p';
+import { closeModal, renderModal } from './views/modal.js?v=20261031p';
+import { render } from './render.js?v=20261031p';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
