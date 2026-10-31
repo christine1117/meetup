@@ -199,3 +199,27 @@ def test_long_pages_keep_eligibility_and_team_size_first():
     assert text.index("第0組") < text.index("參賽資格"), "still in page order"
     short = "我們歡迎組隊。每隊 2 至 5 人。"
     assert relevant(short) == "我們歡迎組隊。 每隊 2 至 5 人。", "short pages read as before"
+
+
+def test_second_reading_asks_only_about_numbers_and_is_cached():
+    from crawler.extract.schema import TeamRule
+    asked = []
+
+    class Fake(llm_mod.Extractor):
+        provider = "fake"
+
+        def call(self, system, tool, user, effort):
+            asked.append((tool["name"], user, effort))
+            return {"checks": [{"rule": 0, "size_ok": True}]}
+
+    ex = Fake("m", FakeCache())
+    c = RawCompetition(id="bh-v", source="bhuntr", region="tw", kind="Tech", name="RegTech", url="https://example.com")
+    rules = [TeamRule(min_members=2, max_members=6, evidence="1名組長及1~5名組員"), TeamRule(individual_allowed=True, evidence="可個人參賽")]
+    got = ex.verify(c, rules)
+    assert got.checks[0].size_ok
+    name, user, effort = asked[0]
+    assert name == "record_checks" and effort == "low"
+    assert '"rule": 0' in user and '"rule": 1' not in user, "only rules that give a number are checked"
+    ex.verify(c, rules)
+    assert len(asked) == 1, "the second time comes from the cache"
+    assert ex.verify(c, [rules[1]]).checks == [] and len(asked) == 1, "nothing to check, nothing asked"

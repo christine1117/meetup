@@ -8,7 +8,13 @@
 | Overview says 2–4, rules page says 3–5         | conflict: sizes not published, review     |
 | "最多 5 名學生及 1 名指導老師"                    | mentors kept apart from participants      |
 | The quote is not in the source text            | that rule's sizes are not published       |
+| A second reading says the quote does not say so| that rule's sizes are not published       |
 | The LLM says it is unsure                      | sizes not published, review               |
+
+The code only checks what needs no understanding of the wording: the quote is on
+the page, min <= max, two pages agree. Whether "1名組長及1~5名組員" means 2–6 is
+for a second, separate LLM reading (llm.Extractor.verify). Without one (no LLM
+this run), a simpler pattern check is used instead.
 
 Pure functions: tested in crawler/tests/test_validate.py.
 """
@@ -18,7 +24,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from .schema import Decision, Extraction, Issue, RawCompetition, TeamRule, Track
+from .schema import Decision, Extraction, Issue, RawCompetition, TeamRule, Track, Verification
 
 MENTOR = re.compile(r"指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|advisers?|coach(?:es)?|supervisors?", re.I)
 NUMBER = re.compile(r"\d+|[一二兩三四五六七八九十]+")
@@ -52,8 +58,6 @@ PEOPLE = (r"(?:人|名|位|成員|隊員|組員|組長|隊長|學生|參賽者|m
 PEOPLE_AFTER = re.compile(rf"^\)?(?:\s*\(\s*\d+\s*\))?(?:\s*(?:-|–|—|~|～|至|到|to|and|or|,)\s*(?:or\s+)?(?:{NUM_TOKEN})){{0,3}}\s*(?:名|位|個)?\s*(?:的)?\s*{PEOPLE}", re.I)
 TEAM_NEAR = re.compile(r"隊|組|團|teams?\b|groups?\b|squads?\b|crews?\b", re.I)
 SOLO = re.compile(r"solo|individual|alone|on your own|by yourself|個人|單人|獨立參賽", re.I)
-# A track only for individuals ("僅限個人報名", "compete individually"): not a team size to show
-INDIVIDUAL_ONLY = re.compile(r"僅限個人|限個人|僅接受個人|個人賽|單一作者|individual(?:ly)? only|compete individually|solo only|single author", re.I)
 # Roles that add up to a team: "1名組長及1~5名組員" is 2 to 6 people (mentors are not roles here)
 ROLE = re.compile(rf"({NUM_TOKEN})(?:\s*(?:-|–|~|～|至|到)\s*({NUM_TOKEN}))?\s*(?:名|位|個)?\s*(?:的)?\s*"
                   r"(組長|隊長|組員|隊員|成員|學生|leaders?|captains?|members?|students?)", re.I)
@@ -124,8 +128,8 @@ def track_key(name: str | None) -> str:
     return norm(name or "") or "*"
 
 
-def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Decision:
-    """Turn one LLM answer into what may be published."""
+def decide(comp: RawCompetition, ex: Extraction | None, source_text: str, checks: Verification | None = None) -> Decision:
+    """Turn one LLM answer into what may be published. checks: the second reading, if there was one."""
     if ex is None:
         # Nothing to read (MLH lists no rules text): a hackathon is listed, size on the official page
         if comp.team_by_default and not (source_text or "").strip():
@@ -138,8 +142,9 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
     if ex.needs_review:
         issues.append(Issue(code="llm_unsure", detail=ex.review_reason or "The LLM marked this as unclear."))
 
+    second = {c.rule: c for c in checks.checks} if checks is not None else None
     good: list[TeamRule] = []
-    for r in ex.team_rules:
+    for idx, r in enumerate(ex.team_rules):
         where = f"{r.track or 'all'}: \"{r.evidence[:80]}\""
         if not quoted(r.evidence, source_text):
             issues.append(Issue(code="evidence_not_found", detail=f"Quote not in the page, sizes not published ({where})"))
@@ -147,16 +152,23 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
         if r.min_members is not None and r.max_members is not None and r.min_members > r.max_members:
             issues.append(Issue(code="min_greater_than_max", detail=f"min {r.min_members} > max {r.max_members} ({where})"))
             continue
-        # A quote that only talks about teachers cannot be a participant count
         sizes = [n for n in (r.min_members, r.max_members) if n is not None]
+        if second is not None:
+            # The second reading decides whether the quote really says this
+            c = second.get(idx)
+            if sizes and not (c and c.size_ok):
+                issues.append(Issue(code="size_not_confirmed", detail=f"A second reading did not confirm it: {c.reason if c else 'no answer'} ({where})"))
+                continue
+            if r.mentors_max is not None and not (c and c.mentors_ok):
+                r = r.model_copy(update={"mentors_max": None})
+            good.append(r)
+            continue
+        # No second reading: the simpler pattern check
         if sizes and not all(number_is_about_people(r.evidence, n) for n in sizes):
             issues.append(Issue(code="number_not_about_people", detail=f"The quote does not give that number of people ({where})"))
             continue
         if (r.min_members or r.max_members) and only_about_mentors(r.evidence):
             issues.append(Issue(code="mentors_counted", detail=f"The number seems to be about mentors ({where})"))
-            continue
-        # An individuals-only track (max 1) is not a team size: left out quietly
-        if (r.max_members == 1 or (r.max_members is None and r.min_members == 1)) and INDIVIDUAL_ONLY.search(r.evidence):
             continue
         # A mentor count is only kept if the quote gives that number for mentors
         if r.mentors_max is not None and r.mentors_max not in mentor_counts(r.evidence):

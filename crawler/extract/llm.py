@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 from typing import Any, Protocol
 
-from .schema import Extraction, RawCompetition
+from .schema import Extraction, RawCompetition, TeamRule, Verification
 
 PROMPT_VERSION = "5"
 
@@ -87,6 +88,37 @@ TOOL = {
 }
 
 
+# The second reading: a separate, narrow question for each team size the first reading found.
+# Understanding the wording ("1名組長及1~5名組員", "solo or a team of up to 4") is the LLM's job;
+# the code only checks what needs no understanding (the quote is on the page, min <= max ...).
+VERIFY_VERSION = "1"
+VERIFY_SYSTEM = """You double-check team sizes that another reader took from a competition page.
+For each claim you get one quote from the page and the numbers read from it.
+
+size_ok is true only if the quote itself says that many PEOPLE may be on one team:
+- count team members (participants, students, hackers...). Not entries or works submitted, prizes,
+  places, ages, judges, or the number of teams accepted.
+- mentors, teachers and advisors (指導老師) are not members.
+- simple arithmetic is fine: "1名組長及1~5名組員" supports min 2, max 6.
+- "solo or in a team of up to 4" supports min 1, max 4; "個人或兩人以下團體" supports min 1, max 2.
+- a null bound claims nothing. If any given number is not supported by the quote, size_ok is false.
+mentors_ok (only when mentors_max is given): true if the quote gives that many mentors/teachers/advisors.
+Give a short reason, above all when something is false. Check every claim."""
+
+VERIFY_TOOL = {
+    "name": "record_checks",
+    "description": "Record, for each claim, whether its quote supports it.",
+    "input_schema": inline_refs(Verification.model_json_schema()),
+}
+
+
+def verify_message(comp: RawCompetition, rules: list[TeamRule]) -> str:
+    claims = [json.dumps({"rule": i, "track": r.track, "min_members": r.min_members, "max_members": r.max_members,
+                          "mentors_max": r.mentors_max, "quote": r.evidence}, ensure_ascii=False)
+              for i, r in enumerate(rules) if r.min_members is not None or r.max_members is not None or r.mentors_max is not None]
+    return f"Competition: {comp.name}\n\nClaims:\n" + "\n".join(claims) if claims else ""
+
+
 def cache_key(provider: str, model: str, text: str) -> str:
     return "llm:" + hashlib.sha256(f"{provider}|{model}|{PROMPT_VERSION}|{text}".encode()).hexdigest()[:32]
 
@@ -110,8 +142,30 @@ class Extractor:
     def __init__(self, model: str, cache=None):
         self.model, self.cache, self.calls = model, cache, 0
 
-    def ask(self, comp: RawCompetition, text: str) -> Any:  # the provider's raw answer (dict or JSON text)
+    def call(self, system: str, tool: dict, user: str, effort: str) -> Any:
+        """One forced tool call; the provider's raw answer (dict or JSON text)."""
         raise NotImplementedError
+
+    def ask(self, comp: RawCompetition, text: str) -> Any:
+        # The first reading does many things at once (sizes per track, eligibility, two languages): more thought
+        return self.call(SYSTEM, TOOL, user_message(comp, text), "medium")
+
+    def verify(self, comp: RawCompetition, rules: list[TeamRule]) -> Verification:
+        """The second reading of every rule that gives a number."""
+        message = verify_message(comp, rules)
+        if not message:
+            return Verification()
+        key = "verify:" + hashlib.sha256(f"{self.provider}|{self.model}|{VERIFY_VERSION}|{message}".encode()).hexdigest()[:32]
+        if self.cache is not None:
+            saved = self.cache.get(key, max_age_days=180)
+            if saved is not None:
+                return Verification.model_validate(saved)
+        raw = self.call(VERIFY_SYSTEM, VERIFY_TOOL, message, "low")
+        self.calls += 1
+        result = Verification.model_validate_json(raw) if isinstance(raw, str) else Verification.model_validate(raw)
+        if self.cache is not None:
+            self.cache.set(key, result.model_dump())
+        return result
 
     def extract(self, comp: RawCompetition, text: str) -> Extraction:
         key = cache_key(self.provider, self.model, text)
@@ -138,14 +192,14 @@ class ClaudeExtractor(Extractor):
 
         self.client = anthropic.Anthropic(api_key=api_key, timeout=90, max_retries=2)
 
-    def ask(self, comp, text):
+    def call(self, system, tool, user, effort):
         response = self.client.messages.create(
             model=self.model,
             max_tokens=4000,
-            system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
-            tools=[TOOL],
-            tool_choice={"type": "tool", "name": TOOL["name"]},
-            messages=[{"role": "user", "content": user_message(comp, text)}],
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+            tools=[tool],
+            tool_choice={"type": "tool", "name": tool["name"]},
+            messages=[{"role": "user", "content": user}],
         )
         return next(b for b in response.content if b.type == "tool_use").input
 
@@ -161,17 +215,17 @@ class OpenAIExtractor(Extractor):
 
         self.client = openai.OpenAI(api_key=api_key, timeout=90, max_retries=2)
 
-    def ask(self, comp, text):
-        # Reasoning models (gpt-5, o-series) think before answering: give them room, and keep the effort low
-        extra = {"reasoning_effort": "low"} if self.model.startswith(("gpt-5", "o1", "o3", "o4")) else {}
+    def call(self, system, tool, user, effort):
+        # Reasoning models (gpt-5, o-series) think before answering: give them room
+        extra = {"reasoning_effort": effort} if self.model.startswith(("gpt-5", "o1", "o3", "o4")) else {}
         response = self.client.chat.completions.create(
             model=self.model,
-            max_completion_tokens=12000,
+            max_completion_tokens=16000,
             **extra,
-            messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": user_message(comp, text)}],
-            tools=[{"type": "function", "function": {"name": TOOL["name"], "description": TOOL["description"],
-                                                     "parameters": TOOL["input_schema"]}}],
-            tool_choice={"type": "function", "function": {"name": TOOL["name"]}},
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            tools=[{"type": "function", "function": {"name": tool["name"], "description": tool["description"],
+                                                     "parameters": tool["input_schema"]}}],
+            tool_choice={"type": "function", "function": {"name": tool["name"]}},
         )
         choice = response.choices[0]
         if not choice.message.tool_calls:

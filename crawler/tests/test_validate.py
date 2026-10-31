@@ -224,3 +224,29 @@ def test_sizes_written_in_other_ways_are_understood():
     assert not about("每人限提交1件作品", 1)
     assert not about("Prizes for the top 3 projects", 3)
     assert not about("Solo participation is not allowed. Each team must have a minimum of 4 members .", 6)
+
+
+def test_second_reading_decides_what_the_quote_says():
+    from crawler.extract.schema import Check, Verification
+    regtech = "每隊需由1名指導老師、1名組長及1~5名組員組成，即每隊伍之組成最少為2人。"
+    page = comp(pages=[PageText(page="description", text=regtech)])
+    ex = Extraction(team_rules=[rule(regtech, min_members=2, max_members=6, mentors_max=1)])
+    yes = Verification(checks=[Check(rule=0, size_ok=True, mentors_ok=True)])
+    d = decide(page, ex, regtech, yes)
+    assert d.status == "published" and (d.tracks[0].min, d.tracks[0].max, d.tracks[0].mentors) == (2, 6, 1)
+
+    # The second reading says no: the size is not published, and a person can see why
+    no = Verification(checks=[Check(rule=0, size_ok=False, reason="6 is not in the quote")])
+    d = decide(page, ex, regtech, no)
+    assert d.tracks == [] and d.issues[0].code == "size_not_confirmed" and "6 is not in the quote" in d.issues[0].detail
+
+    # A mentor count it does not confirm is dropped, the size stays
+    d = decide(page, ex, regtech, Verification(checks=[Check(rule=0, size_ok=True, mentors_ok=False)]))
+    assert (d.tracks[0].max, d.tracks[0].mentors) == (6, None)
+
+
+def test_second_reading_cannot_save_a_quote_that_is_not_on_the_page():
+    from crawler.extract.schema import Check, Verification
+    ex = Extraction(team_rules=[rule("每隊 2 至 5 人", min_members=2, max_members=5)])
+    d = decide(comp(), ex, "這頁沒有寫人數", Verification(checks=[Check(rule=0, size_ok=True)]))
+    assert d.tracks == [] and d.issues[0].code == "evidence_not_found"
