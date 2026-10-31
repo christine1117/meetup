@@ -24,7 +24,7 @@ meetup/
 │  │  ├─ sugar.js             糖度和「放涼」規則（純函式）
 │  │  ├─ forms.js             表單欄位
 │  │  ├─ profile.js           個人資料（存在瀏覽器的那份）、Curious about 的選項
-│  │  ├─ account.js           註冊、登入（email、Google、Apple、LinkedIn）、個人資料存進資料庫
+│  │  ├─ account.js           登入（只有 Google、LinkedIn，沒有密碼）、個人資料存進資料庫
 │  │  ├─ supabase.js          連到資料庫
 │  │  ├─ locales/zh.js        中文翻譯（每天自動補上新的）
 │  │  ├─ contract.js          比賽資料的格式約定
@@ -128,7 +128,7 @@ npm run version  部署前蓋版本號
 
 | 需要的東西 | 用什麼 | 為什麼 |
 |---|---|---|
-| 使用者註冊、登入 | Supabase Auth | 不用自己寫密碼系統 |
+| 使用者登入（Google、LinkedIn） | Supabase Auth | 不用自己寫登入系統，也不用保管密碼 |
 | 資料庫 | Supabase（Postgres） | 結構在 `supabase/migrations/`；權限用資料庫的 row-level security 檢查 |
 | 即時聊天 | Supabase Realtime | 同一個服務，不用另外架 |
 | 網站 | Cloudflare（meetup.christine921117.workers.dev） | 登入和資料都在 Supabase，網站本身不需要伺服器；GitHub 有新版本就自動更新 |

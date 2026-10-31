@@ -1,19 +1,19 @@
 /* What happens when a form is sent. */
-import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261031d';
-import { logError } from '../shared/log.js?v=20261031d';
-import { L } from '../shared/i18n.js?v=20261031d';
-import { MAX_CURIOUS } from '../shared/profile.js?v=20261031d';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031e';
+import { logError } from '../shared/log.js?v=20261031e';
+import { L } from '../shared/i18n.js?v=20261031e';
+import { MAX_CURIOUS } from '../shared/profile.js?v=20261031e';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031d';
-import { isCold } from '../shared/sugar.js?v=20261031d';
-import { S, U, save, saveMe } from './state.js?v=20261031d';
-import { toast } from './ui.js?v=20261031d';
-import { MAX_ROLES } from './options.js?v=20261031d';
-import { COMP } from './competitions.js?v=20261031d';
-import { go } from './router.js?v=20261031d';
-import { DEFAULT_MAX, isFull } from './rules.js?v=20261031d';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031d';
-import { render } from './render.js?v=20261031d';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031e';
+import { isCold } from '../shared/sugar.js?v=20261031e';
+import { S, U, save, saveMe } from './state.js?v=20261031e';
+import { toast } from './ui.js?v=20261031e';
+import { MAX_ROLES } from './options.js?v=20261031e';
+import { COMP } from './competitions.js?v=20261031e';
+import { go } from './router.js?v=20261031e';
+import { DEFAULT_MAX, isFull } from './rules.js?v=20261031e';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031e';
+import { render } from './render.js?v=20261031e';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -25,7 +25,9 @@ const meFrom = (d, form) => ({
 // The signed-in user, in the small shape the app keeps
 export async function whoAmI() {
   const u = await currentUser();
-  return u ? { id: u.id, email: u.email } : null;
+  // Google and LinkedIn give the real name, which goes in the sealed part
+  const meta = (u && u.user_metadata) || {};
+  return u ? { id: u.id, email: u.email, name: meta.full_name || meta.name || '' } : null;
 }
 
 // Ticked roles; "Other" is replaced by what was written next to it
@@ -49,54 +51,6 @@ export const forms = {
     if (first) go('comps');
     else toast(L`Saved`);
     render({ fresh: true });
-  },
-  async signup(form, d) {
-    const local = form.dataset.local === '1';
-    const me = local ? S.me : meFrom(d, form);
-    const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
-    if (!me || !me.alias) return stop(L`Please add a nickname.`);
-    if (!/^\S+@\S+\.\S+$/.test(d.email || '')) return stop(L`That email does not look right.`);
-    if ((d.password || '').length < 8) return stop(L`Use a password with at least 8 characters.`);
-    U.busy = true; U.authMsg = null; render();
-    try {
-      const result = await signUp(d.email, d.password, me);
-      U.busy = false;
-      if (result.confirm) {
-        U.auth = 'login';
-        U.authMsg = { ok: true, text: L`Almost there: we sent you an email. Confirm it, then log in here.` };
-        render({ fresh: true });
-        return;
-      }
-      saveMe(me);
-      U.user = await whoAmI();
-      toast(L`Account created`);
-      go('comps');
-      render({ fresh: true });
-    } catch (err) {
-      logError('signup', err);
-      stop(L(authMessage(err)));
-    }
-  },
-  async login(form, d) {
-    const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
-    if (!d.email || !d.password) return stop(L`Please enter your email and password.`);
-    U.busy = true; U.authMsg = null; render();
-    try {
-      const me = await logIn(d.email, d.password);
-      U.busy = false;
-      U.user = await whoAmI();
-      if (me) {
-        saveMe(me);
-        go('comps');
-      } else {
-        U.needProfile = true;  // signed in, but no profile yet
-        S.me = null;
-      }
-      render({ fresh: true });
-    } catch (err) {
-      logError('login', err);
-      stop(L(authMessage(err)));
-    }
   },
   card(form, d) {
     const fd = new FormData(form);

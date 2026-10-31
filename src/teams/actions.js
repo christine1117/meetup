@@ -1,21 +1,21 @@
 /* What each button does (buttons carry data-act="name"). */
-import { authMessage, logOut, signInWith } from '../shared/account.js?v=20261031d';
-import { clearProfile } from '../shared/profile.js?v=20261031d';
-import { L, setLang } from '../shared/i18n.js?v=20261031d';
-import { logError } from '../shared/log.js?v=20261031d';
+import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031e';
+import { clearProfile } from '../shared/profile.js?v=20261031e';
+import { L, setLang } from '../shared/i18n.js?v=20261031e';
+import { logError } from '../shared/log.js?v=20261031e';
 
-import { later, pick } from '../shared/core.js?v=20261031d';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031d';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261031d';
-import { toast } from './ui.js?v=20261031d';
-import { DAY } from './competitions.js?v=20261031d';
-import { FRIENDS } from './sample-people.js?v=20261031d';
-import { go } from './router.js?v=20261031d';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031d';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031d';
-import { closeModal, renderModal } from './views/modal.js?v=20261031d';
-import { PAGE } from './views/competitions.js?v=20261031d';
-import { render } from './render.js?v=20261031d';
+import { later, pick } from '../shared/core.js?v=20261031e';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031e';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031e';
+import { toast } from './ui.js?v=20261031e';
+import { DAY } from './competitions.js?v=20261031e';
+import { FRIENDS } from './sample-people.js?v=20261031e';
+import { go } from './router.js?v=20261031e';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031e';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031e';
+import { closeModal, renderModal } from './views/modal.js?v=20261031e';
+import { PAGE } from './views/competitions.js?v=20261031e';
+import { render } from './render.js?v=20261031e';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
@@ -101,22 +101,26 @@ export const acts = {
   lang(el) { setLang(el.dataset.value); render({ fresh: true }); },
   cat(el) { U.cat = el.dataset.value; U.shown = PAGE; render(); },
   async oauth(el) {
+    const [id, name] = PROVIDERS.find(([p]) => p === el.dataset.provider);
+    // Not switched on in Supabase yet: say so here instead of on an error page
+    if (U.providers && !U.providers.includes(id)) { U.authMsg = { text: L`${name} sign-in is not ready yet. Please try again later.` }; render(); return; }
+    U.busy = true; U.authMsg = null; render();
     try {
-      await signInWith(el.dataset.provider);
+      await signInWith(id);  // leaves for Google / LinkedIn
     } catch (err) {
       logError('oauth', err);
+      U.busy = false;
       U.authMsg = { text: L(authMessage(err)) };
       render();
     }
   },
-  'auth-mode'(el) { U.auth = el.dataset.mode; U.authMsg = null; render({ fresh: true }); },
   async logout() {
     await logOut();
     clearProfile();
     U.user = null;
     S.me = null;
     save();
-    U.auth = 'login';
+    U.needProfile = false;
     U.authMsg = { ok: true, text: L`You are logged out.` };
     go('comps');
     render({ fresh: true });

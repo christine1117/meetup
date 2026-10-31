@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toRows, fromRows, authMessage } from '../src/shared/account.js';
+import { toRows, fromRows, authMessage, PROVIDERS } from '../src/shared/account.js';
 
 const me = { alias: 'Tea', field: 'Design', field2: '', city: 'Taipei', meet: 'online', curious: ['AI'], fun: 'boba',
   name: 'Real Me', title: 'Designer', school: 'NTU', company: 'Acme', contactType: 'linkedin', contact: 'in/me' };
@@ -22,7 +22,11 @@ test('bad values are made safe before saving', () => {
 });
 
 test('sign-in errors read like plain English', () => {
-  assert.equal(authMessage({ message: 'Invalid login credentials' }), 'Email or password is not right.');
-  assert.equal(authMessage({ message: 'User already registered' }), 'This email already has an account. Log in instead.');
-  assert.equal(authMessage({ message: 'Email not confirmed' }), 'Please confirm your email first. Check your inbox.');
+  assert.equal(authMessage({ message: 'Unsupported provider: provider is not enabled' }), 'This sign-in is not ready yet. Please try again later.');
+  assert.equal(authMessage({ message: 'Failed to fetch' }), 'Could not reach the server. Check your connection.');
+  assert.equal(authMessage({ message: '???' }), 'Something went wrong. Please try again.');
+});
+
+test('only Google and LinkedIn, no passwords', () => {
+  assert.deepEqual(PROVIDERS.map(([id]) => id), ['google', 'linkedin_oidc']);
 });

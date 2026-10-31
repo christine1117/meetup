@@ -1,15 +1,15 @@
 /* HTML: the chat list and one chat. */
-import { L } from '../../shared/i18n.js?v=20261031d';
-import { tr } from '../../shared/i18n.js?v=20261031d';
+import { L } from '../../shared/i18n.js?v=20261031e';
+import { tr } from '../../shared/i18n.js?v=20261031e';
 
-import { esc } from '../../shared/core.js?v=20261031d';
-import { cupFor } from '../../shared/cup.js?v=20261031d';
-import { REVEAL_AT, closesText, isCold, sugarMeter, sugarOf } from '../../shared/sugar.js?v=20261031d';
-import { S, U } from '../state.js?v=20261031d';
-import { compOf } from '../competitions.js?v=20261031d';
-import { P } from '../sample-people.js?v=20261031d';
-import { PASS_TEXT, isGroup, needsOf, nick, personOf, spots, teamRoles, teamsIn, voters } from '../rules.js?v=20261031d';
-import { chatName, tooBig } from '../chats.js?v=20261031d';
+import { esc } from '../../shared/core.js?v=20261031e';
+import { cupFor } from '../../shared/cup.js?v=20261031e';
+import { REVEAL_AT, closesText, isCold, sugarMeter, sugarOf } from '../../shared/sugar.js?v=20261031e';
+import { S, U } from '../state.js?v=20261031e';
+import { compOf } from '../competitions.js?v=20261031e';
+import { P } from '../sample-people.js?v=20261031e';
+import { PASS_TEXT, isGroup, needsOf, nick, personOf, spots, teamRoles, teamsIn, voters } from '../rules.js?v=20261031e';
+import { chatName, tooBig } from '../chats.js?v=20261031e';
 
 export function viewChats() {
   const done = (c) => isCold(c) || c.status === 'closed';

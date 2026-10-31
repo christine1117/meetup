@@ -18,23 +18,25 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn } from '../shared/account.js?v=20261031d';
-import { logError } from '../shared/log.js?v=20261031d';
-import { whoAmI } from './forms.js?v=20261031d';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031e';
+import { L } from '../shared/i18n.js?v=20261031e';
+import { logError } from '../shared/log.js?v=20261031e';
+import { whoAmI } from './forms.js?v=20261031e';
 
-import { $ } from '../shared/core.js?v=20261031d';
-import { at } from '../shared/cup.js?v=20261031d';
-import { closesText } from '../shared/sugar.js?v=20261031d';
-import { S, U, saveMe } from './state.js?v=20261031d';
-import { MAX_CURIOUS } from '../shared/profile.js?v=20261031d';
-import { loadComps } from './competitions.js?v=20261031d';
-import { go, route } from './router.js?v=20261031d';
-import { chatById } from './chats.js?v=20261031d';
-import { closeModal } from './views/modal.js?v=20261031d';
-import { PAGE } from './views/competitions.js?v=20261031d';
-import { render } from './render.js?v=20261031d';
-import { formData, forms } from './forms.js?v=20261031d';
-import { acts } from './actions.js?v=20261031d';
+import { $ } from '../shared/core.js?v=20261031e';
+import { at } from '../shared/cup.js?v=20261031e';
+import { closesText } from '../shared/sugar.js?v=20261031e';
+import { S, U, saveMe } from './state.js?v=20261031e';
+import { MAX_CURIOUS } from '../shared/profile.js?v=20261031e';
+import { loadComps } from './competitions.js?v=20261031e';
+import { go, route } from './router.js?v=20261031e';
+import { chatById } from './chats.js?v=20261031e';
+import { closeModal } from './views/modal.js?v=20261031e';
+import { curiousChecks } from './views/profile.js?v=20261031e';
+import { PAGE } from './views/competitions.js?v=20261031e';
+import { render } from './render.js?v=20261031e';
+import { formData, forms } from './forms.js?v=20261031e';
+import { acts } from './actions.js?v=20261031e';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -57,13 +59,20 @@ document.addEventListener('input', (e) => {
   const el = document.getElementById('c-search');
   if (el) el.setSelectionRange(at, at);
 });
-// "Curious about": stop at MAX_CURIOUS ticks and say why
+// "Curious about": a ticked topic moves up to the picked ones (and back when unticked).
+// Stop at MAX_CURIOUS ticks and say why.
 document.addEventListener('change', (e) => {
   if (e.target.name !== 'curious') return;
-  const tooMany = e.target.checked && e.target.form.querySelectorAll('input[name="curious"]:checked').length > MAX_CURIOUS;
-  if (tooMany) e.target.checked = false;
-  const full = document.getElementById('curious-full');
-  if (full) full.hidden = !tooMany;
+  const wrap = e.target.closest('[data-curious]');
+  const picked = [...wrap.querySelectorAll('input[name="curious"]:checked')].map((x) => x.value);
+  if (e.target.checked && picked.length > MAX_CURIOUS) {
+    e.target.checked = false;
+    $('#curious-full', wrap).hidden = false;
+    return;
+  }
+  wrap.innerHTML = curiousChecks(picked, wrap.querySelector('details').open);
+  const same = [...wrap.querySelectorAll('input[name="curious"]')].find((x) => x.value === e.target.value);
+  if (same) same.focus({ preventScroll: true });
 });
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('[data-form]');
@@ -99,26 +108,39 @@ setInterval(() => {
   }
 }, 30000);
 
+// Back from Google / LinkedIn: say "Signing you in…" until the account answers
+const back = returningFromSignIn();
+U.busy = back;
+// Cancelled at Google / LinkedIn, or it failed there
+if (signInFailed()) {
+  U.authMsg = { text: L`Sign-in did not finish. Please try again.` };
+  history.replaceState(null, '', location.pathname + location.hash);
+}
 render();
 loadComps(render);
 
-// Already logged in on this browser? Bring the profile back from the account.
+// Already signed in on this browser, or just back from signing in? Bring the profile back.
 // (The account library only loads when there is a saved login.)
 let hasLogin = false;
 try { hasLogin = !!localStorage.getItem('halfsugar.auth'); } catch { /* storage is off */ }
-if (hasLogin || returningFromSignIn()) {
+if (hasLogin || back) {
   whoAmI().then(async (user) => {
     U.user = user;
-    if (user) {
-      const me = await loadProfile();
-      if (me) saveMe(me);
-      else if (!S.me) U.needProfile = true;
-    }
-    // Tidy the address after a sign-in link (?code=...), keeping the #/ route
-    if (returningFromSignIn()) history.replaceState(null, '', location.pathname + location.hash);
+    if (!user) return;
+    const me = await loadProfile();
+    if (me) saveMe(me);
+    else if (S.me) await saveProfile(S.me);  // a profile made in this browser before signing in
+    else U.needProfile = true;               // new here: fill in the profile next
+  }).catch((err) => {
+    logError('account', err);
+    if (back) U.authMsg = { text: L`Sign-in did not finish. Please try again.` };
+  }).finally(() => {
+    U.busy = false;
+    // Tidy the address (?code=...), keeping the #/ route
+    if (back) history.replaceState(null, '', location.pathname + location.hash);
     render();
-  }).catch((err) => logError('account', err));
+  });
 }
 
-// Which other accounts (Google, Apple, LinkedIn) are switched on, for the sign-in buttons
-enabledProviders().then((list) => { U.providers = list; if (list.length && !S.me) render(); });
+// Which sign-ins (Google, LinkedIn) are switched on in Supabase
+enabledProviders().then((list) => { U.providers = list; });

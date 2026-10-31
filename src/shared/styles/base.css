@@ -3808,11 +3808,12 @@ body.modal-open {
   margin-top: 12px;
 }
 
-/* Sign in with Google / Apple / LinkedIn */
+/* Sign in with Google / LinkedIn */
 .oauth {
   display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  max-width: 420px;
+  margin: 24px 0 12px;
 }
 
 .oauth__btn {
@@ -3825,19 +3826,3 @@ body.modal-open {
   font-size: 1.125rem;
 }
 
-.oauth__or {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.8125rem;
-}
-
-.oauth__or::before,
-.oauth__or::after {
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-  content: "";
-}

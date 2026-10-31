@@ -1,4 +1,6 @@
-/* Accounts: sign up, log in, log out, and the profile in the database.
+/* Accounts: sign in with Google or LinkedIn, log out, and the profile in the database.
+   There are no passwords: Supabase Auth talks to Google / LinkedIn and sends
+   people back here signed in (?code=... in the address).
 
    The profile is saved in two tables (supabase/migrations/0002_profiles.sql):
    - profiles        what everyone signed in can see
@@ -8,11 +10,9 @@
    A copy of the profile also stays in this browser (shared/profile.js), so the
    apps keep working the same way they always have. */
 
-import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031d';
-import { writeProfile } from './profile.js?v=20261031d';
-import { logError } from './log.js?v=20261031d';
-
-const PENDING = 'halfsugar.pendingProfile';
+import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031e';
+import { writeProfile } from './profile.js?v=20261031e';
+import { logError } from './log.js?v=20261031e';
 
 // App shape -> database rows
 export function toRows(userId, me) {
@@ -53,29 +53,25 @@ export function fromRows(profile, sealed = {}) {
 // Plain-English messages for what Supabase Auth says
 export function authMessage(err) {
   const m = String((err && err.message) || err || '');
-  if (/invalid login credentials/i.test(m)) return 'Email or password is not right.';
-  if (/already registered|already been registered|exists/i.test(m)) return 'This email already has an account. Log in instead.';
-  if (/password should be at least|weak password/i.test(m)) return 'Use a password with at least 8 characters.';
-  if (/email not confirmed/i.test(m)) return 'Please confirm your email first. Check your inbox.';
+  if (/not enabled|unsupported provider/i.test(m)) return 'This sign-in is not ready yet. Please try again later.';
   if (/rate limit|too many/i.test(m)) return 'Too many tries. Wait a minute and try again.';
-  if (/invalid.*email|email.*invalid|unable to validate email/i.test(m)) return 'That email does not look right.';
-  if (/not authorized|error sending|smtp|confirmation email/i.test(m)) return 'We could not send the confirmation email. Please try again later.';
   if (/fetch|network|load failed/i.test(m)) return 'Could not reach the server. Check your connection.';
   return 'Something went wrong. Please try again.';
 }
 
-/* Sign in with another account. Each one shows up only once it is switched on
-   in Supabase (Authentication > Sign In / Providers), so nothing breaks before. */
-export const PROVIDERS = [['google', 'Google', 'ph-google-logo'], ['apple', 'Apple', 'ph-apple-logo'], ['linkedin_oidc', 'LinkedIn', 'ph-linkedin-logo']];
+/* The ways to sign in. Each is switched on in Supabase (Authentication >
+   Sign In / Providers) with the keys from Google Cloud / LinkedIn Developers. */
+export const PROVIDERS = [['google', 'Google', 'ph-google-logo'], ['linkedin_oidc', 'LinkedIn', 'ph-linkedin-logo']];
 
+// Ids of the ones switched on, or null if that could not be checked
 export async function enabledProviders() {
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY }, signal: AbortSignal.timeout(8000) });
     const external = (await res.json()).external || {};
-    return PROVIDERS.filter(([id]) => external[id]);
+    return PROVIDERS.filter(([id]) => external[id]).map(([id]) => id);
   } catch (err) {
     logError('providers', err);
-    return [];
+    return null;
   }
 }
 
@@ -87,8 +83,9 @@ export async function signInWith(provider) {
   if (error) throw error;
 }
 
-// Coming back from a sign-in link or another account (?code=... in the address)
+// Coming back from Google / LinkedIn: ?code=... when it worked, ?error=... when it did not
 export const returningFromSignIn = () => new URLSearchParams(location.search).has('code');
+export const signInFailed = () => new URLSearchParams(location.search).has('error');
 
 export async function currentUser() {
   const c = await db();
@@ -119,44 +116,6 @@ export async function loadProfile() {
   ]);
   if (p.error) throw p.error;
   return fromRows(p.data, s.data || {});
-}
-
-/* Sign up with the profile filled in. If the project asks people to confirm
-   their email first, the profile waits in this browser and is saved at the
-   first log-in. Returns { me, confirm } where confirm means "check your email". */
-export async function signUp(email, password, me) {
-  const c = await db();
-  if (!c) throw new Error('network: the account server could not load');
-  const { data, error } = await c.auth.signUp({
-    email, password, options: { emailRedirectTo: `${location.origin}${location.pathname}` },
-  });
-  if (error) throw error;
-  if (!data.session) {
-    try { localStorage.setItem(PENDING, JSON.stringify(me)); } catch { /* storage is off */ }
-    return { me, confirm: true };
-  }
-  await saveProfile(me);
-  return { me, confirm: false };
-}
-
-// Log in and bring back the saved profile (or save the one waiting from sign-up)
-export async function logIn(email, password) {
-  const c = await db();
-  if (!c) throw new Error('network: the account server could not load');
-  const { error } = await c.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  let me = await loadProfile();
-  if (!me) {
-    let pending = null;
-    try { pending = JSON.parse(localStorage.getItem(PENDING)); } catch { /* none */ }
-    if (pending) {
-      await saveProfile(pending);
-      me = pending;
-    }
-  }
-  try { localStorage.removeItem(PENDING); } catch { /* fine */ }
-  if (me) writeProfile(me);
-  return me;
 }
 
 export async function logOut() {

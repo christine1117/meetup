@@ -1,24 +1,25 @@
-/* HTML: create an account, log in, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031d';
+/* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031e';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031d';
-import { field, select } from '../../shared/forms.js?v=20261031d';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031d';
-import { S, U } from '../state.js?v=20261031d';
-import { esc } from '../../shared/core.js?v=20261031d';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031e';
+import { field, select } from '../../shared/forms.js?v=20261031e';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031e';
+import { S, U } from '../state.js?v=20261031e';
+import { PROVIDERS } from '../../shared/account.js?v=20261031e';
+import { esc } from '../../shared/core.js?v=20261031e';
 
-// "Curious about": what you picked is shown; "Choose more" opens every group of choices.
-// Ticking a box does not redraw the page, so a ticked box stays where it is until you save.
+// "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
+// main.js draws this part again on every tick, so a ticked topic moves up at once.
 // The groups' names and the choices are shown in the chosen language; English is what is saved.
 const box = (x, on) => `<label class="check"><input type="checkbox" name="curious" value="${esc(x)}" ${on ? 'checked' : ''}><span>${esc(L(x))}</span></label>`;
-function curiousChecks(picked) {
+export function curiousChecks(picked, open = false) {
   const groups = CURIOUS_GROUPS.map(([name, list]) => {
     const rest = list.filter((x) => !picked.includes(x));
     return rest.length ? `<p class="choose__group">${esc(L(name))}</p><div class="checks">${rest.map((x) => box(x, false)).join('')}</div>` : '';
   }).join('');
   return `
     <div class="checks">${picked.length ? picked.map((x) => box(x, true)).join('') : `<p class="hint">${L`Nothing picked yet.`}</p>`}</div>
-    <details class="choose">
+    <details class="choose" ${open ? 'open' : ''}>
       <summary><span class="choose__more">${picked.length ? L`Show more topics` : L`Pick topics`}</span><span class="choose__less">${L`Show less`}</span><i class="ph ph-caret-down" aria-hidden="true"></i></summary>
       ${groups}
     </details>
@@ -36,7 +37,7 @@ export function profileFields(me) {
         ${field('city', L`City`, me.city, { ph: L`e.g. Taipei` })}
       </div>
       ${select('meet', L`How you like to meet`, MEETS.map(([v, l]) => [v, L(l)]), me.meet || 'both')}
-      <div class="field"><p class="field__label">${L`Curious about`} <span class="hint-inline">${L`Up to ${MAX_CURIOUS}`}</span></p>${curiousChecks(me.curious || [])}</div>
+      <div class="field"><p class="field__label">${L`Curious about`} <span class="hint-inline">${L`Up to ${MAX_CURIOUS}`}</span></p><div data-curious>${curiousChecks(me.curious || [])}</div></div>
       ${field('fun', L`Fun fact`, me.fun, { ph: L`Something people would not guess about you` })}
     </fieldset>
     <fieldset class="panel panel--locked stack">
@@ -50,56 +51,31 @@ export function profileFields(me) {
     </fieldset>`;
 }
 
-const accountFields = (newAccount) => `
-    <fieldset class="panel stack">
-      <legend><i class="ph ph-user-circle" aria-hidden="true"></i>${L`Your account`}</legend>
-      <div class="row2">
-        ${field('email', L`Email`, '', { type: 'email', req: true, auto: 'email', ph: 'you@example.com' })}
-        ${field('password', L`Password`, '', { type: 'password', req: true, auto: newAccount ? 'new-password' : 'current-password', hint: newAccount ? L`At least 8 characters.` : '' })}
-      </div>
-    </fieldset>`;
-
-// "Continue with Google / Apple / LinkedIn", for the ones switched on in Supabase
-const providerButtons = () => ((U.providers || []).length ? `
+// Sign in with Google or LinkedIn (no passwords)
+const signInButtons = () => `
     <div class="oauth">
-      ${U.providers.map(([id, name, icon]) => `<button class="btn btn--ghost oauth__btn" data-act="oauth" data-provider="${id}" type="button"><i class="ph ${icon}" aria-hidden="true"></i>${L`Continue with ${name}`}</button>`).join('')}
-      <p class="oauth__or"><span>${L`or with email`}</span></p>
-    </div>` : '');
+      ${PROVIDERS.map(([id, name, icon]) => `<button class="btn btn--dark oauth__btn" data-act="oauth" data-provider="${id}" type="button" ${U.busy ? 'disabled' : ''}><i class="ph ${icon}" aria-hidden="true"></i>${L`Continue with ${name}`}</button>`).join('')}
+    </div>`;
 
 const note = () => (U.authMsg ? `<p class="${U.authMsg.ok ? 'ok-note' : 'error'}" role="status">${esc(U.authMsg.text)}</p>` : '');
-const busy = (label) => (U.busy ? `disabled>${L`One moment…`}` : `>${label}`);
 
-// Sign up (with the profile), log in, or (signed in without a profile yet) fill in the profile
-export function authForms({ withProfile = true } = {}) {
+// The sign-in buttons, or (signed in without a profile yet) the profile to fill in
+export function authForms() {
   if (U.needProfile) {
     return `
     <form class="stack" data-form="me" novalidate>
       <p class="lead">${L`You are signed in. Fill in your profile to start.`}</p>
-      ${profileFields({})}
+      ${profileFields({ name: (U.user && U.user.name) || '' })}
       <p class="error" id="me-error" hidden>${L`Please add a nickname.`}</p>
       <button class="btn btn--primary" type="submit">${L`Save profile`}</button>
+      <p class="hint">${L`Signed in as ${esc((U.user && U.user.email) || '')}.`} <button class="link-btn" data-act="logout" type="button">${L`Not you? Log out`}</button></p>
     </form>`;
   }
-  if (U.auth === 'login') {
-    return `
-    ${providerButtons()}
-    <form class="stack" data-form="login" novalidate>
-      ${accountFields(false)}
-      ${note()}
-      <button class="btn btn--primary" type="submit" ${busy(L`Log in`)}</button>
-      <p class="hint">${L`New here?`} <button class="link-btn" data-act="auth-mode" data-mode="signup" type="button">${L`Create an account`}</button></p>
-    </form>`;
-  }
+  if (U.busy) return `<p class="lead" role="status">${L`Signing you in…`}</p>`;
   return `
-    ${providerButtons()}
-    <form class="stack" data-form="signup" data-local="${withProfile ? '' : '1'}" novalidate>
-      ${accountFields(true)}
-      ${withProfile ? profileFields({}) : ''}
-      <p class="hint">${L`Your name, school and contact stay hidden until you team up.`}</p>
-      ${note()}
-      <button class="btn btn--primary" type="submit" ${busy(L`Create account`)}</button>
-      <p class="hint">${L`Already have an account?`} <button class="link-btn" data-act="auth-mode" data-mode="login" type="button">${L`Log in`}</button></p>
-    </form>`;
+    ${signInButtons()}
+    ${note()}
+    <p class="hint">${L`No password needed. Your name, school and contact stay hidden until you team up.`}</p>`;
 }
 
 export function viewOnboard() {
@@ -115,11 +91,11 @@ export function viewOnboard() {
   </main>`;
 }
 
-// Signed out, but a profile already lives in this browser: make it an account, or log in
+// Signed out, but a profile already lives in this browser: sign in to keep it in an account
 export function viewAccount() {
   return `
-  <header class="head"><div><h1>${L`Account`}</h1><p class="sub">${U.auth === 'login' ? L`Log in to bring back your profile.` : L`Save your profile to an account, so it is there on any device.`}</p></div></header>
-  ${authForms({ withProfile: false })}`;
+  <header class="head"><div><h1>${L`Account`}</h1><p class="sub">${L`Sign in to keep your profile in an account, so it is there on any device.`}</p></div></header>
+  ${authForms()}`;
 }
 
 export function viewMe() {
@@ -136,7 +112,7 @@ export function viewMe() {
       ? `<p>${L`Signed in as ${`<b>${esc(U.user.email)}</b>`}. Your profile is saved to your account.`}</p>
          <button class="btn btn--ghost" data-act="logout" type="button">${L`Log out`}</button>`
       : `<p>${L`Not signed in: your profile is only in this browser.`}</p>
-         <a class="btn btn--dark btn--sm" href="#/account">${L`Create an account or log in`}</a>`}
+         <a class="btn btn--dark btn--sm" href="#/account">${L`Sign in with Google or LinkedIn`}</a>`}
   </section>
   <section class="panel note">
     <h2>${L`About this version`}</h2>
