@@ -39,14 +39,28 @@ def mentions_size(text: str) -> bool:
     return bool(SIZE_HINT.search(text or ""))
 
 
+# Sentences that say who may enter or how big a team is. On a long page they are kept first,
+# so a long list of tracks cannot push "參賽資格 … 每隊不超過 8 人" past the limit.
+STRONG = re.compile(r"參賽資格|參加資格|報名資格|參賽對象|參加對象|徵件對象|資格|每隊|每組|人數|成員|指導老師|國籍|"
+                    r"eligib|who can|open to|team size|per team|members", re.I)
+
+
 def relevant(text: str, limit: int = 4000, cues: re.Pattern = CUES) -> str:
-    """The sentences of one page worth showing the LLM (plus their neighbours)."""
+    """The sentences of one page worth showing the LLM (plus their neighbours), in page order.
+    Within the limit, the sentences about eligibility and team size are picked first."""
     parts = sentences(text)
+    hits = [i for i, s in enumerate(parts) if cues.search(s)]
+    strong = [i for i in hits if STRONG.search(parts[i]) or SIZE_HINT.search(parts[i])]
     keep: set[int] = set()
-    for i, s in enumerate(parts):
-        if cues.search(s):
-            keep.update({i - 1, i, i + 1})
-    return " ".join(parts[i] for i in sorted(keep) if 0 <= i < len(parts))[:limit]
+    used = 0
+    for i in strong + hits:
+        for j in (i - 1, i, i + 1):
+            if 0 <= j < len(parts) and j not in keep and used + len(parts[j]) + 1 <= limit:
+                keep.add(j)
+                used += len(parts[j]) + 1
+    if not keep and hits:  # one sentence longer than the limit: keep its start
+        return parts[hits[0]][:limit]
+    return " ".join(parts[i] for i in sorted(keep))
 
 
 def label(pages: list[PageText], limit: int = 8000) -> str:

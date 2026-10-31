@@ -71,7 +71,7 @@ def who_can_enter(text: str) -> PageText | None:
 
 
 def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
-    key = f"devpost4:{url}"
+    key = f"devpost5:{url}"
     saved = cache.get(key, max_age_days=7)
     if saved is not None:
         return [PageText(page=p["page"], text=strip_chrome(p["text"])) for p in saved]

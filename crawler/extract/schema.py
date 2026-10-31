@@ -105,7 +105,9 @@ class TeamRule(BaseModel):
 class Eligibility(BaseModel):
     summary: str = Field(
         ..., min_length=2, max_length=300,
-        description="Who can enter, in one short sentence (under 120 characters), in the same language as the source.",
+        description="Who may enter (school level, age, nationality, profession, required advisors), covering each "
+                    "track briefly, in one sentence under 200 characters, in the same language as the source. "
+                    "Never the competition's purpose or topic.",
     )
 
     @field_validator("summary", mode="before")
@@ -123,12 +125,13 @@ def _cut(n: int):
 
 
 class Texts(BaseModel):
-    """The competition described in one language."""
+    """The competition described in one language: en is always English and zh always Traditional
+    Chinese, whatever the language of the source."""
 
     name: str = Field(..., min_length=1, max_length=200, description="Its name. Keep brand and proper names as they are; translate descriptive titles.")
     organizer: str = Field("", max_length=200, description="The organizer, by its official name in this language if it has one, otherwise translated.")
     summary: str = Field("", max_length=300, description="One sentence (under 140 characters) on what the competition is about.")
-    eligibility: Optional[str] = Field(None, max_length=300, description="Who can enter, in one short sentence, or null if the text does not say.")
+    eligibility: Optional[str] = Field(None, max_length=300, description="Who may enter (school level, age, nationality...), one sentence covering each track briefly; never the purpose. Null if the text does not say.")
     tags: list[str] = Field(default_factory=list, max_length=6, description="Up to 5 short topic tags.")
 
     @field_validator("summary", "eligibility", mode="before")

@@ -4,12 +4,12 @@
    (../shared/contract.js), and formats dates. Each listing links back to
    its official page. Once you join one, a copy is kept so your team still
    works after it drops off the list. */
-import { L, LANG } from '../shared/i18n.js?v=20261031h';
+import { L, LANG } from '../shared/i18n.js?v=20261031i';
 
-import { logError } from '../shared/log.js?v=20261031h';
-import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031h';
-import { rest } from '../shared/supabase.js?v=20261031h';
-import { S } from './state.js?v=20261031h';
+import { logError } from '../shared/log.js?v=20261031i';
+import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031i';
+import { rest } from '../shared/supabase.js?v=20261031i';
+import { S } from './state.js?v=20261031i';
 
 export const DAY = 86400000;
 export const SOURCE_NAME = { devpost: 'Devpost', mlh: 'MLH', bhuntr: '獎金獵人' };
@@ -26,8 +26,14 @@ export const dateText = (ms) => new Date(ms).toLocaleDateString(LANG === 'zh' ? 
 /* A competition in the language being shown: what the LLM wrote in English or
    Chinese, or the original when there is no translation yet. */
 const inLang = (c) => (c.i18n && c.i18n[LANG]) || {};
-export const textOf = (c, key) => inLang(c)[key] || c[key] || '';
-export const tagsOf = (c) => ((inLang(c).tags || []).length ? inLang(c).tags : c.tags || []);
+// The English page never shows Chinese: a missing translation is left out (a name is always shown)
+const CJK = /[\u3400-\u9fff]/;
+const fits = (text) => LANG === 'zh' || !CJK.test(text);
+export function textOf(c, key) {
+  const text = inLang(c)[key] || c[key] || '';
+  return key === 'name' || fits(text) ? text : '';
+}
+export const tagsOf = (c) => ((inLang(c).tags || []).length ? inLang(c).tags : c.tags || []).filter(fits);
 export const trackNameOf = (t) => (LANG === 'zh' ? t.name_zh : t.name_en) || t.name;
 export const quoteOf = (t) => (LANG === 'zh' ? t.evidence_zh : t.evidence_en) || t.evidence;
 // Everything a search can match, in both languages

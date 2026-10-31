@@ -77,7 +77,7 @@ def site_pages(url: str, breaker: http.Breaker) -> list[PageText] | None:
 
 
 def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
-    key = f"mlh1:{url}"
+    key = f"mlh2:{url}"
     saved = cache.get(key, max_age_days=7)
     if saved is not None:
         return [PageText(**p) for p in saved]

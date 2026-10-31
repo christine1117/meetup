@@ -39,7 +39,7 @@ def iso(ms: float) -> str:
 
 
 def read_contest(cid: str, mod: str | None, cache) -> dict:
-    key = f"bhuntr3:{cid}"
+    key = f"bhuntr4:{cid}"
     saved = cache.get(key, mod=mod)
     if saved is not None:
         return saved

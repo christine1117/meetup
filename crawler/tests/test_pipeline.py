@@ -187,3 +187,15 @@ def test_devpost_who_can_participate_survives_the_menu():
     who = who_can_enter(page)
     assert who.page == "who can participate"
     assert who.text.split("\n")[:2] == ["Ages 14 to 18 only", "High school students only"]
+
+
+def test_long_pages_keep_eligibility_and_team_size_first():
+    # A long list of tracks (each with 組) comes before the rules; the rules must still get in
+    tracks = "".join(f"第{i}組說明：資訊應用、智慧製造、區塊鏈、物聯網、雲端應用、行動支付、資訊安全、電子商務等相關應用與服務。" for i in range(80))
+    page = "活動簡介本競賽分為多個組別。" + tracks + "參賽資格大專校院在學學生都可參加。每隊學生不超過8人，另需有1-2名學校指導老師。國籍限制除國際交流組外，預設為臺灣地區學生。"
+    text = relevant(page)
+    assert len(text) <= 4000
+    assert "每隊學生不超過8人" in text and "參賽資格" in text and "國籍限制" in text
+    assert text.index("第0組") < text.index("參賽資格"), "still in page order"
+    short = "我們歡迎組隊。每隊 2 至 5 人。"
+    assert relevant(short) == "我們歡迎組隊。 每隊 2 至 5 人。", "short pages read as before"

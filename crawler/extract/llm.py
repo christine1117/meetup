@@ -14,7 +14,7 @@ from typing import Any, Protocol
 
 from .schema import Extraction, RawCompetition
 
-PROMPT_VERSION = "4"
+PROMPT_VERSION = "5"
 
 SYSTEM = """You read competition pages and extract the allowed number of participants per team.
 
@@ -43,11 +43,18 @@ Rules:
 9. needs_review is only about team size: set it when the size rules are ambiguous or contradict each
    other (for example the overview says 2–4 and the rules say 3–5). Do NOT set it because a size is
    simply not stated (use null), or because of age, eligibility or other details.
-10. Also give a one-sentence summary of who can enter (eligibility), under 120 characters, in the
-    language of the source, with an exact quote as evidence, when the text says.
+10. eligibility: who may enter. That means school level (university, graduate, high school...), age,
+    nationality or residency, profession, and conditions such as a required school advisor. It is
+    NOT the competition's purpose, topic or theme ("鼓勵參賽者運用資訊科技" is not eligibility).
+    If it differs by track, cover each group briefly in one sentence (for example
+    "大專校院及高中職在學生，每隊需 1–2 名指導老師；國際交流組限外國大專生"). Under 200 characters,
+    in the language of the source, with an exact quote as evidence. Leave it null when the text does
+    not say who may enter.
 11. listing: pick one category, decide the region, and describe the competition in English (en) and in
     Traditional Chinese as used in Taiwan (zh): name, organizer, one-sentence summary, eligibility,
-    up to 5 short tags. Write naturally, like a person from that place would, not word for word.
+    up to 5 short tags. en is always written in English and zh always in Traditional Chinese, whatever
+    the language of the source: translate, never copy Chinese into en. If eligibility is given above,
+    give it in both languages too. Write naturally, like a person from that place would, not word for word.
     Keep brand and proper names as they are. For each team rule also give the track name and the quote
     in both languages (track_en, track_zh, evidence_en, evidence_zh).
 Return nothing that is not supported by the text."""
