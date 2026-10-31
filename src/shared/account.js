@@ -10,9 +10,9 @@
    A copy of the profile also stays in this browser (shared/profile.js), so the
    apps keep working the same way they always have. */
 
-import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031p';
-import { writeProfile } from './profile.js?v=20261031p';
-import { logError } from './log.js?v=20261031p';
+import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031q';
+import { writeProfile } from './profile.js?v=20261031q';
+import { logError } from './log.js?v=20261031q';
 
 // App shape -> database rows
 export function toRows(userId, me) {

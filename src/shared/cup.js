@@ -1,7 +1,7 @@
 /* Drawing: the boba cup and the toppings. Returns SVG strings only. */
 
-import { uid } from './core.js?v=20261031p';
-import { flavor } from './flavors.js?v=20261031p';
+import { uid } from './core.js?v=20261031q';
+import { flavor } from './flavors.js?v=20261031q';
 
 // The boba cup: a clear plastic cup with a dome lid, a red straw, pearls at the
 // bottom, and a red seal label.

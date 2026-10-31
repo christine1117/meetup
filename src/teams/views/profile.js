@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031p';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031q';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031p';
-import { field, select } from '../../shared/forms.js?v=20261031p';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031p';
-import { S, U } from '../state.js?v=20261031p';
-import { PROVIDERS } from '../../shared/account.js?v=20261031p';
-import { esc } from '../../shared/core.js?v=20261031p';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031q';
+import { field, select } from '../../shared/forms.js?v=20261031q';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031q';
+import { S, U } from '../state.js?v=20261031q';
+import { PROVIDERS } from '../../shared/account.js?v=20261031q';
+import { esc } from '../../shared/core.js?v=20261031q';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -89,7 +89,7 @@ export function viewOnboard() {
   return `
   <main class="onboard">
     <div class="onboard__top">
-      <p class="logo">${LOGO}<span class="logo__sub">Teams</span></p>
+      <p class="logo">${LOGO}</p>
       <div class="btnrow">${langSwitch()}<button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button">Dev: skip</button></div>
     </div>
     <h1 class="t-hero">${L`Find teammates by what they can do.`}</h1>

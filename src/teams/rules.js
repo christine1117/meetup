@@ -3,13 +3,13 @@
    recommendations (using matching.js).
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
-import { L } from '../shared/i18n.js?v=20261031p';
-import { cardTopics } from './options.js?v=20261031p';
+import { L } from '../shared/i18n.js?v=20261031q';
+import { cardTopics } from './options.js?v=20261031q';
 
-import { S } from './state.js?v=20261031p';
-import { compOf } from './competitions.js?v=20261031p';
-import { P, demoPeople, seedTeam } from './sample-people.js?v=20261031p';
-import { roleFit, vibe } from './matching.js?v=20261031p';
+import { S } from './state.js?v=20261031q';
+import { compOf } from './competitions.js?v=20261031q';
+import { P, demoPeople, seedTeam } from './sample-people.js?v=20261031q';
+import { roleFit, vibe } from './matching.js?v=20261031q';
 
 export const personOf = (id) => (id === 'me' ? { ...S.me, alias: L`You`, id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in

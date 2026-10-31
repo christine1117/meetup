@@ -1,18 +1,18 @@
 /* Layout and drawing: the side nav, and render(), which draws the
    current route and shows a way out if something breaks. */
-import { L, LANG, langSwitch } from '../shared/i18n.js?v=20261031p';
+import { L, LANG, langSwitch } from '../shared/i18n.js?v=20261031q';
 
-import { esc } from '../shared/core.js?v=20261031p';
-import { LOGO } from '../shared/flavors.js?v=20261031p';
-import { logError } from '../shared/log.js?v=20261031p';
-import { S, U } from './state.js?v=20261031p';
-import { app } from './ui.js?v=20261031p';
-import { route } from './router.js?v=20261031p';
-import { chatById } from './chats.js?v=20261031p';
-import { viewAccount, viewMe, viewOnboard } from './views/profile.js?v=20261031p';
-import { viewComp, viewComps } from './views/competitions.js?v=20261031p';
-import { viewChat, viewChats } from './views/chats.js?v=20261031p';
-import { viewTeam } from './views/team.js?v=20261031p';
+import { esc } from '../shared/core.js?v=20261031q';
+import { LOGO } from '../shared/flavors.js?v=20261031q';
+import { logError } from '../shared/log.js?v=20261031q';
+import { S, U } from './state.js?v=20261031q';
+import { app } from './ui.js?v=20261031q';
+import { route } from './router.js?v=20261031q';
+import { chatById } from './chats.js?v=20261031q';
+import { viewAccount, viewMe, viewOnboard } from './views/profile.js?v=20261031q';
+import { viewComp, viewComps } from './views/competitions.js?v=20261031q';
+import { viewChat, viewChats } from './views/chats.js?v=20261031q';
+import { viewTeam } from './views/team.js?v=20261031q';
 
 export const NAV = [['comps', 'Competitions', 'ph-trophy'], ['chats', 'Teams & chats', 'ph-chats-circle'], ['me', 'My order', 'ph-user']];
 
@@ -22,7 +22,7 @@ export function shell(r, body) {
   return `
   <div class="app">
     <aside class="side">
-      <a class="logo" href="#/comps">${LOGO}<span class="logo__sub">Teams</span></a>
+      <a class="logo" href="#/comps">${LOGO}</a>
       <nav class="nav" aria-label="Main">${NAV.map(([n, label, icon]) => `<a href="#/${n}" ${here === n ? 'aria-current="page"' : ''}><i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${L(label)}</span></span></a>`).join('')}</nav>
       <div class="side__foot">${langSwitch()}</div>
     </aside>
