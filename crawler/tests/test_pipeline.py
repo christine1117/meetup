@@ -149,3 +149,13 @@ def test_database_errors_say_why():
                           client=httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(400, text='{"message":"bad column"}'))))
     with pytest.raises(RuntimeError, match="bad column"):
         store.save([{"competition": {"id": "dp-1"}, "tracks": [], "issues": []}])
+
+
+def test_near_miss_categories_and_long_names_are_fixed_not_rejected():
+    from crawler.extract.schema import Listing
+    base = {"region": "tw", "en": {"name": "N"}, "zh": {"name": "N"}}
+    assert Listing.model_validate({**base, "category": "music"}).category == "performance"
+    assert Listing.model_validate({**base, "category": "Photography"}).category == "film_photo"
+    assert Listing.model_validate({**base, "category": "something else"}).category == "other"
+    long = Listing.model_validate({**base, "category": "art", "en": {"name": "x" * 400, "organizer": "y" * 400}})
+    assert len(long.en.name) <= 200 and len(long.en.organizer) <= 200

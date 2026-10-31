@@ -136,14 +136,45 @@ class Texts(BaseModel):
     def shorten(cls, v):
         return _cut(300)(v)
 
+    @field_validator("name", "organizer", mode="before")
+    @classmethod
+    def shorten_names(cls, v):
+        return _cut(200)(v)
+
     @field_validator("tags", mode="before")
     @classmethod
     def few_tags(cls, v):
         return [str(t)[:40] for t in v][:6] if isinstance(v, list) else v
 
 
+# Words an LLM sometimes uses instead of the listed categories
+CATEGORY_SYNONYMS = {
+    "music": "performance", "dance": "performance", "theatre": "performance", "theater": "performance", "singing": "performance",
+    "photography": "film_photo", "photo": "film_photo", "film": "film_photo", "video": "film_photo", "animation": "film_photo",
+    "business": "startup", "entrepreneurship": "startup", "marketing": "startup", "pitch": "startup",
+    "ai": "tech", "programming": "tech", "coding": "tech", "engineering": "tech", "robotics": "tech", "data": "tech",
+    "architecture": "design", "interior": "design", "product": "design", "fashion": "design",
+    "literature": "writing", "poetry": "writing", "essay": "writing",
+    "painting": "art", "illustration": "art", "comics": "art", "crafts": "art",
+    "sport": "sports", "esports": "sports", "games": "sports", "gaming": "sports",
+    "research": "science", "math": "science", "mathematics": "science", "education": "science",
+    "sustainability": "social_impact", "environment": "social_impact", "community": "social_impact", "policy": "social_impact",
+}
+
+
 class Listing(BaseModel):
     """What the competition is, for browsing: its category, region, and both languages."""
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def known_category(cls, v):
+        # Map near misses ("music" -> "performance"); anything unknown becomes "other"
+        if not isinstance(v, str):
+            return v
+        k = v.strip().lower().replace(" ", "_").replace("&", "and")
+        known = {"hackathon", "tech", "startup", "design", "film_photo", "writing", "art", "performance",
+                 "science", "social_impact", "sports", "other"}
+        return k if k in known else CATEGORY_SYNONYMS.get(k, "other")
 
     category: Category = Field(..., description="One category. " + CATEGORY_HELP)
     region: Region = Field(..., description='"tw" if it is organized in Taiwan or mainly for people in Taiwan (Taiwanese '
