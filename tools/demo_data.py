@@ -6,7 +6,8 @@ every competition someone (not a demo) has a card in, or the first listed
 competition if nobody has one yet.
 
   python tools/demo_data.py seed    add them (skipped if they are already there)
-  python tools/demo_data.py clean   delete every demo account (their profiles and cards go with them)
+  python tools/demo_data.py invite  two demo people (Kite, Sol) invite every real person who has a card where they do
+  python tools/demo_data.py clean   delete every demo account (their profiles, cards and invitations go with them)
 
 Runs on GitHub (Actions > Demo data), where the key is."""
 
@@ -101,5 +102,28 @@ def seed():
     print(f"Added {len(PEOPLE)} demo people with cards in {len(comps)} competition(s): {', '.join(comps)}")
 
 
+NOTES = {"Kite": "我做前端，想找設計一起做空氣品質地圖！", "Sol": "我負責簡報和產品，在找會寫程式的夥伴。"}
+
+
+def invite():
+    demos, real = demo_accounts()
+    profiles = check(http.get(f"{url}/rest/v1/profiles", headers=admin, params={"select": "id,alias", "id": f"in.({','.join(u['id'] for u in demos)})"}), "read demo profiles").json() if demos else []
+    senders = [p for p in profiles if p["alias"] in NOTES]
+    cards = check(http.get(f"{url}/rest/v1/participations", headers=admin, params={"select": "competition_id,user_id"}), "read cards").json()
+    where = {}
+    for c in cards:
+        where.setdefault(c["competition_id"], set()).add(c["user_id"])
+    rows = [{"competition_id": comp, "kind": "solo_to_solo", "sender_id": s["id"], "receiver_id": person, "note": NOTES[s["alias"]]}
+            for comp, people in where.items() for s in senders if s["id"] in people for person in people if person in real]
+    if rows:
+        # Written with the service key: a demo account cannot sign in to call send_invite itself
+        r = http.post(f"{url}/rest/v1/match_requests", headers={**admin, "Prefer": "return=minimal,resolution=ignore-duplicates"}, json=rows)
+        if r.is_error and "match_requests_one_open" in r.text:
+            print("Some of these invitations are already there.")
+        else:
+            check(r, "send demo invitations")
+    print(f"Sent {len(rows)} demo invitation(s).")
+
+
 if __name__ == "__main__":
-    {"seed": seed, "clean": clean}[sys.argv[1] if len(sys.argv) > 1 else "seed"]()
+    {"seed": seed, "invite": invite, "clean": clean}[sys.argv[1] if len(sys.argv) > 1 else "seed"]()

@@ -1,15 +1,15 @@
 # Demo people in the database, by hand (Actions > Demo data > Run workflow):
 # "seed" adds 8 demo accounts with cards in the competitions you have cards in;
-# "clean" deletes every demo account again. Emails are made up (example.com).
+# "invite" has two of them (Kite, Sol) invite you to chat; "clean" deletes every demo account again. Emails are made up (example.com).
 name: Demo data
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: "seed: add demo people · clean: delete them all"
+        description: "seed: add demo people · invite: two of them invite you · clean: delete them all"
         type: choice
-        options: [seed, clean]
+        options: [seed, invite, clean]
         default: seed
 
 permissions:
