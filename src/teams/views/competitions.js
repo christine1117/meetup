@@ -1,16 +1,16 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031j';
-import { L } from '../../shared/i18n.js?v=20261031j';
-import { cupFor } from '../../shared/cup.js?v=20261031j';
-import { field, select } from '../../shared/forms.js?v=20261031j';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031j';
-import { S, U } from '../state.js?v=20261031j';
-import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031j';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031j';
-import { P } from '../sample-people.js?v=20261031j';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031j';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031j';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031k';
+import { L } from '../../shared/i18n.js?v=20261031k';
+import { cupFor } from '../../shared/cup.js?v=20261031k';
+import { field, select } from '../../shared/forms.js?v=20261031k';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031k';
+import { S, U } from '../state.js?v=20261031k';
+import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031k';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031k';
+import { P } from '../sample-people.js?v=20261031k';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031k';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031k';
 
 export const PAGE = 20;  // competitions per page
 

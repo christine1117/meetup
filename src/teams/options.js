@@ -1,8 +1,8 @@
 /* What a competition card can say: roles, goals, hours and topics.
    Values are stored in English; they are shown in the chosen language. */
 
-import { L } from '../shared/i18n.js?v=20261031j';
-import ZH from '../shared/locales/zh.js?v=20261031j';
+import { L } from '../shared/i18n.js?v=20261031k';
+import ZH from '../shared/locales/zh.js?v=20261031k';
 
 
 export const ROLES = ['Frontend', 'Backend', 'Design', 'Product', 'Data', 'Research', 'Marketing', 'Pitch', 'Hardware', 'Writing'];

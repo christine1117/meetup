@@ -1,15 +1,15 @@
 /* Chats: sending, half sugar notes, teaming up and ending politely.
    reply() plays the other side until there is a server. */
-import { L } from '../shared/i18n.js?v=20261031j';
+import { L } from '../shared/i18n.js?v=20261031k';
 
-import { later, pick, uid } from '../shared/core.js?v=20261031j';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031j';
-import { S, U, save } from './state.js?v=20261031j';
-import { toast } from './ui.js?v=20261031j';
-import { LINES, MATE_LINES, P } from './sample-people.js?v=20261031j';
-import { go } from './router.js?v=20261031j';
-import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261031j';
-import { render } from './render.js?v=20261031j';
+import { later, pick, uid } from '../shared/core.js?v=20261031k';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031k';
+import { S, U, save } from './state.js?v=20261031k';
+import { toast } from './ui.js?v=20261031k';
+import { LINES, MATE_LINES, P } from './sample-people.js?v=20261031k';
+import { go } from './router.js?v=20261031k';
+import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261031k';
+import { render } from './render.js?v=20261031k';
 
 export const chatById = (id) => S.chats.find((c) => c.id === id);
 export const chatName = (c) => (c.kind === 'team' ? teamsIn(c.comp).find((t) => t.id === c.ref).name : (c.revealed ? P[c.ref].real.name : P[c.ref].alias));

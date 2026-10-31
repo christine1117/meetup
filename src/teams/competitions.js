@@ -4,12 +4,12 @@
    (../shared/contract.js), and formats dates. Each listing links back to
    its official page. Once you join one, a copy is kept so your team still
    works after it drops off the list. */
-import { L, LANG } from '../shared/i18n.js?v=20261031j';
+import { L, LANG } from '../shared/i18n.js?v=20261031k';
 
-import { logError } from '../shared/log.js?v=20261031j';
-import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031j';
-import { rest } from '../shared/supabase.js?v=20261031j';
-import { S } from './state.js?v=20261031j';
+import { logError } from '../shared/log.js?v=20261031k';
+import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031k';
+import { rest } from '../shared/supabase.js?v=20261031k';
+import { S } from './state.js?v=20261031k';
 
 export const DAY = 86400000;
 export const SOURCE_NAME = { devpost: 'Devpost', mlh: 'MLH', bhuntr: '獎金獵人' };
@@ -29,8 +29,11 @@ const inLang = (c) => (c.i18n && c.i18n[LANG]) || {};
 // The English page never shows Chinese: a missing translation is left out (a name is always shown)
 const CJK = /[\u3400-\u9fff]/;
 const fits = (text) => LANG === 'zh' || !CJK.test(text);
+// "University students (各大專院校學生)": the Chinese in brackets is dropped, not the whole line
+const CJK_BRACKETS = /\s*[(（][^()（）]*[\u3400-\u9fff][^()（）]*[)）]/g;
 export function textOf(c, key) {
-  const text = inLang(c)[key] || c[key] || '';
+  let text = inLang(c)[key] || c[key] || '';
+  if (LANG !== 'zh' && key !== 'name') text = text.replace(CJK_BRACKETS, '').trim();
   return key === 'name' || fits(text) ? text : '';
 }
 export const tagsOf = (c) => ((inLang(c).tags || []).length ? inLang(c).tags : c.tags || []).filter(fits);
