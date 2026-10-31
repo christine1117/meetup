@@ -2,7 +2,8 @@
 
 The list comes from the public JSON the Devpost site itself uses. For each
 hackathon we keep the sentences about teams and eligibility from its
-overview and rules pages (cached for a week) for the LLM to read.
+overview and rules pages, plus Devpost's own "Who can participate" box
+(cached for a week), for the LLM to read.
 Teams are the norm on Devpost, so a hackathon is listed even before its
 rules are read."""
 
@@ -38,15 +39,39 @@ def dates(text: str = "") -> tuple[str | None, str | None]:
 
 
 # The site's own menus and banners, which repeat on every page and mention "Teams"
-CHROME = re.compile(r"Devpost for Teams|private hackathons|Host a public hackathon|unsupported browser|Drive innovation, collaboration|Webinars & events|Join a hackathon|Log in Sign up", re.I)
+CHROME = re.compile(r"Devpost for Teams|private hackathons|Host a public hackathon|unsupported browser|Drive innovation, collaboration|Webinars & events|Join a hackathon|Log in Sign up"
+                    r"|Best practices for planning|Upcoming events and on-demand", re.I)
+# Whole lines that are menu items: "Log in", "My projects", "Participants (80)", ...
+MENU = re.compile(r"^(?:Log in|Sign up|Overview|My projects|Participants \(\d+\)|Resources|Rules|Project gallery|Updates|Discussions"
+                  r"|Find more hackathons|View full rules|Planning guides|Hackathons|Projects|Portfolio)$", re.I)
 
 
 def strip_chrome(text: str) -> str:
-    return " ".join(s for s in re.split(r"(?<=[.!?])\s+", text) if not CHROME.search(s))
+    """Drop the menus line by line, then sentence by sentence. Line by line first:
+    the menu has no full stops, so as one "sentence" it would take the lines
+    after it (such as "Who can participate") away with it."""
+    out = []
+    for line in text.split("\n"):
+        if MENU.match(line.strip()):
+            continue
+        kept = [s for s in re.split(r"(?<=[.!?])\s+", line) if not CHROME.search(s)]
+        if kept:
+            out.append(" ".join(kept))
+    return "\n".join(out)
+
+
+# Devpost's own "Who can participate" box: ages, students only, countries
+WHO = re.compile(r"Who can participate\s*\n([\s\S]{0,800}?)\n\s*View full rules", re.I)
+
+
+def who_can_enter(text: str) -> PageText | None:
+    m = WHO.search(text)
+    lines = [x.strip() for x in m.group(1).split("\n") if x.strip()] if m else []
+    return PageText(page="who can participate", text="\n".join(lines)) if lines else None
 
 
 def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
-    key = f"devpost3:{url}"
+    key = f"devpost4:{url}"
     saved = cache.get(key, max_age_days=7)
     if saved is not None:
         return [PageText(page=p["page"], text=strip_chrome(p["text"])) for p in saved]
@@ -54,7 +79,11 @@ def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
     out = []
     for name, link in (("overview", base), ("rules", base + "rules")):
         try:
-            out.append(PageText(page=name, text=strip_chrome(relevant(clean(http.get(link))))))
+            page = clean(http.get(link))
+            who = who_can_enter(page) if name == "overview" else None
+            if who:
+                out.append(who)
+            out.append(PageText(page=name, text=relevant(strip_chrome(page))))
             breaker.ok()
         except Exception as err:
             breaker.fail(err)

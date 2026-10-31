@@ -197,8 +197,13 @@ def main() -> int:
         return 1
     if cfg.supabase_url and cfg.supabase_service_key:
         try:
-            SupabaseStore(cfg.supabase_url, cfg.supabase_service_key).save(db)
+            store = SupabaseStore(cfg.supabase_url, cfg.supabase_service_key)
+            store.save(db)
             log.info("Saved %d competitions to the database", len(db))
+            if not cfg.limit:  # a trial run with a limit sees only part of each source
+                read_ok = [sid for (sid, _, _), *_ in collected]
+                store.unlist_missing(read_ok, [raw.id for _, raws, *_ in collected for raw in raws])
+                log.info("Hid competitions that %s no longer list", ", ".join(read_ok))
         except Exception as err:
             log.error("Database save failed: %s", err)
             return 1

@@ -1,26 +1,25 @@
 /* What each button does (buttons carry data-act="name"). */
-import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031g';
-import { clearProfile } from '../shared/profile.js?v=20261031g';
-import { L, setLang } from '../shared/i18n.js?v=20261031g';
-import { logError } from '../shared/log.js?v=20261031g';
+import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261031h';
+import { clearProfile } from '../shared/profile.js?v=20261031h';
+import { L, setLang } from '../shared/i18n.js?v=20261031h';
+import { logError } from '../shared/log.js?v=20261031h';
 
-import { later, pick } from '../shared/core.js?v=20261031g';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031g';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261031g';
-import { toast } from './ui.js?v=20261031g';
-import { DAY } from './competitions.js?v=20261031g';
-import { FRIENDS } from './sample-people.js?v=20261031g';
-import { go } from './router.js?v=20261031g';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031g';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031g';
-import { closeModal, renderModal } from './views/modal.js?v=20261031g';
-import { PAGE } from './views/competitions.js?v=20261031g';
-import { render } from './render.js?v=20261031g';
+import { later, pick } from '../shared/core.js?v=20261031h';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031h';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031h';
+import { toast } from './ui.js?v=20261031h';
+import { DAY } from './competitions.js?v=20261031h';
+import { FRIENDS } from './sample-people.js?v=20261031h';
+import { go } from './router.js?v=20261031h';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031h';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031h';
+import { closeModal, renderModal } from './views/modal.js?v=20261031h';
+import { render } from './render.js?v=20261031h';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
-  region(el) { U.region = el.dataset.value; U.shown = PAGE; render(); },
-  more() { U.shown = (U.shown || PAGE) + PAGE; render(); },
+  region(el) { U.region = el.dataset.value; U.page = 1; render(); },
+  page(el) { U.page = Number(el.dataset.value); render(); window.scrollTo(0, 0); },
   open(el) {
     U.hi = null;
     U.modal = { kind: el.dataset.kind, ref: el.dataset.ref, comp: el.dataset.comp };
@@ -99,7 +98,7 @@ export const acts = {
   'dev-time'(el) { const c = chatById(el.dataset.id); const before = sugarOf(c); c.devMin = (c.devMin || 0) + 5; if (before < REVEAL_AT && sugarOf(c) >= REVEAL_AT) c.msgs.push({ from: 'sys', text: 'Half sugar! You can team up now.', at: Date.now() }); save(); render(); },
   'dev-days'(el) { const c = chatById(el.dataset.id); c.msgs.forEach((m) => { m.at -= 3 * DAY + 60000; }); c.at -= 3 * DAY + 60000; save(); render(); },
   lang(el) { setLang(el.dataset.value); render({ fresh: true }); },
-  cat(el) { U.cat = el.dataset.value; U.shown = PAGE; render(); },
+  cat(el) { U.cat = el.dataset.value; U.page = 1; render(); },
   async oauth(el) {
     const [id, name] = PROVIDERS.find(([p]) => p === el.dataset.provider);
     // Not switched on in Supabase yet: say so here instead of on an error page

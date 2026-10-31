@@ -50,6 +50,19 @@ class SupabaseStore:
         self._post("extraction_reviews", [{**i, "competition_id": r["competition"]["id"]} for r in rows for i in r["issues"]], upsert=False)
 
 
+    def unlist_missing(self, sources: list[str], seen: list[str]) -> None:
+        """Competitions a source no longer lists (ended, or taken down) stop being listed.
+        Only for sources read this run: a source that failed keeps its rows as they are."""
+        if not sources:
+            return
+        params = {"source": f"in.({','.join(sources)})", "listed": "eq.true"}
+        if seen:
+            params["id"] = f"not.in.({','.join(seen)})"
+        r = self.client.patch(f"{self.base}/competitions", params=params, json={"listed": False},
+                              headers={**self.headers, "Prefer": "return=minimal"})
+        check(r, "competitions")
+
+
 def db_rows(raw, decision, record: dict) -> dict:
     """The database shape for one competition (record: what the website gets, from run.listing_record)."""
     return {

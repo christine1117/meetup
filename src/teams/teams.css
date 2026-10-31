@@ -527,9 +527,46 @@
   margin-left: 4px;
 }
 
-.more-btn {
+/* Page numbers under the competition list */
+.pager {
   display: flex;
-  margin: 16px auto 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 20px 0 0;
+}
+
+.pager__btn {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: #fffdf8;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pager__btn:hover {
+  border-color: var(--ink);
+}
+
+.pager__btn.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.pager__btn:focus-visible {
+  outline: 2px solid var(--orange-deep);
+  outline-offset: 2px;
+}
+
+.pager__gap {
+  color: var(--muted);
 }
 
 .credit {

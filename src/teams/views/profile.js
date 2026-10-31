@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031g';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031h';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031g';
-import { field, select } from '../../shared/forms.js?v=20261031g';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031g';
-import { S, U } from '../state.js?v=20261031g';
-import { PROVIDERS } from '../../shared/account.js?v=20261031g';
-import { esc } from '../../shared/core.js?v=20261031g';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031h';
+import { field, select } from '../../shared/forms.js?v=20261031h';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031h';
+import { S, U } from '../state.js?v=20261031h';
+import { PROVIDERS } from '../../shared/account.js?v=20261031h';
+import { esc } from '../../shared/core.js?v=20261031h';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -75,7 +75,7 @@ export function authForms() {
   return `
     ${signInButtons()}
     ${note()}
-    <p class="hint"><a href="privacy.html">${L`Privacy`}</a></p>`;
+    <p class="hint"><a class="inline-link" href="privacy.html">${L`Privacy`}</a></p>`;
 }
 
 export function viewOnboard() {
@@ -116,7 +116,7 @@ export function viewMe() {
   </section>
   <section class="panel note">
     <h2>${L`About this version`}</h2>
-    <p>${L`Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.`} <a href="privacy.html">${L`Privacy`}</a></p>
+    <p>${L`Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.`} <a class="inline-link" href="privacy.html">${L`Privacy`}</a></p>
     ${U.confirmReset
       ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
       : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear team data`}</button>`}

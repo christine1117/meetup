@@ -159,3 +159,31 @@ def test_near_miss_categories_and_long_names_are_fixed_not_rejected():
     assert Listing.model_validate({**base, "category": "something else"}).category == "other"
     long = Listing.model_validate({**base, "category": "art", "en": {"name": "x" * 400, "organizer": "y" * 400}})
     assert len(long.en.name) <= 200 and len(long.en.organizer) <= 200
+
+
+def test_competitions_a_source_dropped_are_hidden_only_for_sources_read():
+    sent = []
+    client = httpx.Client(transport=httpx.MockTransport(lambda req: sent.append(req) or httpx.Response(204)))
+    store = SupabaseStore("https://x.supabase.co", "sb_secret_abc", client)
+    store.unlist_missing(["devpost", "mlh"], ["dp-1", "mlh-2"])
+    req = sent[0]
+    assert req.method == "PATCH" and json.loads(req.content) == {"listed": False}
+    assert req.url.params["source"] == "in.(devpost,mlh)"
+    assert req.url.params["id"] == "not.in.(dp-1,mlh-2)"
+    store.unlist_missing([], ["dp-1"])
+    assert len(sent) == 1, "no source read: nothing is hidden"
+
+
+def test_devpost_who_can_participate_survives_the_menu():
+    from crawler.extract.candidates import relevant
+    from crawler.sources.devpost import strip_chrome, who_can_enter
+    page = ("Join a hackathon\n Log in\n Sign up\n Overview\n FUSE Society Blueprint 2026\n This hackathon has ended\n"
+            " Who can participate\n Ages 14 to 18 only\n High school students only\n"
+            " Companies/professional organizations excluded from participation\n View full rules\n"
+            " Each team will submit a solution.")
+    text = strip_chrome(page)
+    assert "Log in" not in text and "Join a hackathon" not in text
+    assert "High school students only" in relevant(text)
+    who = who_can_enter(page)
+    assert who.page == "who can participate"
+    assert who.text.split("\n")[:2] == ["Ages 14 to 18 only", "High school students only"]

@@ -1,22 +1,40 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031g';
-import { L } from '../../shared/i18n.js?v=20261031g';
-import { cupFor } from '../../shared/cup.js?v=20261031g';
-import { field, select } from '../../shared/forms.js?v=20261031g';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031g';
-import { S, U } from '../state.js?v=20261031g';
-import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031g';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031g';
-import { P } from '../sample-people.js?v=20261031g';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031g';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031g';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031h';
+import { L } from '../../shared/i18n.js?v=20261031h';
+import { cupFor } from '../../shared/cup.js?v=20261031h';
+import { field, select } from '../../shared/forms.js?v=20261031h';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031h';
+import { S, U } from '../state.js?v=20261031h';
+import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031h';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031h';
+import { P } from '../sample-people.js?v=20261031h';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031h';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031h';
 
-export const PAGE = 30;
+export const PAGE = 20;  // competitions per page
 
 // "$0" is not worth saying
 const prizeOf = (c) => (c.prize && /[1-9]/.test(c.prize) ? c.prize : '');
 const whenLine = (c) => `${esc(whenText(c))}${c.where ? ` · ${esc(c.where)}` : ''}${prizeOf(c) ? ` · ${esc(L`${prizeOf(c)} in prizes`)}` : ''}`;
+
+// Page numbers: 1 … 4 5 6 … 12, with previous / next
+function pager(page, pages) {
+  if (pages < 2) return '';
+  const nums = [...new Set([1, page - 1, page, page + 1, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  const btn = (n, label, aria) => `<button class="pager__btn ${n === page ? 'is-on' : ''}" data-act="page" data-value="${n}" type="button" ${n === page ? 'aria-current="page"' : ''} ${aria ? `aria-label="${esc(aria)}"` : ''}>${label}</button>`;
+  const parts = [];
+  nums.forEach((n, i) => {
+    if (i && n - nums[i - 1] > 1) parts.push('<span class="pager__gap" aria-hidden="true">…</span>');
+    parts.push(btn(n, n));
+  });
+  return `
+  <nav class="pager" aria-label="${esc(L`Pages`)}">
+    ${page > 1 ? btn(page - 1, '<i class="ph ph-caret-left" aria-hidden="true"></i>', L`Previous page`) : ''}
+    ${parts.join('')}
+    ${page < pages ? btn(page + 1, '<i class="ph ph-caret-right" aria-hidden="true"></i>', L`Next page`) : ''}
+  </nav>`;
+}
 
 export function viewComps() {
   if (dataState === 'loading') return `<p class="empty">${L`Loading competitions…`}</p>`;
@@ -26,10 +44,13 @@ export function viewComps() {
   const cat = U.cat || 'all';
   const inRegion = DATA.items.filter((c) => (region === 'all' || c.region === region) && (!q || searchText(c).includes(q)));
   const list = inRegion.filter((c) => cat === 'all' || categoryOf(c) === cat);
+  // "All": Taiwan first, then international, each by closing date (the list is already in that order)
+  if (region === 'all') list.sort((a, b) => (a.region !== 'tw') - (b.region !== 'tw'));
   const counts = {};
   inRegion.forEach((c) => { const k = categoryOf(c); counts[k] = (counts[k] || 0) + 1; });
   const mine = Object.keys(S.cards).filter((id) => COMP[id]);
-  const shown = U.shown || PAGE;
+  const pages = Math.max(1, Math.ceil(list.length / PAGE));
+  const page = Math.min(U.page || 1, pages);
   const updated = DATA.updatedAt ? dateText(Date.parse(DATA.updatedAt)) : '';
   const row = (c) => `
     <li>
@@ -58,8 +79,8 @@ export function viewComps() {
     ${CATEGORIES.filter(([id]) => counts[id]).map(([id]) => `<button class="cat ${cat === id ? 'is-on' : ''}" data-act="cat" data-value="${id}" type="button" aria-pressed="${cat === id}">${esc(categoryName(id))} <span>${counts[id]}</span></button>`).join('')}
   </div>
   ${mine.length && !q && cat === 'all' ? `<h2 class="sec-title">${L`You joined`}</h2><ul class="comp-list">${mine.map((id) => row(COMP[id])).join('')}</ul><h2 class="sec-title">${L`All open competitions`}</h2>` : ''}
-  ${list.length ? `<ul class="comp-list">${list.slice(0, shown).map(row).join('')}</ul>` : `<p class="empty">${L`Nothing matches. Try another word.`}</p>`}
-  ${list.length > shown ? `<button class="btn btn--ghost more-btn" data-act="more" type="button">${L`Show more (${list.length - shown} left)`}</button>` : ''}
+  ${list.length ? `<ul class="comp-list">${list.slice((page - 1) * PAGE, page * PAGE).map(row).join('')}</ul>` : `<p class="empty">${L`Nothing matches. Try another word.`}</p>`}
+  ${pager(page, pages)}
   <p class="credit">${L`${list.length} open · Updated ${esc(updated)} from ${DATA.sources.map((x) => `<a class="inline-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join(', ')}.`} ${L`Details and sign-up are on each official page.`}</p>`;
 }
 
