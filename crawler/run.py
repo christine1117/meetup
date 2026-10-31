@@ -161,8 +161,9 @@ def main() -> int:
         for raw in raws:
             text = label(raw.pages)
             ex = answers.get(raw.id)
-            if ex is None and raw.id in previous and text:
-                # Not read this run (no LLM, or it failed): keep what is already published, unchanged
+            if ex is None and raw.id in previous:
+                # Not read this run (no LLM, it failed, or the page could not be fetched this time):
+                # keep what is already published, unchanged
                 items.append(previous[raw.id])
                 counts["kept as published"] = counts.get("kept as published", 0) + 1
                 listed += 1

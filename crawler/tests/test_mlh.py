@@ -100,3 +100,35 @@ def test_library_words_in_scripts_are_not_kept(monkeypatch):
 def test_unreadable_site_is_reported_not_fatal(monkeypatch):
     fake(monkeypatch, {})
     assert mlh.site_pages("https://h.dev/", http.Breaker()) is None
+
+
+def test_websites_that_refuse_do_not_fail_the_whole_source(monkeypatch):
+    events = [{"id": i, "slug": f"h{i}", "name": f"Hack {i}", "startsAt": "2099-01-01T00:00:00Z", "websiteUrl": f"https://h{i}.dev/"} for i in range(14)]
+    page = f'<script data-page="app" type="application/json">{json.dumps({"props": {"events": events}})}</script>'
+    asked = []
+
+    def get(url, **_):
+        if "mlh.com" in url:
+            return page
+        raise RuntimeError("429 Too Many Requests")
+
+    def get_page(url, **_):
+        asked.append(url)
+        raise RuntimeError("429 Too Many Requests")
+
+    monkeypatch.setattr(http, "get", get)
+    monkeypatch.setattr(http, "get_page", get_page)
+    monkeypatch.setattr(http, "pause", lambda: None)
+    monkeypatch.setattr(http.time, "sleep", lambda s: None)
+
+    class Cache(dict):
+        def get(self, key, **_):
+            return dict.get(self, key)
+
+        def set(self, key, value, mod=None):
+            self[key] = value
+
+    items, _, notes = mlh.collect(Cache())
+    assert len(items) == 14, "the list is kept even though the websites refused"
+    assert len(asked) == 10, "fetching stops after 10 failures in a row"
+    assert notes.get("stopped fetching websites (10 failed in a row)") == 1

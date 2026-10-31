@@ -76,11 +76,13 @@ def site_pages(url: str, breaker: http.Breaker) -> list[PageText] | None:
     return [p for p in out if p.text.strip()]
 
 
-def pages_for(url: str, cache, breaker: http.Breaker) -> list[PageText] | None:
+def pages_for(url: str, cache, breaker: http.Breaker, fetch: bool = True) -> list[PageText] | None:
     key = f"mlh2:{url}"
     saved = cache.get(key, max_age_days=7)
     if saved is not None:
         return [PageText(**p) for p in saved]
+    if not fetch:
+        return None
     pages = site_pages(url, breaker)
     if pages is None:
         return None  # unreadable: listed with the size unknown, and reported
@@ -110,7 +112,10 @@ def collect(cache=None, progress=lambda msg: None, limit=None):
 
     walk(json.loads(m.group(1)))
     items, seen, notes = [], set(), {}
-    breaker = http.Breaker()
+    # Each event is a different small website, and some refuse a bot now and then ("429 Too Many
+    # Requests"). Many failures in a row stop the fetching, not the source: the list is still used,
+    # and an event whose website was not read keeps what was published before.
+    breaker, fetching = http.Breaker(10), True
     for e in events:
         if e.get("id") in seen or datetime.fromisoformat(e["startsAt"].replace("Z", "+00:00")) <= now:
             continue
@@ -121,7 +126,14 @@ def collect(cache=None, progress=lambda msg: None, limit=None):
             progress(f"{len(seen)} websites read")
         fmt = e.get("formatType")
         url = e.get("websiteUrl") or f"https://www.mlh.com{e['url']}"
-        pages = pages_for(url, cache, breaker) if cache is not None else []
+        pages = []
+        if cache is not None:
+            try:
+                pages = pages_for(url, cache, breaker, fetching)
+            except http.TooManyFailures:
+                fetching = False
+                notes["stopped fetching websites (10 failed in a row)"] = 1
+                pages = None
         if pages is None:
             notes["website unreadable"] = notes.get("website unreadable", 0) + 1
         items.append(RawCompetition(
