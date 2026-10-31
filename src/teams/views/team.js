@@ -1,16 +1,16 @@
 /* HTML: your team page with its group chat. */
-import { L } from '../../shared/i18n.js?v=20261031u';
+import { L } from '../../shared/i18n.js?v=20261031v';
 
-import { esc } from '../../shared/core.js?v=20261031u';
-import { cupFor } from '../../shared/cup.js?v=20261031u';
-import { field, select } from '../../shared/forms.js?v=20261031u';
-import { S, U } from '../state.js?v=20261031u';
-import { avatar, roleChips } from '../ui.js?v=20261031u';
-import { compOf } from '../competitions.js?v=20261031u';
-import { P } from '../sample-people.js?v=20261031u';
-import { isFull, sizeChoices, myRoles, needsOf, personOf, spots, teamMax } from '../rules.js?v=20261031u';
-import { roleChecks } from './cards.js?v=20261031u';
-import { bubbles } from './chats.js?v=20261031u';
+import { esc } from '../../shared/core.js?v=20261031v';
+import { cupFor } from '../../shared/cup.js?v=20261031v';
+import { field, select } from '../../shared/forms.js?v=20261031v';
+import { S, U } from '../state.js?v=20261031v';
+import { avatar, roleChips } from '../ui.js?v=20261031v';
+import { compOf } from '../competitions.js?v=20261031v';
+import { P } from '../sample-people.js?v=20261031v';
+import { isFull, sizeChoices, myRoles, needsOf, personOf, spots, teamMax } from '../rules.js?v=20261031v';
+import { roleChecks } from './cards.js?v=20261031v';
+import { bubbles } from './chats.js?v=20261031v';
 
 export function viewTeam(t) {
   const link = `${location.origin}${location.pathname}#/join/${t.code}`;

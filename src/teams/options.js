@@ -1,8 +1,8 @@
 /* What a competition card can say: roles, goals, hours and topics.
    Values are stored in English; they are shown in the chosen language. */
 
-import { L } from '../shared/i18n.js?v=20261031u';
-import ZH from '../shared/locales/zh.js?v=20261031u';
+import { L } from '../shared/i18n.js?v=20261031v';
+import ZH from '../shared/locales/zh.js?v=20261031v';
 
 
 export const ROLES = ['Frontend', 'Backend', 'Design', 'Product', 'Data', 'Research', 'Marketing', 'Pitch', 'Hardware', 'Writing'];
@@ -13,8 +13,8 @@ export const hoursName = (h) => L((HOURS.find(([v]) => v === String(h)) || HOURS
 // For <select>: values stay English, labels follow the language
 export const goalOptions = () => GOALS.map(([v, l]) => [v, L(l)]);
 export const hourOptions = () => HOURS.map(([v, l]) => [v, L(l)]);
-// Who you are looking for in this competition (spec §4: solo / team / either)
-export const LOOKING_FOR = [['either', 'People or a team'], ['solo', 'People to start a team with'], ['team', 'A team to join']];
+// How you want to team up in this competition (spec §4 looking_for: solo / team / either)
+export const LOOKING_FOR = [['either', 'Either is fine'], ['solo', 'Start a new team with people'], ['team', 'Join a team that already exists']];
 export const lookingName = (v) => L((LOOKING_FOR.find(([k]) => k === v) || LOOKING_FOR[0])[1]);
 // When people usually work on it (a card can tick several)
 export const WHEN = [['weekday_day', 'Weekday daytime'], ['weekday_evening', 'Weekday evenings'], ['weekend', 'Weekends']];
