@@ -1,21 +1,21 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031w';
-import { logError } from '../shared/log.js?v=20261031w';
-import { L } from '../shared/i18n.js?v=20261031w';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031w';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031y';
+import { logError } from '../shared/log.js?v=20261031y';
+import { L } from '../shared/i18n.js?v=20261031y';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031y';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031w';
-import { isCold } from '../shared/sugar.js?v=20261031w';
-import { S, U, save, saveMe } from './state.js?v=20261031w';
-import { toast } from './ui.js?v=20261031w';
-import { MAX_ROLES, WHEN } from './options.js?v=20261031w';
-import { saveCard } from './server.js?v=20261031w';
-import { COMP } from './competitions.js?v=20261031w';
-import { go } from './router.js?v=20261031w';
-import { isFull, withinRules } from './rules.js?v=20261031w';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031w';
-import { render } from './render.js?v=20261031w';
-import { savedNote } from './views/profile.js?v=20261031w';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031y';
+import { isCold } from '../shared/sugar.js?v=20261031y';
+import { S, U, save, saveMe } from './state.js?v=20261031y';
+import { toast } from './ui.js?v=20261031y';
+import { MAX_ROLES, SLOTS } from './options.js?v=20261031y';
+import { saveCard } from './server.js?v=20261031y';
+import { COMP } from './competitions.js?v=20261031y';
+import { go } from './router.js?v=20261031y';
+import { isFull, withinRules } from './rules.js?v=20261031y';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031y';
+import { render } from './render.js?v=20261031y';
+import { savedNote } from './views/profile.js?v=20261031y';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -46,7 +46,7 @@ export function cardFrom(fd, d, before = {}) {
     goal: d.goal, hours: Number(d.hours),
     idea: (d.idea || '').slice(0, 300),
     built: (d.built || '').slice(0, 200),
-    availability: fd.getAll('when').filter((w) => WHEN.some(([v]) => v === w)),
+    availability: fd.getAll('when').filter((w) => SLOTS.includes(w)),
   };
 }
 // What is missing from a card, as messages (empty when it can be saved)

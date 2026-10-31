@@ -842,3 +842,54 @@
   margin: 0;
   color: var(--muted);
 }
+
+/* When you usually work: a small week grid (days across, morning / afternoon / evening down) */
+.avail {
+  display: grid;
+  grid-template-columns: auto repeat(7, minmax(30px, 44px));
+  gap: 6px;
+  align-items: center;
+  justify-content: start;
+  font-size: 0.8125rem;
+}
+
+.avail__day {
+  text-align: center;
+  color: var(--muted);
+}
+
+.avail__part {
+  padding-right: 6px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.avail__cell {
+  position: relative;
+  cursor: pointer;
+}
+
+.avail__cell input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.avail__cell span {
+  display: block;
+  height: 32px;
+  border: 1px solid #b9ad98;
+  border-radius: 8px;
+  background: #fffdf8;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.avail__cell input:checked + span {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.avail__cell input:focus-visible + span {
+  outline: 2px solid var(--orange-deep);
+  outline-offset: 2px;
+}

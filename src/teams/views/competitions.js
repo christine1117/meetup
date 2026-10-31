@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031w';
-import { L } from '../../shared/i18n.js?v=20261031w';
-import { cupFor } from '../../shared/cup.js?v=20261031w';
-import { field, select } from '../../shared/forms.js?v=20261031w';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031w';
-import { S, U } from '../state.js?v=20261031w';
-import { WHEN, goalName, goalOptions, hourOptions, hoursName, whenName } from '../options.js?v=20261031w';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031w';
-import { P } from '../sample-people.js?v=20261031w';
-import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031w';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031w';
-import { signInPrompt } from './profile.js?v=20261031w';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031y';
+import { L } from '../../shared/i18n.js?v=20261031y';
+import { cupFor } from '../../shared/cup.js?v=20261031y';
+import { field, select } from '../../shared/forms.js?v=20261031y';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031y';
+import { S, U } from '../state.js?v=20261031y';
+import { DAYS, PARTS, goalName, goalOptions, hourOptions, hoursName, slotsText } from '../options.js?v=20261031y';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031y';
+import { P } from '../sample-people.js?v=20261031y';
+import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031y';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031y';
+import { signInPrompt } from './profile.js?v=20261031y';
 
 export const PAGE = 20;  // competitions per page
 
@@ -85,8 +85,12 @@ export function viewComps() {
   <p class="credit">${L`${list.length} open · Updated ${esc(updated)} from ${DATA.sources.map((x) => `<a class="inline-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join(', ')}.`} ${L`Details and sign-up are on each official page.`}</p>`;
 }
 
-// Tick boxes with a fixed list (times to work)
-const ticks = (name, list, picked = []) => `<div class="checks">${list.map(([v, l]) => `<label class="check"><input type="checkbox" name="${name}" value="${esc(v)}" ${picked.includes(v) ? 'checked' : ''}><span>${esc(L(l))}</span></label>`).join('')}</div>`;
+// When you usually work: days across, morning / afternoon / evening down
+const slotGrid = (picked = []) => `
+  <div class="avail" role="group">
+    <span></span>${DAYS.map(([, day]) => `<span class="avail__day">${esc(L(day))}</span>`).join('')}
+    ${PARTS.map(([p, part]) => `<span class="avail__part">${esc(L(part))}</span>${DAYS.map(([d, day]) => `<label class="avail__cell"><input type="checkbox" name="when" value="${d}_${p}" ${picked.includes(`${d}_${p}`) ? 'checked' : ''} aria-label="${esc(`${L(day)} ${L(part)}`)}"><span aria-hidden="true"></span></label>`).join('')}`).join('')}
+  </div>`;
 
 // The participation card (spec §4): what you bring to this competition. withTeam: also start a team.
 export function cardForm(cid, withTeam, editing = false) {
@@ -105,7 +109,7 @@ export function cardForm(cid, withTeam, editing = false) {
     </div>
     ${field('idea', L`Your idea for this competition`, prev.idea || '', { area: true, ph: L`e.g. An app that helps students find study partners`, hint: L`Optional. Even a rough idea helps others decide.` })}
     ${field('built', L`Something you have built`, prev.built || '', { ph: L`e.g. A bus app used by 2,000 riders`, hint: L`Optional. A project, a product or a competition you took part in.` })}
-    <div class="field"><p class="field__label">${withTeam ? L`When does your team usually work?` : L`When do you usually work?`} <span class="hint-inline">${L`Optional`}</span></p>${ticks('when', WHEN, prev.availability || [])}</div>
+    <div class="field"><p class="field__label">${withTeam ? L`When does your team usually work?` : L`When do you usually work?`} <span class="hint-inline">${L`Optional`}</span></p>${slotGrid(prev.availability || [])}</div>
     ${withTeam ? select('max', L`Team size limit`, sizeChoices(cid).map((n) => [String(n), L`${n} people`]), String(defaultMax(cid)), rules) : ''}
     <p class="error" id="card-error" hidden></p>
     <div class="btnrow">
@@ -117,7 +121,7 @@ export function cardForm(cid, withTeam, editing = false) {
 
 // Your card in this competition, with an edit button
 function myCard(cid, card) {
-  const facts = [goalName(card.goal), hoursName(card.hours), ...(card.availability || []).map(whenName)];
+  const facts = [goalName(card.goal), hoursName(card.hours), slotsText(card.availability)];
   return `
   <section class="panel mycard">
     <div class="mycard__top">

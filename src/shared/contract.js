@@ -5,7 +5,7 @@
    The crawler checks every record before saving, and the app checks again
    when loading. A record that breaks the contract is dropped, never shown. */
 
-import { L } from './i18n.js?v=20261031w';
+import { L } from './i18n.js?v=20261031y';
 
 export const SOURCES = ['devpost', 'mlh', 'bhuntr'];
 // Categories the LLM picks from (crawler/extract/schema.py), with their English names

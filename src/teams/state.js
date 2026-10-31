@@ -3,7 +3,7 @@
    kept in this browser for now. Your profile is saved separately
    (see ../shared/profile.js). */
 
-import { readProfile, writeProfile } from '../shared/profile.js?v=20261031w';
+import { readProfile, writeProfile } from '../shared/profile.js?v=20261031y';
 
 export const KEY = 'halfsugar.teams.v1';
 export const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {} });

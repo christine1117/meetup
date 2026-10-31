@@ -31,7 +31,7 @@ end $$;
 -- A writes a card; the user id comes from the sign-in, not from the page
 select pg_temp.as_user('a');
 insert into participations (competition_id, offered_roles, desired_roles, goal, weekly_hours, idea, built, availability)
-values ('dp-1', '{Design}', '{Frontend,Backend}', 'win', 6, 'Air quality alerts near schools', 'A bus app used by 2,000 riders', '{weekend}');
+values ('dp-1', '{Design}', '{Frontend,Backend}', 'win', 6, 'Air quality alerts near schools', 'A bus app used by 2,000 riders', '{mon_eve,sat_am,sat_pm}');
 do $$ begin
   assert (select user_id from participations) = auth.uid(), 'the card is A''s';
 end $$;
@@ -45,6 +45,7 @@ select pg_temp.expect_error($$insert into participations (competition_id, user_i
 select pg_temp.expect_error($$update participations set offered_roles = '{A,B,C}' where competition_id = 'dp-1'$$, 'check');
 select pg_temp.expect_error($$update participations set goal = 'fame' where competition_id = 'dp-1'$$, 'check');
 select pg_temp.expect_error($$update participations set availability = '{midnight}' where competition_id = 'dp-1'$$, 'check');
+select pg_temp.expect_error($$update participations set availability = '{weekend}' where competition_id = 'dp-1'$$, 'check');
 select pg_temp.expect_error($$update participations set built = repeat('x', 201) where competition_id = 'dp-1'$$, 'check');
 select pg_temp.expect_error($$update participations set idea = repeat('x', 301) where competition_id = 'dp-1'$$, 'check');
 

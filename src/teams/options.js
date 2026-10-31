@@ -1,8 +1,8 @@
 /* What a competition card can say: roles, goals, hours and topics.
    Values are stored in English; they are shown in the chosen language. */
 
-import { L } from '../shared/i18n.js?v=20261031w';
-import ZH from '../shared/locales/zh.js?v=20261031w';
+import { L, LANG } from '../shared/i18n.js?v=20261031y';
+import ZH from '../shared/locales/zh.js?v=20261031y';
 
 
 export const ROLES = ['Frontend', 'Backend', 'Design', 'Product', 'Data', 'Research', 'Marketing', 'Pitch', 'Hardware', 'Writing'];
@@ -13,9 +13,15 @@ export const hoursName = (h) => L((HOURS.find(([v]) => v === String(h)) || HOURS
 // For <select>: values stay English, labels follow the language
 export const goalOptions = () => GOALS.map(([v, l]) => [v, L(l)]);
 export const hourOptions = () => HOURS.map(([v, l]) => [v, L(l)]);
-// When people usually work on it (a card can tick several)
-export const WHEN = [['weekday_day', 'Weekday daytime'], ['weekday_evening', 'Weekday evenings'], ['weekend', 'Weekends']];
-export const whenName = (w) => L((WHEN.find(([v]) => v === w) || [w, w])[1]);
+// When people usually work on it: a day and a part of it, e.g. mon_eve, sat_am
+export const DAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']];
+export const PARTS = [['am', 'Morning'], ['pm', 'Afternoon'], ['eve', 'Evening']];
+export const SLOTS = DAYS.flatMap(([d]) => PARTS.map(([p]) => `${d}_${p}`));
+// "Mon Evening, Sat Morning/Afternoon" (in Chinese: 週一晚、週六早/午)
+export const slotsText = (list = []) => DAYS.map(([d, day]) => {
+  const parts = PARTS.filter(([p]) => list.includes(`${d}_${p}`)).map(([, part]) => L(part));
+  return parts.length ? `${L(day)}${LANG === 'zh' ? '' : ' '}${parts.join('/')}` : '';
+}).filter(Boolean).join(L`, `);
 export const TOPICS = ['Environment', 'Health', 'Education', 'Money', 'Food', 'Transport', 'Social good', 'AI'];
 export const MAX_ROLES = 2;
 

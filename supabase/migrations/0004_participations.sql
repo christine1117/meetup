@@ -13,7 +13,8 @@ create table if not exists participations (
   weekly_hours      int  not null check (weekly_hours between 1 and 60),
   idea              text not null default '' check (length(idea) <= 300),  -- your idea for this competition
   built             text not null default '' check (length(built) <= 200), -- something you have built or done
-  availability      text[] not null default '{}' check (availability <@ array['weekday_day', 'weekday_evening', 'weekend']),
+  -- when you usually work: day_part, e.g. mon_eve, sat_am (mon..sun x am / pm / eve)
+  availability      text[] not null default '{}' check (availability <@ array['mon_am', 'mon_pm', 'mon_eve', 'tue_am', 'tue_pm', 'tue_eve', 'wed_am', 'wed_pm', 'wed_eve', 'thu_am', 'thu_pm', 'thu_eve', 'fri_am', 'fri_pm', 'fri_eve', 'sat_am', 'sat_pm', 'sat_eve', 'sun_am', 'sun_pm', 'sun_eve']),
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   primary key (competition_id, user_id)
