@@ -1,6 +1,6 @@
 /* Form fields used by both apps. Values are always escaped. */
 
-import { esc } from './core.js?v=20261101c';
+import { esc } from './core.js?v=20261101d';
 
 export const field = (name, label, val = '', o = {}) => `
   <div class="field">

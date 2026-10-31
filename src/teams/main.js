@@ -18,26 +18,26 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261101c';
-import { L } from '../shared/i18n.js?v=20261101c';
-import { logError } from '../shared/log.js?v=20261101c';
-import { whoAmI } from './forms.js?v=20261101c';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261101d';
+import { L } from '../shared/i18n.js?v=20261101d';
+import { logError } from '../shared/log.js?v=20261101d';
+import { whoAmI } from './forms.js?v=20261101d';
 
-import { $ } from '../shared/core.js?v=20261101c';
-import { at } from '../shared/cup.js?v=20261101c';
-import { closesText } from '../shared/sugar.js?v=20261101c';
-import { S, U, saveMe } from './state.js?v=20261101c';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261101c';
-import { loadComps } from './competitions.js?v=20261101c';
-import { OTHERS, loadCards, loadOthers } from './server.js?v=20261101c';
-import { toast } from './ui.js?v=20261101c';
-import { go, route } from './router.js?v=20261101c';
-import { chatById } from './chats.js?v=20261101c';
-import { closeModal } from './views/modal.js?v=20261101c';
-import { curiousChecks } from './views/profile.js?v=20261101c';
-import { render } from './render.js?v=20261101c';
-import { autosave, formData, forms } from './forms.js?v=20261101c';
-import { acts } from './actions.js?v=20261101c';
+import { $ } from '../shared/core.js?v=20261101d';
+import { at } from '../shared/cup.js?v=20261101d';
+import { closesText } from '../shared/sugar.js?v=20261101d';
+import { S, U, saveMe } from './state.js?v=20261101d';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261101d';
+import { loadComps } from './competitions.js?v=20261101d';
+import { OTHERS, loadCards, loadOthers } from './server.js?v=20261101d';
+import { toast } from './ui.js?v=20261101d';
+import { go, route } from './router.js?v=20261101d';
+import { chatById } from './chats.js?v=20261101d';
+import { closeModal } from './views/modal.js?v=20261101d';
+import { curiousChecks } from './views/profile.js?v=20261101d';
+import { render } from './render.js?v=20261101d';
+import { autosave, formData, forms } from './forms.js?v=20261101d';
+import { acts } from './actions.js?v=20261101d';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');

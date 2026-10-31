@@ -1,23 +1,26 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
-import { L } from '../../shared/i18n.js?v=20261101c';
+import { L } from '../../shared/i18n.js?v=20261101d';
 
-import { esc } from '../../shared/core.js?v=20261101c';
-import { flavorChip } from '../../shared/flavors.js?v=20261101c';
-import { cupFor } from '../../shared/cup.js?v=20261101c';
-import { S, U } from '../state.js?v=20261101c';
-import { roleChips } from '../ui.js?v=20261101c';
-import { ROLES, cardTopics, goalName, hoursName, slotsText } from '../options.js?v=20261101c';
-import { P } from '../sample-people.js?v=20261101c';
-import { freshRoles } from '../matching.js?v=20261101c';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261101c';
+import { esc } from '../../shared/core.js?v=20261101d';
+import { flavorChip } from '../../shared/flavors.js?v=20261101d';
+import { cupFor } from '../../shared/cup.js?v=20261101d';
+import { S, U } from '../state.js?v=20261101d';
+import { roleChips } from '../ui.js?v=20261101d';
+import { ROLES, cardTopics, goalName, hoursName, slotsText } from '../options.js?v=20261101d';
+import { P } from '../sample-people.js?v=20261101d';
+import { freshRoles } from '../matching.js?v=20261101d';
+import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261101d';
 
 // A recommended person (a real card) (spec §16 Screen 4). The list is in fit order;
-// the score itself is not shown. Inviting to chat opens in the next step.
+// the score is not shown, and shared "Curious about" topics count quietly.
+// Inviting to chat opens in the next step.
 export function matchCard(r, cid) {
   const p = r.person;
   const team = myTeam(cid);
-  const fresh = freshRoles(p.canDo, roleCounts(sideOf(cid), cid), team ? needsOf(team) : []);
-  const mine = S.cards[cid] ? S.cards[cid].canDo : [];
+  const card = S.cards[cid] || { canDo: [], wants: [] };
+  // Orange only for what you asked for: the roles you are looking for (or your team still needs),
+  // and, on their side, the roles they are looking for that you do
+  const asked = team ? needsOf(team) : card.wants || [];
   return `
     <article class="card tcard">
       <div class="tcard__top">
@@ -25,10 +28,9 @@ export function matchCard(r, cid) {
         <div><strong>${esc(p.alias)}</strong> ${flavorChip(p)}<p class="meta">${[p.city, goalName(p.goal), hoursName(p.hours)].filter(Boolean).map(esc).join(' · ')}</p></div>
       </div>
       <dl class="brief">
-        <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
-        ${p.wants.length ? `<div><dt>${L`Looking for`}</dt><dd class="chips">${roleChips(p.wants, mine)}</dd></div>` : ''}
+        <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, asked)}</dd></div>
+        ${p.wants.length ? `<div><dt>${L`Looking for`}</dt><dd class="chips">${roleChips(p.wants, card.canDo)}</dd></div>` : ''}
         ${p.availability.length ? `<div><dt>${L`Free`}</dt><dd>${esc(slotsText(p.availability))}</dd></div>` : ''}
-        ${(p.curious || []).length ? `<div><dt>${L`Curious about`}</dt><dd class="chips">${roleChips(p.curious, (S.me && S.me.curious) || [])}</dd></div>` : ''}
         ${p.idea ? `<div><dt>${L`Idea`}</dt><dd>${esc(p.idea)}</dd></div>` : ''}
         ${p.built ? `<div><dt>${L`Built`}</dt><dd>${esc(p.built)}</dd></div>` : ''}
       </dl>

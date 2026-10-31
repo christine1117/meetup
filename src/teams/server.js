@@ -2,8 +2,8 @@
    (spec.md §4). The database checks who may write what
    (supabase/migrations/0004_participations.sql). */
 
-import { db } from '../shared/supabase.js?v=20261101c';
-import { S, U } from './state.js?v=20261101c';
+import { db } from '../shared/supabase.js?v=20261101d';
+import { S, U } from './state.js?v=20261101d';
 
 // A row of the participations table <-> the card the pages use
 export const cardFromRow = (r) => ({

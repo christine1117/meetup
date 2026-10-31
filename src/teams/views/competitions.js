@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261101c';
-import { L } from '../../shared/i18n.js?v=20261101c';
-import { cupFor } from '../../shared/cup.js?v=20261101c';
-import { field, select } from '../../shared/forms.js?v=20261101c';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261101c';
-import { S, U } from '../state.js?v=20261101c';
-import { DAYS, PARTS, goalName, goalOptions, hourOptions, hoursName, slotsText } from '../options.js?v=20261101c';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261101c';
-import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots } from '../rules.js?v=20261101c';
-import { matchCard, roleChecks } from './cards.js?v=20261101c';
-import { OTHERS } from '../server.js?v=20261101c';
-import { signInPrompt } from './profile.js?v=20261101c';
+import { esc, safeUrl } from '../../shared/core.js?v=20261101d';
+import { L } from '../../shared/i18n.js?v=20261101d';
+import { cupFor } from '../../shared/cup.js?v=20261101d';
+import { field, select } from '../../shared/forms.js?v=20261101d';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261101d';
+import { S, U } from '../state.js?v=20261101d';
+import { DAYS, PARTS, goalName, goalOptions, hourOptions, hoursName, slotsText } from '../options.js?v=20261101d';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261101d';
+import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots } from '../rules.js?v=20261101d';
+import { matchCard, roleChecks } from './cards.js?v=20261101d';
+import { OTHERS } from '../server.js?v=20261101d';
+import { signInPrompt } from './profile.js?v=20261101d';
 
 export const PAGE = 20;  // competitions per page
 
