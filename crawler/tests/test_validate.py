@@ -207,3 +207,20 @@ def test_not_listed_unless_the_text_says_teams_can_enter():
     assert not d.listed and "no_team_rules" in [i.code for i in d.issues]
     d = decide(comp(), Extraction(teams_allowed=True, team_rules=[]), "可個人或組隊參賽")
     assert d.listed and d.tracks == []
+
+
+def test_sizes_written_in_other_ways_are_understood():
+    from crawler.extract.validate import number_is_about_people as about
+    regtech = "每隊需由1名指導老師、1名組長及1~5名組員組成，即每隊伍之組成最少為2人。"
+    assert about(regtech, 2) and about(regtech, 6), "1 leader + 1–5 members: 2 to 6 people"
+    assert not about(regtech, 7), "the mentor is not added"
+    assert about("Teams for the Munich event consist of 2–5 participants.", 2)
+    assert about("Groups need to consist of between 1 and 4 people", 1)
+    assert about("Solo or in a team of up to 4.", 1), "solo means a minimum of 1"
+    assert about("Squads of 2 – 4 hackers", 2)
+    assert about("An association of at least two (2) individuals", 2)
+    assert about("學士/碩士/進修班在學學生個人或兩人以下團體參賽。", 2)
+    # Still refused: numbers that are not people, and numbers the text does not give
+    assert not about("每人限提交1件作品", 1)
+    assert not about("Prizes for the top 3 projects", 3)
+    assert not about("Solo participation is not allowed. Each team must have a minimum of 4 members .", 6)

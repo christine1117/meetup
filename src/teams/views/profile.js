@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031i';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031j';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031i';
-import { field, select } from '../../shared/forms.js?v=20261031i';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031i';
-import { S, U } from '../state.js?v=20261031i';
-import { PROVIDERS } from '../../shared/account.js?v=20261031i';
-import { esc } from '../../shared/core.js?v=20261031i';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031j';
+import { field, select } from '../../shared/forms.js?v=20261031j';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031j';
+import { S, U } from '../state.js?v=20261031j';
+import { PROVIDERS } from '../../shared/account.js?v=20261031j';
+import { esc } from '../../shared/core.js?v=20261031j';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -100,7 +100,7 @@ export function viewAccount() {
 
 export function viewMe() {
   return `
-  <header class="head"><div><h1>${L`Me`}</h1><p class="sub">${L`The sealed part unlocks when you team up.`}</p></div></header>
+  <header class="head"><div><h1>${L`My order`}</h1><p class="sub">${L`The sealed part unlocks when you team up.`}</p></div></header>
   <form class="stack" data-form="me" data-auto="1" novalidate>
     ${profileFields(S.me)}
     <p class="error" id="me-error" hidden>${L`Please add a nickname.`}</p>

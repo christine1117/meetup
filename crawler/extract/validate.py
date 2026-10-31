@@ -43,21 +43,50 @@ def mentor_counts(quote: str) -> set[int]:
     return found
 
 
-PEOPLE_AFTER = re.compile(r"^\s*(?:[-~～至到]\s*\S{1,2}\s*)?(?:人|名|位|成員|隊員|組員|學生|members?|people|persons|participants|individuals|students|hackers|teammates)", re.I)
-TEAM_NEAR = re.compile(r"隊|組|團|teams?\b", re.I)
+NUM_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+             "一": 1, "二": 2, "兩": 2, "两": 2, "雙": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+NUM_TOKEN = r"\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|[一二兩两雙三四五六七八九十]"
+PEOPLE = (r"(?:人|名|位|成員|隊員|組員|組長|隊長|學生|參賽者|members?|people|persons?|participants?|individuals?|students?"
+          r"|hackers?|builders?|teammates?|creators?)")
+# After a number: maybe the rest of a range or list ("–5", " and 4", ", 2, or 3"), then who is counted
+PEOPLE_AFTER = re.compile(rf"^\)?(?:\s*\(\s*\d+\s*\))?(?:\s*(?:-|–|—|~|～|至|到|to|and|or|,)\s*(?:or\s+)?(?:{NUM_TOKEN})){{0,3}}\s*(?:名|位|個)?\s*(?:的)?\s*{PEOPLE}", re.I)
+TEAM_NEAR = re.compile(r"隊|組|團|teams?\b|groups?\b|squads?\b|crews?\b", re.I)
+SOLO = re.compile(r"solo|individual|alone|on your own|by yourself|個人|單人|獨立參賽", re.I)
+# A track only for individuals ("僅限個人報名", "compete individually"): not a team size to show
+INDIVIDUAL_ONLY = re.compile(r"僅限個人|限個人|僅接受個人|個人賽|單一作者|individual(?:ly)? only|compete individually|solo only|single author", re.I)
+# Roles that add up to a team: "1名組長及1~5名組員" is 2 to 6 people (mentors are not roles here)
+ROLE = re.compile(rf"({NUM_TOKEN})(?:\s*(?:-|–|~|～|至|到)\s*({NUM_TOKEN}))?\s*(?:名|位|個)?\s*(?:的)?\s*"
+                  r"(組長|隊長|組員|隊員|成員|學生|leaders?|captains?|members?|students?)", re.I)
+
+
+def _value(token: str) -> int:
+    t = token.lower()
+    return int(t) if t.isdigit() else NUM_WORDS.get(t, 0)
+
+
+def roles_add_up(quote: str, n: int) -> bool:
+    """n is what the roles in the quote add up to, at their lowest or at their highest."""
+    lows = highs = count = 0
+    for m in ROLE.finditer(quote):
+        low = _value(m.group(1))
+        lows, highs, count = lows + low, highs + (_value(m.group(2)) if m.group(2) else low), count + 1
+    return count >= 2 and n in (lows, highs)
 
 
 def number_is_about_people(quote: str, n: int) -> bool:
-    """Is n in the quote as a count of people ("每隊 3 人", "teams of up to 4"),
-    not of something else ("每人限提交 1 件作品")?"""
-    words = {1: "one|一", 2: "two|二|兩|两|雙", 3: "three|三", 4: "four|四", 5: "five|五", 6: "six|六", 7: "seven|七", 8: "eight|八", 9: "nine|九", 10: "ten|十"}
-    pattern = rf"(?<!\d){n}(?!\d)" + (rf"|\b(?:{words[n]})\b|{words[n]}" if n in words else "")
+    """Is n in the quote as a count of people ("每隊 3 人", "teams of 2–5 participants"),
+    not of something else ("每人限提交 1 件作品")? Also true when the quote says it another
+    way: a minimum of 1 for "solo or in a team", or roles that add up to n."""
+    words = [w for w, v in NUM_WORDS.items() if v == n]
+    pattern = rf"(?<!\d){n}(?!\d)" + ("|" + "|".join(rf"\b{w}\b" if w.isascii() else w for w in words) if words else "")
     for m in re.finditer(pattern, quote, re.I):
-        after = quote[m.end(): m.end() + 8]
+        after = quote[m.end(): m.end() + 30]
         around = quote[max(0, m.start() - 30): m.end() + 20]
         if PEOPLE_AFTER.match(after) or TEAM_NEAR.search(around):
             return True
-    return False
+    if n == 1 and SOLO.search(quote):
+        return True
+    return roles_add_up(quote, n)
 
 
 def only_about_mentors(quote: str) -> bool:
@@ -125,6 +154,9 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
             continue
         if (r.min_members or r.max_members) and only_about_mentors(r.evidence):
             issues.append(Issue(code="mentors_counted", detail=f"The number seems to be about mentors ({where})"))
+            continue
+        # An individuals-only track (max 1) is not a team size: left out quietly
+        if (r.max_members == 1 or (r.max_members is None and r.min_members == 1)) and INDIVIDUAL_ONLY.search(r.evidence):
             continue
         # A mentor count is only kept if the quote gives that number for mentors
         if r.mentors_max is not None and r.mentors_max not in mentor_counts(r.evidence):

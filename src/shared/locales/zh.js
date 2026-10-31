@@ -306,6 +306,7 @@ export default {
   "Move to Brew": "改發到 Brew",
   "Music": "音樂",
   "Music & performance": "音樂表演",
+  "My order": "My order",
   "Mystery Cup": "Mystery Cup",
   "Mystery Cup is open": "Mystery Cup 開放中",
   "name": "名字",

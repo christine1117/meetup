@@ -29,7 +29,7 @@ HEADER = """/* Traditional Chinese for the interface. One line per English text.
 """
 
 # Names and slogans that stay in English in the Chinese interface
-KEEP_ENGLISH = ["Half Sugar", "Explore", "Brew", "Mystery Cup", "First Sip", "Pop the seal", "Refill", "Boba run",
+KEEP_ENGLISH = ["Half Sugar", "My order", "Explore", "Brew", "Mystery Cup", "First Sip", "Pop the seal", "Refill", "Boba run",
                 "Gone cold", "Devpost", "MLH", "LinkedIn", "Instagram", "Email"]
 SLOGANS = ["Boba chat, not coffee chat.", "Meet the person before the résumé.", "Conversation before credentials.",
            "I want to meet someone.", "I need someone for something.", "You can’t pick the flavor."]
