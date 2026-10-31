@@ -9,7 +9,7 @@
    touch. Not chatty, not a manual.
    ========================================================= */
 
-import ZH from './locales/zh.js?v=20261031a';
+import ZH from './locales/zh.js?v=20261031b';
 
 const LANG_KEY = 'halfsugar.lang';
 

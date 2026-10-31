@@ -1,4 +1,4 @@
-/* Half Sugar Teams: only what the main app.css does not already have */
+/* Team mode: only what shared/styles/base.css does not already have */
 
 .logo {
   white-space: nowrap;
@@ -630,4 +630,17 @@
 
 .side__foot {
   margin-top: auto;
+}
+
+/* "Other" role written by hand */
+.other-input {
+  flex: 1 1 160px;
+  min-width: 140px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #b9ad98;
+  border-radius: var(--r-pill);
+  background: #fffdf8;
+  font: inherit;
+  font-size: 0.9375rem;
 }

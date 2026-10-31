@@ -8,9 +8,9 @@
    A copy of the profile also stays in this browser (shared/profile.js), so the
    apps keep working the same way they always have. */
 
-import { db } from './supabase.js?v=20261031a';
-import { writeProfile } from './profile.js?v=20261031a';
-import { logError } from './log.js?v=20261031a';
+import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031b';
+import { writeProfile } from './profile.js?v=20261031b';
+import { logError } from './log.js?v=20261031b';
 
 const PENDING = 'halfsugar.pendingProfile';
 
@@ -63,6 +63,32 @@ export function authMessage(err) {
   if (/fetch|network|load failed/i.test(m)) return 'Could not reach the server. Check your connection.';
   return 'Something went wrong. Please try again.';
 }
+
+/* Sign in with another account. Each one shows up only once it is switched on
+   in Supabase (Authentication > Sign In / Providers), so nothing breaks before. */
+export const PROVIDERS = [['google', 'Google', 'ph-google-logo'], ['apple', 'Apple', 'ph-apple-logo'], ['linkedin_oidc', 'LinkedIn', 'ph-linkedin-logo']];
+
+export async function enabledProviders() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY }, signal: AbortSignal.timeout(8000) });
+    const external = (await res.json()).external || {};
+    return PROVIDERS.filter(([id]) => external[id]);
+  } catch (err) {
+    logError('providers', err);
+    return [];
+  }
+}
+
+// Leaves this page for the provider, which sends people back here signed in
+export async function signInWith(provider) {
+  const c = await db();
+  if (!c) throw new Error('network: the account server could not load');
+  const { error } = await c.auth.signInWithOAuth({ provider, options: { redirectTo: `${location.origin}${location.pathname}` } });
+  if (error) throw error;
+}
+
+// Coming back from a sign-in link or another account (?code=... in the address)
+export const returningFromSignIn = () => new URLSearchParams(location.search).has('code');
 
 export async function currentUser() {
   const c = await db();

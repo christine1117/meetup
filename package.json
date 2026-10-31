@@ -2,7 +2,7 @@
   "name": "half-sugar",
   "private": true,
   "type": "module",
-  "description": "Half Sugar and Half Sugar Teams: browser modules for the apps, a Python crawler that reads competition rules with an LLM.",
+  "description": "Half Sugar: find teammates for competitions. Browser modules for the app, a Python crawler that reads competition rules with an LLM.",
   "scripts": {
     "test": "node --test tests/*.test.js && .venv/bin/python -m pytest crawler/tests tools -q",
     "test:web": "node --test tests/*.test.js",

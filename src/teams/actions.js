@@ -1,20 +1,21 @@
 /* What each button does (buttons carry data-act="name"). */
-import { logOut } from '../shared/account.js?v=20261031a';
-import { clearProfile } from '../shared/profile.js?v=20261031a';
-import { L, setLang } from '../shared/i18n.js?v=20261031a';
+import { authMessage, logOut, signInWith } from '../shared/account.js?v=20261031b';
+import { clearProfile } from '../shared/profile.js?v=20261031b';
+import { L, setLang } from '../shared/i18n.js?v=20261031b';
+import { logError } from '../shared/log.js?v=20261031b';
 
-import { later, pick } from '../shared/core.js?v=20261031a';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031a';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261031a';
-import { toast } from './ui.js?v=20261031a';
-import { DAY } from './competitions.js?v=20261031a';
-import { FRIENDS } from './sample-people.js?v=20261031a';
-import { go } from './router.js?v=20261031a';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031a';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031a';
-import { closeModal, renderModal } from './views/modal.js?v=20261031a';
-import { PAGE } from './views/competitions.js?v=20261031a';
-import { render } from './render.js?v=20261031a';
+import { later, pick } from '../shared/core.js?v=20261031b';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031b';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031b';
+import { toast } from './ui.js?v=20261031b';
+import { DAY } from './competitions.js?v=20261031b';
+import { FRIENDS } from './sample-people.js?v=20261031b';
+import { go } from './router.js?v=20261031b';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031b';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031b';
+import { closeModal, renderModal } from './views/modal.js?v=20261031b';
+import { PAGE } from './views/competitions.js?v=20261031b';
+import { render } from './render.js?v=20261031b';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
@@ -99,6 +100,15 @@ export const acts = {
   'dev-days'(el) { const c = chatById(el.dataset.id); c.msgs.forEach((m) => { m.at -= 3 * DAY + 60000; }); c.at -= 3 * DAY + 60000; save(); render(); },
   lang(el) { setLang(el.dataset.value); render({ fresh: true }); },
   cat(el) { U.cat = el.dataset.value; U.shown = PAGE; render(); },
+  async oauth(el) {
+    try {
+      await signInWith(el.dataset.provider);
+    } catch (err) {
+      logError('oauth', err);
+      U.authMsg = { text: L(authMessage(err)) };
+      render();
+    }
+  },
   'auth-mode'(el) { U.auth = el.dataset.mode; U.authMsg = null; render({ fresh: true }); },
   async logout() {
     await logOut();
@@ -118,6 +128,6 @@ export const acts = {
   },
   reset() { U.confirmReset = true; render(); },
   'reset-no'() { U.confirmReset = false; render(); },
-  // Clears teams, cards and chats. Your profile stays, since Half Sugar uses it too.
+  // Clears teams, cards and chats. Your profile stays (it is saved separately).
   'reset-yes'() { try { localStorage.removeItem(KEY); } catch { /* nothing */ } location.hash = ''; location.reload(); },
 };

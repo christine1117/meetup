@@ -1,19 +1,19 @@
 /* What happens when a form is sent. */
-import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261031a';
-import { logError } from '../shared/log.js?v=20261031a';
-import { L } from '../shared/i18n.js?v=20261031a';
-import { MAX_CURIOUS } from '../shared/profile.js?v=20261031a';
+import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261031b';
+import { logError } from '../shared/log.js?v=20261031b';
+import { L } from '../shared/i18n.js?v=20261031b';
+import { MAX_CURIOUS } from '../shared/profile.js?v=20261031b';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031a';
-import { isCold } from '../shared/sugar.js?v=20261031a';
-import { S, U, save, saveMe } from './state.js?v=20261031a';
-import { toast } from './ui.js?v=20261031a';
-import { MAX_ROLES } from './options.js?v=20261031a';
-import { COMP } from './competitions.js?v=20261031a';
-import { go } from './router.js?v=20261031a';
-import { DEFAULT_MAX, isFull } from './rules.js?v=20261031a';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031a';
-import { render } from './render.js?v=20261031a';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031b';
+import { isCold } from '../shared/sugar.js?v=20261031b';
+import { S, U, save, saveMe } from './state.js?v=20261031b';
+import { toast } from './ui.js?v=20261031b';
+import { MAX_ROLES } from './options.js?v=20261031b';
+import { COMP } from './competitions.js?v=20261031b';
+import { go } from './router.js?v=20261031b';
+import { DEFAULT_MAX, isFull } from './rules.js?v=20261031b';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031b';
+import { render } from './render.js?v=20261031b';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -26,6 +26,12 @@ const meFrom = (d, form) => ({
 export async function whoAmI() {
   const u = await currentUser();
   return u ? { id: u.id, email: u.email } : null;
+}
+
+// Ticked roles; "Other" is replaced by what was written next to it
+export function pickRoles(fd, name) {
+  const own = String(fd.get(`${name}Other`) || '').split(/[,，、]/).map((x) => x.trim().slice(0, 40)).filter(Boolean);
+  return [...new Set(fd.getAll(name).flatMap((r) => (r === '__other' ? own : [r])))];
 }
 
 export const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v).trim()]));
@@ -95,12 +101,12 @@ export const forms = {
   card(form, d) {
     const fd = new FormData(form);
     const cid = form.dataset.comp;
-    const canDo = fd.getAll('canDo');
+    const canDo = pickRoles(fd, 'canDo');
     if (!canDo.length || canDo.length > MAX_ROLES || (form.dataset.team && !d.team)) { $('#card-error', form).hidden = false; return; }
-    S.cards[cid] = { canDo, topics: fd.getAll('topics'), goal: d.goal, hours: Number(d.hours) };
+    S.cards[cid] = { canDo, topic: (d.topic || '').slice(0, 160), goal: d.goal, hours: Number(d.hours) };
     if (COMP[cid]) S.compCache[cid] = COMP[cid];
     if (form.dataset.team) {
-      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], needs: fd.getAll('needs'), max: Number(d.max) || DEFAULT_MAX, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
+      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], needs: pickRoles(fd, 'needs'), max: Number(d.max) || DEFAULT_MAX, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
     }
     U.form = null;
     save();
@@ -123,7 +129,7 @@ export const forms = {
     if (!t) return;
     t.pitch = d.pitch;
     t.max = Math.max(Number(d.max) || DEFAULT_MAX, t.members.length);
-    if (!isFull(t)) t.needs = new FormData(form).getAll('needs');
+    if (!isFull(t)) t.needs = pickRoles(new FormData(form), 'needs');
     save();
     toast(L`Saved`);
     render({ fresh: true });

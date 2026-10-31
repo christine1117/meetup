@@ -1,16 +1,16 @@
 /* HTML: your team page with its group chat. */
-import { L } from '../../shared/i18n.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031b';
 
-import { esc } from '../../shared/core.js?v=20261031a';
-import { cupFor } from '../../shared/cup.js?v=20261031a';
-import { field, select } from '../../shared/forms.js?v=20261031a';
-import { S, U } from '../state.js?v=20261031a';
-import { avatar, roleChips } from '../ui.js?v=20261031a';
-import { compOf } from '../competitions.js?v=20261031a';
-import { P } from '../sample-people.js?v=20261031a';
-import { SIZE_CHOICES, isFull, myRoles, needsOf, personOf, spots, teamMax } from '../rules.js?v=20261031a';
-import { roleChecks } from './cards.js?v=20261031a';
-import { bubbles } from './chats.js?v=20261031a';
+import { esc } from '../../shared/core.js?v=20261031b';
+import { cupFor } from '../../shared/cup.js?v=20261031b';
+import { field, select } from '../../shared/forms.js?v=20261031b';
+import { S, U } from '../state.js?v=20261031b';
+import { avatar, roleChips } from '../ui.js?v=20261031b';
+import { compOf } from '../competitions.js?v=20261031b';
+import { P } from '../sample-people.js?v=20261031b';
+import { SIZE_CHOICES, isFull, myRoles, needsOf, personOf, spots, teamMax } from '../rules.js?v=20261031b';
+import { roleChecks } from './cards.js?v=20261031b';
+import { bubbles } from './chats.js?v=20261031b';
 
 export function viewTeam(t) {
   const link = `${location.origin}${location.pathname}#/join/${t.code}`;
@@ -31,7 +31,7 @@ export function viewTeam(t) {
       <form class="stack pitch-form" data-form="teamedit" data-id="${t.id}" novalidate>
         ${field('pitch', L`What we’re building`, t.pitch || '', { area: true, ph: L`One or two sentences. People looking for a team see this.` })}
         ${select('max', L`Team size limit`, SIZE_CHOICES.filter((n) => n >= t.members.length).map((n) => [String(n), L`${n} people`]), String(teamMax(t)))}
-        ${isFull(t) ? '' : `<div class="field"><p class="field__label">${L`Still need`} <span class="hint-inline">${L`Optional`}</span></p>${roleChecks('needs', needsOf(t))}</div>`}
+        ${isFull(t) ? '' : `<div class="field"><p class="field__label">${L`Still need`} <span class="hint-inline">${L`Optional`}</span></p>${roleChecks('needs', needsOf(t), undefined, true)}</div>`}
         <button class="btn btn--ghost btn--sm" type="submit">${L`Save`}</button>
       </form>
       ${isFull(t) ? `<p class="meta">${L`The team is full. No one else can join.`}</p>` : `<div class="invite">

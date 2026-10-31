@@ -8,7 +8,7 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const version = process.argv[2] || new Date().toISOString().replace(/\D/g, '').slice(0, 12);
-const pages = ['index.html', 'teams/index.html'];
+const pages = ['index.html'];
 
 async function jsFiles(dir) {
   const out = [];

@@ -1,16 +1,16 @@
 /* HTML: the pop-up for a person or a team. */
-import { L } from '../../shared/i18n.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031b';
 
-import { $, esc } from '../../shared/core.js?v=20261031a';
-import { flavorChip } from '../../shared/flavors.js?v=20261031a';
-import { cupFor } from '../../shared/cup.js?v=20261031a';
-import { S, U } from '../state.js?v=20261031a';
-import { avatar, roleChips } from '../ui.js?v=20261031a';
-import { goalName, hoursName } from '../options.js?v=20261031a';
-import { compOf } from '../competitions.js?v=20261031a';
-import { P } from '../sample-people.js?v=20261031a';
-import { freshRoles } from '../matching.js?v=20261031a';
-import { chatWith, isFull, knows, myRoles, myTeam, needsOf, personOf, roleCounts, sideOf, spots, teamsIn } from '../rules.js?v=20261031a';
+import { $, esc } from '../../shared/core.js?v=20261031b';
+import { flavorChip } from '../../shared/flavors.js?v=20261031b';
+import { cupFor } from '../../shared/cup.js?v=20261031b';
+import { S, U } from '../state.js?v=20261031b';
+import { avatar, roleChips } from '../ui.js?v=20261031b';
+import { cardTopics, goalName, hoursName } from '../options.js?v=20261031b';
+import { compOf } from '../competitions.js?v=20261031b';
+import { P } from '../sample-people.js?v=20261031b';
+import { freshRoles } from '../matching.js?v=20261031b';
+import { chatWith, isFull, knows, myRoles, myTeam, needsOf, personOf, roleCounts, sideOf, spots, teamsIn } from '../rules.js?v=20261031b';
 
 export const modalEl = document.createElement('div');
 modalEl.id = 'modal';
@@ -58,7 +58,7 @@ export function personModal(pid, cid) {
       </div>
       <dl class="brief">
         <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
-        ${p.topics.length ? `<div><dt>${L`Cares about`}</dt><dd class="chips">${roleChips(p.topics, card ? card.topics : [])}</dd></div>` : ''}
+        ${p.topics.length ? `<div><dt>${L`Cares about`}</dt><dd class="chips">${roleChips(p.topics, cardTopics(card))}</dd></div>` : ''}
         <div><dt>${L`Built`}</dt><dd>${esc(p.work)}</dd></div>
       </dl>
       ${known ? `

@@ -1,5 +1,5 @@
 /* =========================================================
-   Half Sugar Teams
+   Half Sugar: find teammates for competitions
    Find teammates for competitions and hackathons by what people can
    do, not where they studied.
 
@@ -12,28 +12,28 @@
    Competitions are real: the crawler (crawler/run.js) collects them once a
    day from Devpost, MLH and 獎金獵人 into data/competitions.json.
    People and chats are still samples until accounts exist; your data stays in
-   this browser. Your profile is shared with Half Sugar.
+   this browser.
 
    This file wires up events and starts the app. The rest lives in:
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { loadProfile } from '../shared/account.js?v=20261031a';
-import { logError } from '../shared/log.js?v=20261031a';
-import { whoAmI } from './forms.js?v=20261031a';
+import { enabledProviders, loadProfile, returningFromSignIn } from '../shared/account.js?v=20261031b';
+import { logError } from '../shared/log.js?v=20261031b';
+import { whoAmI } from './forms.js?v=20261031b';
 
-import { $ } from '../shared/core.js?v=20261031a';
-import { at } from '../shared/cup.js?v=20261031a';
-import { closesText } from '../shared/sugar.js?v=20261031a';
-import { S, U, saveMe } from './state.js?v=20261031a';
-import { loadComps } from './competitions.js?v=20261031a';
-import { go, route } from './router.js?v=20261031a';
-import { chatById } from './chats.js?v=20261031a';
-import { closeModal } from './views/modal.js?v=20261031a';
-import { PAGE } from './views/competitions.js?v=20261031a';
-import { render } from './render.js?v=20261031a';
-import { formData, forms } from './forms.js?v=20261031a';
-import { acts } from './actions.js?v=20261031a';
+import { $ } from '../shared/core.js?v=20261031b';
+import { at } from '../shared/cup.js?v=20261031b';
+import { closesText } from '../shared/sugar.js?v=20261031b';
+import { S, U, saveMe } from './state.js?v=20261031b';
+import { loadComps } from './competitions.js?v=20261031b';
+import { go, route } from './router.js?v=20261031b';
+import { chatById } from './chats.js?v=20261031b';
+import { closeModal } from './views/modal.js?v=20261031b';
+import { PAGE } from './views/competitions.js?v=20261031b';
+import { render } from './render.js?v=20261031b';
+import { formData, forms } from './forms.js?v=20261031b';
+import { acts } from './actions.js?v=20261031b';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -97,7 +97,7 @@ loadComps(render);
 // (The account library only loads when there is a saved login.)
 let hasLogin = false;
 try { hasLogin = !!localStorage.getItem('halfsugar.auth'); } catch { /* storage is off */ }
-if (hasLogin) {
+if (hasLogin || returningFromSignIn()) {
   whoAmI().then(async (user) => {
     U.user = user;
     if (user) {
@@ -105,6 +105,11 @@ if (hasLogin) {
       if (me) saveMe(me);
       else if (!S.me) U.needProfile = true;
     }
+    // Tidy the address after a sign-in link (?code=...), keeping the #/ route
+    if (returningFromSignIn()) history.replaceState(null, '', location.pathname + location.hash);
     render();
   }).catch((err) => logError('account', err));
 }
+
+// Which other accounts (Google, Apple, LinkedIn) are switched on, for the sign-in buttons
+enabledProviders().then((list) => { U.providers = list; if (list.length && !S.me) render(); });

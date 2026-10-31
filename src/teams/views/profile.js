@@ -1,16 +1,16 @@
-/* HTML: create an account, log in, and the Me page (the same profile as Half Sugar). */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031a';
+/* HTML: create an account, log in, and the Me page. */
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031b';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031a';
-import { field, select } from '../../shared/forms.js?v=20261031a';
-import { CONTACTS, CURIOUS_OPTIONS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031a';
-import { S, U } from '../state.js?v=20261031a';
-import { esc } from '../../shared/core.js?v=20261031a';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031b';
+import { field, select } from '../../shared/forms.js?v=20261031b';
+import { CONTACTS, CURIOUS_OPTIONS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031b';
+import { S, U } from '../state.js?v=20261031b';
+import { esc } from '../../shared/core.js?v=20261031b';
 
-// The same choices as Half Sugar (plus anything already on your profile)
+// The choices from shared/profile.js (plus anything already on your profile)
 const curiousChecks = (picked) => `<div class="checks">${[...new Set([...picked, ...CURIOUS_OPTIONS])].map((x) => `<label class="check"><input type="checkbox" name="curious" value="${esc(x)}" ${picked.includes(x) ? 'checked' : ''}><span>${esc(L(x))}</span></label>`).join('')}</div>`;
 
-// The same profile as Half Sugar: visible from the start, then sealed details
+// The profile: visible from the start, then sealed details
 export function profileFields(me) {
   return `
     <fieldset class="panel stack">
@@ -44,6 +44,13 @@ const accountFields = (newAccount) => `
       </div>
     </fieldset>`;
 
+// "Continue with Google / Apple / LinkedIn", for the ones switched on in Supabase
+const providerButtons = () => ((U.providers || []).length ? `
+    <div class="oauth">
+      ${U.providers.map(([id, name, icon]) => `<button class="btn btn--ghost oauth__btn" data-act="oauth" data-provider="${id}" type="button"><i class="ph ${icon}" aria-hidden="true"></i>${L`Continue with ${name}`}</button>`).join('')}
+      <p class="oauth__or"><span>${L`or with email`}</span></p>
+    </div>` : '');
+
 const note = () => (U.authMsg ? `<p class="${U.authMsg.ok ? 'ok-note' : 'error'}" role="status">${esc(U.authMsg.text)}</p>` : '');
 const busy = (label) => (U.busy ? `disabled>${L`One moment…`}` : `>${label}`);
 
@@ -60,6 +67,7 @@ export function authForms({ withProfile = true } = {}) {
   }
   if (U.auth === 'login') {
     return `
+    ${providerButtons()}
     <form class="stack" data-form="login" novalidate>
       ${accountFields(false)}
       ${note()}
@@ -68,10 +76,11 @@ export function authForms({ withProfile = true } = {}) {
     </form>`;
   }
   return `
+    ${providerButtons()}
     <form class="stack" data-form="signup" data-local="${withProfile ? '' : '1'}" novalidate>
       ${accountFields(true)}
       ${withProfile ? profileFields({}) : ''}
-      <p class="hint">${L`One account and one profile for Half Sugar and team mode.`}</p>
+      <p class="hint">${L`Your name, school and contact stay hidden until you team up.`}</p>
       ${note()}
       <button class="btn btn--primary" type="submit" ${busy(L`Create account`)}</button>
       <p class="hint">${L`Already have an account?`} <button class="link-btn" data-act="auth-mode" data-mode="login" type="button">${L`Log in`}</button></p>
@@ -100,7 +109,7 @@ export function viewAccount() {
 
 export function viewMe() {
   return `
-  <header class="head"><div><h1>${L`Me`}</h1><p class="sub">${L`Shared with Half Sugar. The sealed part unlocks when you team up.`}</p></div></header>
+  <header class="head"><div><h1>${L`Me`}</h1><p class="sub">${L`The sealed part unlocks when you team up.`}</p></div></header>
   <form class="stack" data-form="me" novalidate>
     ${profileFields(S.me)}
     <p class="error" id="me-error" hidden>${L`Please add a nickname.`}</p>
@@ -117,7 +126,6 @@ export function viewMe() {
   <section class="panel note">
     <h2>${L`About this version`}</h2>
     <p>${L`Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.`}</p>
-    <p><a class="inline-link" href="../">${L`Open Half Sugar`}</a></p>
     ${U.confirmReset
       ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
       : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear team data`}</button>`}

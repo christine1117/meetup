@@ -1,15 +1,15 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
-import { L } from '../../shared/i18n.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031b';
 
-import { esc } from '../../shared/core.js?v=20261031a';
-import { flavorChip } from '../../shared/flavors.js?v=20261031a';
-import { cupFor } from '../../shared/cup.js?v=20261031a';
-import { S, U } from '../state.js?v=20261031a';
-import { roleChips } from '../ui.js?v=20261031a';
-import { ROLES, goalName, hoursName } from '../options.js?v=20261031a';
-import { P } from '../sample-people.js?v=20261031a';
-import { freshRoles } from '../matching.js?v=20261031a';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031a';
+import { esc } from '../../shared/core.js?v=20261031b';
+import { flavorChip } from '../../shared/flavors.js?v=20261031b';
+import { cupFor } from '../../shared/cup.js?v=20261031b';
+import { S, U } from '../state.js?v=20261031b';
+import { roleChips } from '../ui.js?v=20261031b';
+import { ROLES, cardTopics, goalName, hoursName } from '../options.js?v=20261031b';
+import { P } from '../sample-people.js?v=20261031b';
+import { freshRoles } from '../matching.js?v=20261031b';
+import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031b';
 
 export function personCard(p, cid) {
   const card = S.cards[cid];
@@ -24,7 +24,7 @@ export function personCard(p, cid) {
       </div>
       <dl class="brief">
         <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
-        ${p.topics.length ? `<div><dt>${L`Cares about`}</dt><dd class="chips">${roleChips(p.topics, card.topics)}</dd></div>` : ''}
+        ${p.topics.length ? `<div><dt>${L`Cares about`}</dt><dd class="chips">${roleChips(p.topics, cardTopics(card))}</dd></div>` : ''}
         <div><dt>${L`Built`}</dt><dd>${esc(p.work)}</dd></div>
       </dl>
       ${hiBox(cid, 'person', p.id, existing, mine ? L`Invite ${p.alias}` : L`Say hi`)}
@@ -72,4 +72,12 @@ export function hiBox(cid, kind, ref, existing, label) {
   return `<button class="btn btn--dark btn--sm" data-act="hi" data-key="${key}" type="button">${esc(label)}</button>`;
 }
 
-export const roleChecks = (name, picked, list = ROLES) => `<div class="checks">${list.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${r}" ${picked.includes(r) ? 'checked' : ''}><span>${L(r)}</span></label>`).join('')}</div>`;
+// Tick boxes for roles. withOther adds "Other" with a box to write your own.
+export function roleChecks(name, picked, list = ROLES, withOther = false) {
+  const custom = picked.filter((r) => !list.includes(r));
+  const boxes = list.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${esc(r)}" ${picked.includes(r) ? 'checked' : ''}><span>${esc(L(r))}</span></label>`).join('');
+  const other = withOther ? `
+    <label class="check"><input type="checkbox" name="${name}" value="__other" ${custom.length ? 'checked' : ''}><span>${L`Other`}</span></label>
+    <input class="other-input" name="${name}Other" value="${esc(custom.join(', '))}" maxlength="40" placeholder="${esc(L`Write your own`)}" aria-label="${esc(L`Other role`)}">` : '';
+  return `<div class="checks">${boxes}${other}</div>`;
+}

@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031a';
-import { L } from '../../shared/i18n.js?v=20261031a';
-import { cupFor } from '../../shared/cup.js?v=20261031a';
-import { field, select } from '../../shared/forms.js?v=20261031a';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031a';
-import { S, U } from '../state.js?v=20261031a';
-import { roleChips } from '../ui.js?v=20261031a';
-import { TOPICS, goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031a';
-import { COMP, DATA, SOURCE_NAME, compOf, dataState, dateText, regionName, searchText, tagsOf, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031a';
-import { P } from '../sample-people.js?v=20261031a';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031a';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031a';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031b';
+import { L } from '../../shared/i18n.js?v=20261031b';
+import { cupFor } from '../../shared/cup.js?v=20261031b';
+import { field, select } from '../../shared/forms.js?v=20261031b';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031b';
+import { S, U } from '../state.js?v=20261031b';
+import { roleChips } from '../ui.js?v=20261031b';
+import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031b';
+import { COMP, DATA, SOURCE_NAME, compOf, dataState, dateText, regionName, searchText, tagsOf, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031b';
+import { P } from '../sample-people.js?v=20261031b';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031b';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031b';
 
 export const PAGE = 30;
 
@@ -63,21 +63,21 @@ export function viewComps() {
 }
 
 export function cardForm(cid, withTeam) {
-  const prev = S.cards[cid] || Object.values(S.cards)[0] || { canDo: [], topics: [], goal: 'win', hours: 6 };
+  const prev = S.cards[cid] || Object.values(S.cards)[0] || { canDo: [], topic: '', goal: 'win', hours: 6 };
   const rules = compOf(cid).team && compOf(cid).team.max ? L`The rules say ${teamSizeText(compOf(cid).team)}.` : L`Check the official rules.`;
   return `
   <form class="panel stack" data-form="card" data-comp="${cid}" data-team="${withTeam ? 1 : ''}" novalidate>
     <h2>${withTeam ? L`Start a team` : L`Your competition card`}</h2>
     ${withTeam ? field('team', L`Team name`, '', { req: true, ph: L`e.g. Clear Air` }) : ''}
     ${withTeam ? field('pitch', L`What are you building?`, '', { area: true, ph: L`One or two sentences. You can change it later.` }) : ''}
-    <div class="field"><p class="field__label">${L`Your role`} <span class="hint-inline">${L`Pick 1 or 2`}</span></p>${roleChecks('canDo', prev.canDo)}</div>
+    <div class="field"><p class="field__label">${L`Your role`} <span class="hint-inline">${L`Pick 1 or 2`}</span></p>${roleChecks('canDo', prev.canDo, undefined, true)}</div>
     <div class="row2">
       ${select('goal', L`Your goal`, goalOptions(), prev.goal)}
       ${select('hours', L`Time each week`, hourOptions(), String(prev.hours))}
     </div>
-    <div class="field"><p class="field__label">${L`What you care about`} <span class="hint-inline">${L`Optional`}</span></p>${roleChecks('topics', prev.topics || [], TOPICS)}</div>
+    ${field('topic', L`Topic or idea you’d like to work on`, prev.topic || (prev.topics || []).join(', '), { ph: L`e.g. Air quality near schools`, hint: L`Optional. One sentence is enough.` })}
     ${withTeam ? select('max', L`Team size limit`, SIZE_CHOICES.map((n) => [String(n), L`${n} people`]), String(defaultMax(cid)), rules) : ''}
-    ${withTeam ? `<div class="field"><p class="field__label">${L`Still need`} <span class="hint-inline">${L`Optional. Can include a role you already have.`}</span></p>${roleChecks('needs', [])}</div>` : ''}
+    ${withTeam ? `<div class="field"><p class="field__label">${L`Still need`} <span class="hint-inline">${L`Optional. Can include a role you already have.`}</span></p>${roleChecks('needs', [], undefined, true)}</div>` : ''}
     <p class="error" id="card-error" hidden>${withTeam ? L`Pick 1 or 2 roles and add a team name.` : L`Pick 1 or 2 roles.`}</p>
     <div class="btnrow">
       <button class="btn btn--primary" type="submit">${withTeam ? L`Create team` : L`Join`}</button>
@@ -136,7 +136,7 @@ export function viewComp(cid) {
     <i class="ph ph-caret-right" aria-hidden="true"></i>
   </a>` : `
   <section class="mycard">
-    <p class="meta">${L`Your card`} · <b>${esc(card.canDo.map((r) => L(r)).join(', '))}</b> · ${esc(goalName(card.goal))} · ${esc(hoursName(card.hours))}${card.topics.length ? ` · ${L`Cares about ${esc(card.topics.map((x) => L(x)).join(', '))}`}` : ''}</p>
+    <p class="meta">${L`Your card`} · <b>${esc(card.canDo.map((r) => L(r)).join(', '))}</b> · ${esc(goalName(card.goal))} · ${esc(hoursName(card.hours))}${card.topic ? ` · ${L`Topic: ${esc(card.topic)}`}` : (card.topics || []).length ? ` · ${L`Cares about ${esc(card.topics.map((x) => L(x)).join(', '))}`}` : ''}</p>
   </section>`}
   ${team && isFull(team) ? `<p class="empty">${L`Your team is full (${spots(team)}). Good luck!`}</p>` : `
   <h2 class="sec-title">${team ? L`People for your team` : L`Recommended for you`}</h2>

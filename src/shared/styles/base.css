@@ -3807,3 +3807,37 @@ body.modal-open {
 .side__foot .lang-switch {
   margin-top: 12px;
 }
+
+/* Sign in with Google / Apple / LinkedIn */
+.oauth {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.oauth__btn {
+  justify-content: center;
+  width: 100%;
+}
+
+.oauth__btn i {
+  margin-right: 8px;
+  font-size: 1.125rem;
+}
+
+.oauth__or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.oauth__or::before,
+.oauth__or::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}

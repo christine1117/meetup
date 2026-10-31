@@ -3,12 +3,13 @@
    recommendations (using matching.js).
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
-import { L } from '../shared/i18n.js?v=20261031a';
+import { L } from '../shared/i18n.js?v=20261031b';
+import { cardTopics } from './options.js?v=20261031b';
 
-import { S } from './state.js?v=20261031a';
-import { compOf } from './competitions.js?v=20261031a';
-import { P, demoPeople, seedTeam } from './sample-people.js?v=20261031a';
-import { roleFit, vibe } from './matching.js?v=20261031a';
+import { S } from './state.js?v=20261031b';
+import { compOf } from './competitions.js?v=20261031b';
+import { P, demoPeople, seedTeam } from './sample-people.js?v=20261031b';
+import { roleFit, vibe } from './matching.js?v=20261031b';
 
 export const personOf = (id) => (id === 'me' ? { ...S.me, alias: L`You`, id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in
@@ -54,12 +55,14 @@ export function roleCounts(ids, cid) {
 export const sideOf = (cid) => { const t = myTeam(cid); return t ? t.members : ['me']; };
 export function personScore(p, cid) {
   const t = myTeam(cid);
-  return roleFit(p.canDo, roleCounts(sideOf(cid), cid), t ? needsOf(t) : []) + vibe(p, S.cards[cid]) + p.reply;
+  const card = S.cards[cid];
+  return roleFit(p.canDo, roleCounts(sideOf(cid), cid), t ? needsOf(t) : []) + vibe(p, { ...card, topics: cardTopics(card) }) + p.reply;
 }
 export function teamScore(t, cid) {
   const lead = P[t.members[0]];
   const topics = [...new Set(t.members.flatMap((m) => P[m].topics))];
-  return roleFit(myRoles(cid), roleCounts(t.members, cid), needsOf(t)) + vibe({ ...lead, topics }, S.cards[cid]) + lead.reply;
+  const card = S.cards[cid];
+  return roleFit(myRoles(cid), roleCounts(t.members, cid), needsOf(t)) + vibe({ ...lead, topics }, { ...card, topics: cardTopics(card) }) + lead.reply;
 }
 export function recommendations(cid) {
   const mine = myTeam(cid);

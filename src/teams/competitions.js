@@ -4,12 +4,12 @@
    (../shared/contract.js), and formats dates. Each listing links back to
    its official page. Once you join one, a copy is kept so your team still
    works after it drops off the list. */
-import { L, LANG } from '../shared/i18n.js?v=20261031a';
+import { L, LANG } from '../shared/i18n.js?v=20261031b';
 
-import { logError } from '../shared/log.js?v=20261031a';
-import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031a';
-import { rest } from '../shared/supabase.js?v=20261031a';
-import { S } from './state.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031b';
+import { checkCompetition, competitionFromRow } from '../shared/contract.js?v=20261031b';
+import { rest } from '../shared/supabase.js?v=20261031b';
+import { S } from './state.js?v=20261031b';
 
 export const DAY = 86400000;
 export const SOURCE_NAME = { devpost: 'Devpost', mlh: 'MLH', bhuntr: '獎金獵人' };
@@ -18,7 +18,8 @@ export const regionName = (r) => L(REGION_NAME[r] || '');
 export let DATA = { items: [], sources: [], updatedAt: null };
 export let COMP = {};
 export let dataState = 'loading';
-export const DATA_URL = '../data/competitions.json';
+// Relative to this file, so it works wherever the page is
+export const DATA_URL = new URL('../../data/competitions.json', import.meta.url).href.split('?')[0];
 export const compOf = (id) => COMP[id] || (S.compCache || {})[id] || { id, name: 'A past competition', kind: 'Competition', source: '', tags: [] };
 export const dateText = (ms) => new Date(ms).toLocaleDateString(LANG === 'zh' ? 'zh-TW' : 'en-US', { month: 'short', day: 'numeric' });
 

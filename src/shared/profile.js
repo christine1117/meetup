@@ -1,10 +1,10 @@
-/* The one profile, shared by Half Sugar and team mode.
-   It lives in Half Sugar's saved data, so signing up in either app signs you
-   up in both. When accounts move to a server, only this file changes. */
+/* The profile kept in this browser. It uses the storage key the first Half
+   Sugar app used, so nobody loses theirs. With an account, the profile also
+   lives in the database (shared/account.js). */
 
 export const PROFILE_KEY = 'meetup.v1';
 
-// "Curious about" is picked from this list in both apps (up to MAX_CURIOUS)
+// "Curious about" is picked from this list (up to MAX_CURIOUS)
 export const CURIOUS_OPTIONS = [
   'AI products', 'AI in supply chains', 'Supply chains', 'Semiconductors', 'Chip packaging', 'Hardware',
   'Pricing', 'Fundraising', 'Sales', 'Marketing', 'Branding', 'Product design', 'User research', 'Data analysis',
@@ -36,7 +36,7 @@ export function readProfile() {
   }
 }
 
-// Save the profile into Half Sugar's data without touching anything else there
+// Save the profile without touching anything else stored under the same key
 export function writeProfile(me) {
   try {
     const saved = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};

@@ -1,10 +1,10 @@
 # Half Sugar 專案架構
 
-一個專案、一起部署（Modular Monolith）。裡面分成四個模組，每個模組有清楚的邊界。
+一個專案、一起部署（Modular Monolith）。裡面分成三個模組，每個模組有清楚的邊界。
+網站目前只有一個入口：組隊（Teams）。原本的 Half Sugar 聊天 app 已經拿掉，需要時可以從 git 紀錄找回。
 
 | 模組 | 資料夾 | 負責什麼 |
 |---|---|---|
-| Half Sugar | `src/halfsugar/` | 聊天交友：Explore、Brew、Mystery Cup、Chats、Me |
 | Teams | `src/teams/` | 比賽組隊：選比賽、參賽卡、推薦、聊到半糖、組隊 |
 | Competitions | `crawler/`（Python）+ `data/` + `supabase/` | 每天抓真實比賽，用 LLM 讀懂組隊人數，存檔／存進資料庫 |
 | Shared（共用核心） | `src/shared/` | 兩個 app 都用的東西：杯子圖、糖度規則、個人資料、資料格式約定 |
@@ -13,9 +13,8 @@
 
 ```
 meetup/
-├─ index.html                 Half Sugar 入口（網址 /meetup/）
-├─ teams/index.html           Teams 入口（網址 /meetup/teams/）
-├─ landing/                   舊的介紹頁
+├─ index.html                 網站入口（Teams）
+├─ teams/index.html           舊網址 /teams/ 自動轉到首頁
 ├─ src/
 │  ├─ shared/                 共用核心，不認識任何一個 app
 │  │  ├─ core.js              小工具：$、uid、esc、safeUrl
@@ -24,23 +23,13 @@ meetup/
 │  │  ├─ cup.js               畫杯子和配料（只產生 SVG 文字）
 │  │  ├─ sugar.js             糖度和「放涼」規則（純函式）
 │  │  ├─ forms.js             表單欄位
-│  │  ├─ profile.js           共用的個人資料（兩個 app 同一份）
+│  │  ├─ profile.js           個人資料（存在瀏覽器的那份）、Curious about 的選項
+│  │  ├─ account.js           註冊、登入（email、Google、Apple、LinkedIn）、個人資料存進資料庫
+│  │  ├─ supabase.js          連到資料庫
+│  │  ├─ locales/zh.js        中文翻譯（每天自動補上新的）
 │  │  ├─ contract.js          比賽資料的格式約定
 │  │  ├─ log.js               錯誤紀錄
 │  │  └─ styles/base.css
-│  ├─ halfsugar/
-│  │  ├─ main.js              入口：啟動
-│  │  ├─ state.js             存檔資料
-│  │  ├─ people.js            範例使用者
-│  │  ├─ matching.js          推薦演算法
-│  │  ├─ conversations.js     聊天、揭曉
-│  │  ├─ simulate.js          範例使用者的回覆（有後端後移除）
-│  │  ├─ toppings.js          配料和禮物盒
-│  │  ├─ modal.js             彈出視窗
-│  │  ├─ screens/*.js         每個頁面一個檔案
-│  │  ├─ shell.js             版面和 render()
-│  │  ├─ forms.js / actions.js / events.js
-│  │  └─ router.js / ui.js
 │  └─ teams/
 │     ├─ main.js              入口：事件和啟動
 │     ├─ competitions.js      讀比賽資料（資料存取層）
@@ -79,12 +68,11 @@ meetup/
 ## 模組邊界（誰可以用誰）
 
 - `shared` 不 import 任何 app 的東西。
-- `halfsugar` 和 `teams` 互相不 import，只透過 `shared` 共用。
 - `crawler`（Python）產出的格式，跟網頁的 `shared/contract.js` 是同一份約定；兩邊各自檢查。
-- 每個 app 裡面分三層：
-  - **資料**：`state`、`competitions`、`people`
-  - **邏輯**：`matching`、`rules`、`chats`、`conversations`
-  - **畫面**：`views`、`screens`、`render`、`shell`
+- app 裡面分三層：
+  - **資料**：`state`、`competitions`、`sample-people`
+  - **邏輯**：`matching`、`rules`、`chats`
+  - **畫面**：`views`、`render`
 
 ## 六個原則怎麼做到
 
@@ -120,6 +108,11 @@ LLM 被要求：只抓參賽人數、上下限分開、沒寫就是 null、不�
 
 兩把金鑰都沒有時：已公開的比賽維持原樣，黑客松照常列出（人數顯示看官網），其他新比賽先不公開，等可以讀了再說。
 
+## 翻譯
+
+- **比賽內容**：LLM 每天讀比賽時同時寫英文和中文，自動完成。
+- **介面文字**：`tools/translate_ui.py` 每天找出沒有中文的新文字，交給 LLM 翻譯，檢查（`{0}` 不能少、產品名稱保留英文）後寫進 `src/shared/locales/zh.js`。已經有的行不會被改，所以人工修過的翻譯會留著。
+
 ## 常用指令
 
 ```
@@ -127,6 +120,7 @@ npm run setup    第一次：建立 Python 環境、安裝套件
 npm test         跑全部測試（網頁 + 爬蟲）
 npm run crawl    手動爬一次比賽（試跑：CRAWL_LIMIT=5 CRAWL_OUT_DIR=/tmp/x npm run crawl）
 npm run serve    本機開網站：http://localhost:8000
+npm run translate 補上缺的中文翻譯（需要 LLM 金鑰）
 npm run version  部署前蓋版本號
 ```
 
@@ -137,14 +131,12 @@ npm run version  部署前蓋版本號
 | 使用者註冊、登入 | Supabase Auth | 不用自己寫密碼系統 |
 | 資料庫 | Supabase（Postgres） | 結構在 `supabase/migrations/`；權限用資料庫的 row-level security 檢查 |
 | 即時聊天 | Supabase Realtime | 同一個服務，不用另外架 |
-| 網站 | 靜態網站即可（GitHub Pages、Cloudflare Pages 或 Vercel） | 登入和資料都在 Supabase，網站本身不需要伺服器 |
-| 每天爬蟲 + LLM | GitHub Actions | 每天 06:00 跑，LLM 金鑰（OpenAI 或 Claude）放 GitHub Secrets |
+| 網站 | Cloudflare（meetup.christine921117.workers.dev） | 登入和資料都在 Supabase，網站本身不需要伺服器；GitHub 有新版本就自動更新 |
+| 每天爬蟲 + LLM + 翻譯 | GitHub Actions | 每天 06:00 跑，LLM 金鑰（OpenAI 或 Claude）放 GitHub Secrets |
 | 需要藏金鑰的伺服器程式 | Supabase Edge Functions | 例如管理員確認人數的操作 |
 | Docker | 目前不需要 | 沒有自己架的伺服器 |
 
 ## 之後要接後端時改哪裡
 
-- 個人資料：`src/shared/profile.js` 改成讀寫 Supabase（表格在 `0002_profiles.sql`）
-- 存檔：兩個 app 的 `state.js`
-- 範例使用者和假回覆：`people.js`、`simulate.js`、`sample-people.js`，換成真的資料
-- 比賽資料：`teams/competitions.js` 改成讀 Supabase 的 `competitions` 表（格式不變）
+- 已完成：帳號和個人資料在 Supabase（`shared/account.js`），比賽從 Supabase 讀（讀不到時改讀每日檔案）
+- 下一步：隊伍、參賽卡和聊天存進資料庫（現在在瀏覽器）；範例使用者 `sample-people.js` 換成真的使用者
