@@ -2,7 +2,7 @@
 """End-to-end check on the real database, with throwaway test accounts:
 A and B save cards in one competition and see each other's card (with the
 public profile, as the recommendations load them); C, without a card, sees
-none. The accounts are deleted afterwards. Prints statuses and the database's
+none. A invites B to chat; B sees it and accepts; C sees nothing. The accounts are deleted afterwards. Prints statuses and the database's
 own error text; nothing personal. Runs on GitHub (needs the key)."""
 
 import os
@@ -59,6 +59,18 @@ try:
     check("C without a card sees no cards", none == [], str(none)[:200])
     edit = http.patch(f"{url}/rest/v1/participations", headers={**as_c, "Prefer": "return=representation"}, params={"user_id": f"eq.{a}"}, json={"idea": "hacked"})
     check("C cannot change A's card", edit.json() == [], edit.text[:200])
+
+    # Invitations (step 3): A invites B; B sees it, C does not; B accepts
+    rpc = lambda who, fn, args: http.post(f"{url}/rest/v1/rpc/{fn}", headers=who, json=args)
+    sent = rpc(as_a, "send_invite", {"comp": comp, "receiver": b, "invite_note": "Want to build something?"})
+    check("A invites B", sent.status_code == 200, sent.text[:200])
+    again = rpc(as_b, "send_invite", {"comp": comp, "receiver": a, "invite_note": ""})
+    check("B cannot open a second request with A", again.status_code >= 400 and "already a request" in again.text, again.text[:200])
+    inbox = http.get(f"{url}/rest/v1/match_requests", headers=as_b, params={"select": "id,status,note,sender:profiles!match_requests_sender_id_fkey(alias)"}).json()
+    check("B sees the invitation with A's nickname", len(inbox) == 1 and inbox[0]["status"] == "pending" and inbox[0]["sender"]["alias"] == "Test A", str(inbox)[:200])
+    check("C sees no invitations", http.get(f"{url}/rest/v1/match_requests", headers=as_c, params={"select": "id"}).json() == [])
+    answered = rpc(as_b, "answer_invite", {"request": inbox[0]["id"], "accept": True})
+    check("B accepts", answered.status_code == 200 and "chatting" in answered.text, answered.text[:200])
 finally:
     for uid in made:
         http.delete(f"{url}/auth/v1/admin/users/{uid}", headers=admin)
