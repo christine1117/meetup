@@ -3,7 +3,7 @@
    a role the side does not have yet scores high, a second person in the
    same role scores a little, a third scores below zero. If a team says it
    still needs a role (even one it already has), that role scores highest.
-   Then: the same goal, similar hours and shared topics. */
+   Then: the same goal, similar hours, a shared time to work, and shared topics. */
 
 
 export const overlap = (a = [], b = []) => a.filter((x) => b.includes(x));
@@ -15,5 +15,6 @@ export const freshRoles = (roles, counts, needs = []) => roles.filter((r) => nee
 export function vibe(a, b) {
   return (a.goal === b.goal ? 2 : 0)
     + (Math.abs(Number(a.hours) - Number(b.hours)) <= 3 ? 1 : 0)
+    + (overlap(a.availability, b.availability).length ? 1 : 0)
     + Math.min(2, overlap(a.topics, b.topics).length);
 }

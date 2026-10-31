@@ -1,8 +1,9 @@
-/* Saved data for team mode: your competition cards, teams and chats.
-   Your profile is saved separately (see ../shared/profile.js). */
+/* Saved data for team mode. Your participation cards live on the server
+   (server.js) and are loaded when you sign in; teams and chats are still
+   kept in this browser for now. Your profile is saved separately
+   (see ../shared/profile.js). */
 
-import { readProfile, writeProfile } from '../shared/profile.js?v=20261031r';
-import { MAX_ROLES } from './options.js?v=20261031r';
+import { readProfile, writeProfile } from '../shared/profile.js?v=20261031u';
 
 export const KEY = 'halfsugar.teams.v1';
 export const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {} });
@@ -13,7 +14,7 @@ export function load() {
     s.chats.forEach((c) => { c.votes = c.votes || {}; });
     // Older versions stored role slots; now a team just has an optional "still need" list
     s.teams.forEach((t) => { if (!t.needs) t.needs = (t.roles || []).filter((r) => !r.by).map((r) => r.name); delete t.roles; });
-    Object.values(s.cards).forEach((c) => { c.topics = c.topics || []; c.canDo = (c.canDo || []).slice(0, MAX_ROLES); });
+    s.cards = {}; // from the server only (older versions kept them here)
     if (!s.compCache || typeof s.compCache !== 'object') s.compCache = {};
     return s;
   } catch {
@@ -21,7 +22,7 @@ export function load() {
   }
 }
 export function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage is off; the page still works */ }
+  try { localStorage.setItem(KEY, JSON.stringify({ ...S, cards: {} })); } catch { /* storage is off; the page still works */ }
 }
 export let S = load();
 

@@ -1,20 +1,21 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031r';
-import { logError } from '../shared/log.js?v=20261031r';
-import { L } from '../shared/i18n.js?v=20261031r';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031r';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031u';
+import { logError } from '../shared/log.js?v=20261031u';
+import { L } from '../shared/i18n.js?v=20261031u';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031u';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031r';
-import { isCold } from '../shared/sugar.js?v=20261031r';
-import { S, U, save, saveMe } from './state.js?v=20261031r';
-import { toast } from './ui.js?v=20261031r';
-import { MAX_ROLES } from './options.js?v=20261031r';
-import { COMP } from './competitions.js?v=20261031r';
-import { go } from './router.js?v=20261031r';
-import { isFull, withinRules } from './rules.js?v=20261031r';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031r';
-import { render } from './render.js?v=20261031r';
-import { savedNote } from './views/profile.js?v=20261031r';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031u';
+import { isCold } from '../shared/sugar.js?v=20261031u';
+import { S, U, save, saveMe } from './state.js?v=20261031u';
+import { toast } from './ui.js?v=20261031u';
+import { MAX_ROLES, WHEN } from './options.js?v=20261031u';
+import { saveCard } from './server.js?v=20261031u';
+import { COMP } from './competitions.js?v=20261031u';
+import { go } from './router.js?v=20261031u';
+import { isFull, withinRules } from './rules.js?v=20261031u';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031u';
+import { render } from './render.js?v=20261031u';
+import { savedNote } from './views/profile.js?v=20261031u';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -35,6 +36,26 @@ export async function whoAmI() {
 export function pickRoles(fd, name) {
   const own = String(fd.get(`${name}Other`) || '').split(/[,，、]/).map((x) => x.trim().slice(0, 40)).filter(Boolean);
   return [...new Set(fd.getAll(name).flatMap((r) => (r === '__other' ? own : [r])))];
+}
+
+// The card as the form gives it; what the form does not ask (the roles you want, on the team form) stays as it was
+export function cardFrom(fd, d, before = {}) {
+  return {
+    canDo: pickRoles(fd, 'canDo'),
+    wants: fd.has('wantsOther') || fd.getAll('wants').length ? pickRoles(fd, 'wants').slice(0, 3) : before.wants || [],
+    lookingFor: d.lookingFor || before.lookingFor || 'either',
+    goal: d.goal, hours: Number(d.hours),
+    idea: (d.idea || '').slice(0, 300),
+    built: (d.built || '').slice(0, 200),
+    availability: fd.getAll('when').filter((w) => WHEN.some(([v]) => v === w)),
+  };
+}
+// What is missing from a card, as messages (empty when it can be saved)
+export function cardProblems(card, withTeam, teamName) {
+  const out = [];
+  if (!card.canDo.length || card.canDo.length > MAX_ROLES) out.push(L`Pick 1 or 2 roles.`);
+  if (withTeam && !teamName) out.push(L`Add a team name.`);
+  return out;
 }
 
 export const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v).trim()]));
@@ -75,18 +96,35 @@ export const forms = {
     else toast(L`Saved`);
     render({ fresh: true });
   },
-  card(form, d) {
+  // The participation card (spec §4), saved to your account
+  async card(form, d) {
     const fd = new FormData(form);
     const cid = form.dataset.comp;
-    const canDo = pickRoles(fd, 'canDo');
-    if (!canDo.length || canDo.length > MAX_ROLES || (form.dataset.team && !d.team)) { $('#card-error', form).hidden = false; return; }
-    S.cards[cid] = { canDo, topic: (d.topic || '').slice(0, 160), goal: d.goal, hours: Number(d.hours) };
+    const card = cardFrom(fd, d, S.cards[cid]);
+    const missing = cardProblems(card, !!form.dataset.team, d.team);
+    const error = $('#card-error', form);
+    if (missing.length) { error.textContent = missing.join(' '); error.hidden = false; return; }
+    if (!U.user) { go('account'); return; }
+    U.busy = true;
+    render();
+    try {
+      await saveCard(cid, card);
+    } catch (err) {
+      logError('cards', err);
+      U.busy = false;
+      toast(L`Could not save your card. Please try again.`);
+      render();
+      return;
+    }
+    U.busy = false;
     if (COMP[cid]) S.compCache[cid] = COMP[cid];
+    // Teams are still kept in this browser (they move to the server in a later step)
     if (form.dataset.team) {
       S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: '', members: ['me'], needs: pickRoles(fd, 'needs'), max: withinRules(cid, Number(d.max)), code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
+      save();
     }
     U.form = null;
-    save();
+    toast(L`Card saved`);
     render({ fresh: true });
   },
   hi(form, d) {

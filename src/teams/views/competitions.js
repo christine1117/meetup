@@ -1,16 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031r';
-import { L } from '../../shared/i18n.js?v=20261031r';
-import { cupFor } from '../../shared/cup.js?v=20261031r';
-import { field, select } from '../../shared/forms.js?v=20261031r';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031r';
-import { S, U } from '../state.js?v=20261031r';
-import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031r';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031r';
-import { P } from '../sample-people.js?v=20261031r';
-import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031r';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031r';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031u';
+import { L } from '../../shared/i18n.js?v=20261031u';
+import { cupFor } from '../../shared/cup.js?v=20261031u';
+import { field, select } from '../../shared/forms.js?v=20261031u';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031u';
+import { S, U } from '../state.js?v=20261031u';
+import { LOOKING_FOR, WHEN, goalName, goalOptions, hourOptions, hoursName, lookingName, whenName } from '../options.js?v=20261031u';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031u';
+import { P } from '../sample-people.js?v=20261031u';
+import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031u';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031u';
+import { signInPrompt } from './profile.js?v=20261031u';
 
 export const PAGE = 20;  // competitions per page
 
@@ -84,27 +85,51 @@ export function viewComps() {
   <p class="credit">${L`${list.length} open · Updated ${esc(updated)} from ${DATA.sources.map((x) => `<a class="inline-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join(', ')}.`} ${L`Details and sign-up are on each official page.`}</p>`;
 }
 
-export function cardForm(cid, withTeam) {
-  const prev = S.cards[cid] || Object.values(S.cards)[0] || { canDo: [], topic: '', goal: 'win', hours: 6 };
+// Tick boxes with a fixed list (times to work)
+const ticks = (name, list, picked = []) => `<div class="checks">${list.map(([v, l]) => `<label class="check"><input type="checkbox" name="${name}" value="${esc(v)}" ${picked.includes(v) ? 'checked' : ''}><span>${esc(L(l))}</span></label>`).join('')}</div>`;
+
+// The participation card (spec §4): what you bring to this competition. withTeam: also start a team.
+export function cardForm(cid, withTeam, editing = false) {
+  // A new card starts from your card in another competition, without that competition's idea
+  const prev = S.cards[cid] || { ...(Object.values(S.cards)[0] || { canDo: [], wants: [], goal: 'win', hours: 6, built: '', lookingFor: 'either', availability: [] }), idea: '' };
   const rules = compOf(cid).team && compOf(cid).team.max ? L`The rules say ${teamSizeText(compOf(cid).team)}.` : L`Check the official rules.`;
   return `
   <form class="panel stack" data-form="card" data-comp="${cid}" data-team="${withTeam ? 1 : ''}" novalidate>
-    <h2>${withTeam ? L`Start a team` : L`Your competition card`}</h2>
+    <h2>${withTeam ? L`Start a team` : editing ? L`Edit your card` : L`Your competition card`}</h2>
     ${withTeam ? field('team', L`Team name`, '', { req: true, ph: L`e.g. Clear Air` }) : ''}
     <div class="field"><p class="field__label">${L`Your role`} <span class="hint-inline">${L`Pick 1 or 2`}</span></p>${roleChecks('canDo', prev.canDo, undefined, true)}</div>
+    ${withTeam ? '' : select('lookingFor', L`Looking for`, LOOKING_FOR.map(([v, l]) => [v, L(l)]), prev.lookingFor || 'either')}
+    <div class="field"><p class="field__label">${withTeam ? L`Still need` : L`Roles you are looking for`} <span class="hint-inline">${L`Optional`}</span></p>${roleChecks(withTeam ? 'needs' : 'wants', withTeam ? [] : prev.wants || [], undefined, true)}</div>
     <div class="row2">
       ${select('goal', L`Your goal`, goalOptions(), prev.goal)}
       ${select('hours', L`Time each week`, hourOptions(), String(prev.hours))}
     </div>
-    ${field('topic', L`Topic or idea you’d like to work on`, prev.topic || (prev.topics || []).join(', '), { ph: L`e.g. Air quality near schools`, hint: L`Optional. One sentence is enough.` })}
+    ${field('idea', L`Your idea for this competition`, prev.idea || '', { area: true, ph: L`e.g. An app that helps students find study partners`, hint: L`Optional. Even a rough idea helps others decide.` })}
+    ${field('built', L`Something you have built`, prev.built || '', { ph: L`e.g. A bus app used by 2,000 riders`, hint: L`Optional. A project, a product or a competition you took part in.` })}
+    <div class="field"><p class="field__label">${withTeam ? L`When does your team usually work?` : L`When do you usually work?`} <span class="hint-inline">${L`Optional`}</span></p>${ticks('when', WHEN, prev.availability || [])}</div>
     ${withTeam ? select('max', L`Team size limit`, sizeChoices(cid).map((n) => [String(n), L`${n} people`]), String(defaultMax(cid)), rules) : ''}
-    ${withTeam ? `<div class="field"><p class="field__label">${L`Still need`} <span class="hint-inline">${L`Optional`}</span></p>${roleChecks('needs', [], undefined, true)}</div>` : ''}
-    <p class="error" id="card-error" hidden>${withTeam ? L`Pick 1 or 2 roles and add a team name.` : L`Pick 1 or 2 roles.`}</p>
+    <p class="error" id="card-error" hidden></p>
     <div class="btnrow">
-      <button class="btn btn--primary" type="submit">${withTeam ? L`Create team` : L`Join`}</button>
+      <button class="btn btn--primary" type="submit" ${U.busy ? 'disabled' : ''}>${withTeam ? L`Create team` : editing ? L`Save card` : L`Join`}</button>
       <button class="btn btn--ghost" data-act="form" data-what="" type="button">${L`Cancel`}</button>
     </div>
   </form>`;
+}
+
+// Your card in this competition, with an edit button
+function myCard(cid, card) {
+  const facts = [lookingName(card.lookingFor), goalName(card.goal), hoursName(card.hours), ...(card.availability || []).map(whenName)];
+  return `
+  <section class="panel mycard">
+    <div class="mycard__top">
+      <h2>${L`Your card`}</h2>
+      <button class="btn btn--ghost btn--sm" data-act="form" data-what="edit" type="button">${L`Edit`}</button>
+    </div>
+    <p><b>${esc(card.canDo.map((r) => L(r)).join(L`, `))}</b>${card.wants && card.wants.length ? ` · ${L`Looking for ${esc(card.wants.map((r) => L(r)).join(L`, `))}`}` : ''}</p>
+    <p class="meta">${facts.filter(Boolean).map(esc).join(' · ')}</p>
+    ${card.idea ? `<p class="mycard__line"><span class="meta">${L`Idea`}</span> ${esc(card.idea)}</p>` : ''}
+    ${card.built ? `<p class="mycard__line"><span class="meta">${L`Built`}</span> ${esc(card.built)}</p>` : ''}
+  </section>`;
 }
 
 // One track's rule (the quote it came from stays in the data for checking, not on the page)
@@ -135,7 +160,11 @@ export function viewComp(cid) {
     ${safeUrl(c.url) ? `<div class="btnrow"><a class="btn btn--ghost btn--sm" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener">${L`Official page`}<i class="ph ph-arrow-up-right" aria-hidden="true"></i></a></div>` : ''}
   </section>
 
-  ${!card ? (U.form ? cardForm(cid, U.form === 'team') : `
+  ${!card && !U.user ? `
+  <section class="panel join">
+    <h2>${L`Join this competition`}</h2>
+    ${signInPrompt(L`Sign in to fill in a card. It stays with your account, on any device.`)}
+  </section>` : card && U.form === 'edit' ? cardForm(cid, false, true) : !card ? (U.form && U.form !== 'edit' ? cardForm(cid, U.form === 'team') : `
   <section class="panel join">
     <h2>${L`Join this competition`}</h2>
     <div class="join__choices">
@@ -149,9 +178,7 @@ export function viewComp(cid) {
     <div><strong>${esc(team.name)}</strong><p class="meta">${spots(team)}${needsOf(team).length ? ` · ${L`Still need: ${esc(needsOf(team).map((r) => L(r)).join(', '))}`}` : ''}</p></div>
     <i class="ph ph-caret-right" aria-hidden="true"></i>
   </a>` : `
-  <section class="mycard">
-    <p class="meta">${L`Your card`} · <b>${esc(card.canDo.map((r) => L(r)).join(', '))}</b> · ${esc(goalName(card.goal))} · ${esc(hoursName(card.hours))}${card.topic ? ` · ${L`Topic: ${esc(card.topic)}`}` : (card.topics || []).length ? ` · ${L`Cares about ${esc(card.topics.map((x) => L(x)).join(', '))}`}` : ''}</p>
-  </section>`}
+  ${myCard(cid, card)}`}
   ${team && isFull(team) ? `<p class="empty">${L`Your team is full (${spots(team)}). Good luck!`}</p>` : `
   <h2 class="sec-title">${team ? L`People for your team` : L`Recommended for you`}</h2>
   <p class="meta sample-note">${L`Sample people for now. Real profiles show up here once more people sign up.`}</p>

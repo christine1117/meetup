@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031r';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031u';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031r';
-import { field, select } from '../../shared/forms.js?v=20261031r';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031r';
-import { S, U } from '../state.js?v=20261031r';
-import { PROVIDERS } from '../../shared/account.js?v=20261031r';
-import { esc } from '../../shared/core.js?v=20261031r';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031u';
+import { field, select } from '../../shared/forms.js?v=20261031u';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031u';
+import { S, U } from '../state.js?v=20261031u';
+import { PROVIDERS } from '../../shared/account.js?v=20261031u';
+import { esc } from '../../shared/core.js?v=20261031u';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -63,6 +63,9 @@ const signInButtons = () => `
     <div class="oauth">
       ${PROVIDERS.map(([id, name, icon]) => `<button class="btn btn--dark oauth__btn" data-act="oauth" data-provider="${id}" type="button" ${U.busy ? 'disabled' : ''}><i class="ph ${icon}" aria-hidden="true"></i>${L`Continue with ${name}`}</button>`).join('')}
     </div>`;
+
+// For parts that need an account: why, and the sign-in buttons
+export const signInPrompt = (why) => `<div class="signin-prompt"><p>${why || L`Sign in to continue.`}</p>${signInButtons()}</div>`;
 
 const note = () => (U.authMsg ? `<p class="${U.authMsg.ok ? 'ok-note' : 'error'}" role="status">${esc(U.authMsg.text)}</p>` : '');
 

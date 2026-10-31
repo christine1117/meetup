@@ -18,24 +18,25 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031r';
-import { L } from '../shared/i18n.js?v=20261031r';
-import { logError } from '../shared/log.js?v=20261031r';
-import { whoAmI } from './forms.js?v=20261031r';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031u';
+import { L } from '../shared/i18n.js?v=20261031u';
+import { logError } from '../shared/log.js?v=20261031u';
+import { whoAmI } from './forms.js?v=20261031u';
 
-import { $ } from '../shared/core.js?v=20261031r';
-import { at } from '../shared/cup.js?v=20261031r';
-import { closesText } from '../shared/sugar.js?v=20261031r';
-import { S, U, saveMe } from './state.js?v=20261031r';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031r';
-import { loadComps } from './competitions.js?v=20261031r';
-import { go, route } from './router.js?v=20261031r';
-import { chatById } from './chats.js?v=20261031r';
-import { closeModal } from './views/modal.js?v=20261031r';
-import { curiousChecks } from './views/profile.js?v=20261031r';
-import { render } from './render.js?v=20261031r';
-import { autosave, formData, forms } from './forms.js?v=20261031r';
-import { acts } from './actions.js?v=20261031r';
+import { $ } from '../shared/core.js?v=20261031u';
+import { at } from '../shared/cup.js?v=20261031u';
+import { closesText } from '../shared/sugar.js?v=20261031u';
+import { S, U, saveMe } from './state.js?v=20261031u';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031u';
+import { loadComps } from './competitions.js?v=20261031u';
+import { loadCards } from './server.js?v=20261031u';
+import { go, route } from './router.js?v=20261031u';
+import { chatById } from './chats.js?v=20261031u';
+import { closeModal } from './views/modal.js?v=20261031u';
+import { curiousChecks } from './views/profile.js?v=20261031u';
+import { render } from './render.js?v=20261031u';
+import { autosave, formData, forms } from './forms.js?v=20261031u';
+import { acts } from './actions.js?v=20261031u';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -146,6 +147,8 @@ if (hasLogin || back) {
       markUnsynced(false);
     } else if (me) saveMe(me);
     else U.needProfile = true;               // new here: fill in the profile next
+    // Your participation cards (one per competition)
+    await loadCards().catch((err) => logError('cards', err));
   }).catch((err) => {
     logError('account', err);
     if (back) U.authMsg = { text: L`Sign-in did not finish. Please try again.` };

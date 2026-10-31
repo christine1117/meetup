@@ -2,7 +2,7 @@
    is a server. Each competition gets a steady handful of sample people,
    and most get one sample team. Remove this file once sign-ups are real. */
 
-import { defaultMax } from './rules.js?v=20261031r';
+import { defaultMax } from './rules.js?v=20261031u';
 
 export const PEOPLE = [
   { id: 'p1', alias: 'Mochi', field: 'Design', city: 'Taipei', canDo: ['Design', 'Research'], topics: ['Environment', 'Transport'], goal: 'win', hours: 10, work: 'Redesigned a bus app used by 2,000 riders', reply: 0.9, real: { name: 'Yen Shu-Wei', school: 'NCKU, Industrial Design', contact: 'shuwei@example.com' } },
@@ -11,7 +11,7 @@ export const PEOPLE = [
   { id: 'p4', alias: 'Nori', field: 'Content', city: 'Taichung', canDo: ['Writing', 'Marketing'], topics: ['Education', 'Social good'], goal: 'learn', hours: 6, work: 'Writes a newsletter with 4,200 readers', reply: 0.6, real: { name: 'Huang Pei-Shan', school: 'Tunghai, Sociology', contact: 'peishan@example.com' } },
   { id: 'p5', alias: 'Pim', field: 'Research', city: 'Hsinchu', canDo: ['Data', 'Research'], topics: ['Environment', 'Health'], goal: 'learn', hours: 6, work: 'Measured indoor air in 23 homes, data on GitHub', reply: 0.8, real: { name: 'Tsou Ting-An', school: 'NTHU, Environmental Engineering', contact: 'tingan@example.com' } },
   { id: 'p6', alias: 'Rue', field: 'Design', city: 'Taipei', canDo: ['Design', 'Frontend'], topics: ['Food', 'Money'], goal: 'win', hours: 10, work: 'Booking app for tattoo artists, 35 on the waitlist', reply: 0.8, real: { name: 'Wu Ruo-Xi', school: 'Shih Chien, Communication Design', contact: 'ruoxi@example.com' } },
-  { id: 'p7', alias: 'Tavi', field: 'Engineering', city: 'Taipei', canDo: ['Backend', 'Data', 'Hardware'], topics: ['Health', 'AI'], goal: 'fun', hours: 3, work: 'Speech-to-notes tool piloted in 3 clinics', reply: 0.95, real: { name: 'Hsu Chih-Hao', school: 'NYCU, Electrical Engineering', contact: 'chihhao@example.com' } },
+  { id: 'p7', alias: 'Tavi', field: 'Engineering', city: 'Taipei', canDo: ['Backend', 'Data', 'Hardware'], topics: ['Health', 'AI'], goal: 'experience', hours: 3, work: 'Speech-to-notes tool piloted in 3 clinics', reply: 0.95, real: { name: 'Hsu Chih-Hao', school: 'NYCU, Electrical Engineering', contact: 'chihhao@example.com' } },
   { id: 'p8', alias: 'Ode', field: 'Business', city: 'Taichung', canDo: ['Marketing', 'Pitch'], topics: ['Food', 'Social good'], goal: 'learn', hours: 6, work: 'Supplies 9 restaurants with farm produce', reply: 0.65, real: { name: 'Lai Po-Jui', school: 'Tunghai, International Business', contact: 'pojui@example.com' } },
   { id: 'p9', alias: 'Juno', field: 'Engineering', city: 'Tainan', canDo: ['Frontend'], topics: ['Education', 'AI'], goal: 'learn', hours: 10, work: 'Shipped three small web apps for local shops', reply: 0.9, real: { name: 'Kuo Yi-Jun', school: 'NCKU, Computer Science', contact: 'yijun@example.com' } },
   { id: 'p10', alias: 'Bao', field: 'Founder', city: 'Taipei', canDo: ['Product', 'Pitch'], topics: ['Food', 'Education'], goal: 'win', hours: 6, work: 'Took a campus food app to 800 users', reply: 0.7, real: { name: 'Tsai Wei-Lun', school: 'NTU, Economics', contact: 'weilun@example.com' } },

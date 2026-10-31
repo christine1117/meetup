@@ -1,8 +1,11 @@
 -- Just enough of Supabase to run the migrations on a plain PostgreSQL for tests:
 -- the roles, auth.users, auth.uid() and the realtime publication.
-create role anon nologin;
-create role authenticated nologin;
-create role service_role nologin bypassrls;
+do $$ begin
+  create role anon nologin;
+  create role authenticated nologin;
+  create role service_role nologin bypassrls;
+exception when duplicate_object then null;
+end $$;
 create schema auth;
 create table auth.users (id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$

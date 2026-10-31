@@ -119,17 +119,6 @@
   font-size: 0.875rem;
 }
 
-.mycard {
-  margin-top: 16px;
-  padding: 12px 16px;
-  border-radius: var(--r-input);
-  background: var(--sunk);
-}
-
-.mycard .meta {
-  margin: 0;
-}
-
 /* Person and team cards */
 .tcard {
   margin-bottom: 12px;
@@ -806,4 +795,50 @@
 
 .save-state i {
   color: #3f7d4e;
+}
+
+/* ---------- Your participation card in a competition ---------- */
+
+.mycard {
+  display: grid;
+  gap: 8px;
+}
+
+.mycard__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.mycard__top h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.mycard p {
+  margin: 0;
+}
+
+.mycard__line {
+  line-height: 1.6;
+}
+
+.mycard__line .meta {
+  margin-right: 6px;
+}
+
+/* "Sign in to …" with the sign-in buttons */
+.signin-prompt {
+  display: grid;
+  gap: 4px;
+}
+
+.signin-prompt > p {
+  margin: 0;
+  color: var(--muted);
 }

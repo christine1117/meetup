@@ -27,3 +27,10 @@ test('same goal, similar hours and shared topics add up', () => {
   assert.equal(vibe(a, { goal: 'win', hours: 6, topics: ['AI', 'Health', 'Food'] }), 5);
   assert.equal(vibe(a, { goal: 'fun', hours: 10, topics: [] }), 0);
 });
+
+test('a shared time to work adds one', () => {
+  const a = { goal: 'win', hours: 6, topics: [], availability: ['weekend', 'weekday_evening'] };
+  assert.equal(vibe(a, { goal: 'learn', hours: 20, topics: [], availability: ['weekend'] }), 1);
+  assert.equal(vibe(a, { goal: 'learn', hours: 20, topics: [], availability: ['weekday_day'] }), 0);
+  assert.equal(vibe(a, { goal: 'learn', hours: 20, topics: [] }), 0, 'not said: nothing added');
+});

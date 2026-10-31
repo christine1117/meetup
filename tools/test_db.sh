@@ -1,6 +1,7 @@
 #!/bin/sh
-# Database tests: the migrations and supabase/tests/*.sql on a throwaway
-# PostgreSQL in Docker (nothing touches the real database). Needs Docker.
+# Database tests: each supabase/tests/*_test.sql runs on a fresh database with
+# every migration applied, on a throwaway PostgreSQL in Docker (nothing touches
+# the real database). Needs Docker.
 set -e
 cd "$(dirname "$0")/.."
 name=halfsugar-db-test
@@ -14,6 +15,11 @@ for i in $(seq 1 60); do
   fi
   sleep 1
 done
-run() { docker exec -i -e PGOPTIONS='-c client_min_messages=warning' "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres; }
-cat supabase/tests/stub.sql supabase/migrations/*.sql | run
-for f in supabase/tests/*_test.sql; do run < "$f"; done
+run() { docker exec -i -e PGOPTIONS='-c client_min_messages=warning' "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d "$1"; }
+n=0
+for f in supabase/tests/*_test.sql; do
+  n=$((n + 1))
+  echo "create database t$n;" | run postgres
+  cat supabase/tests/stub.sql supabase/migrations/*.sql | run "t$n"
+  run "t$n" < "$f"
+done
