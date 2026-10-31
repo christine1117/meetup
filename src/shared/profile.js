@@ -4,13 +4,22 @@
 
 export const PROFILE_KEY = 'meetup.v1';
 
-// "Curious about" is picked from this list (up to MAX_CURIOUS)
-export const CURIOUS_OPTIONS = [
-  'AI products', 'AI in supply chains', 'Supply chains', 'Semiconductors', 'Chip packaging', 'Hardware',
-  'Pricing', 'Fundraising', 'Sales', 'Marketing', 'Branding', 'Product design', 'User research', 'Data analysis',
-  'Fintech', 'Health tech', 'Climate tech', 'Open data', 'Education', 'Writing', 'Community building',
-  'Small business', 'Side projects', 'Hiring', 'Job interviews', 'Career change', 'Studying abroad', 'Working abroad',
+// "Curious about" choices, in groups so a long list is easy to scan.
+// Values are stored in English (older profiles keep working); they are shown in the chosen language.
+export const CURIOUS_GROUPS = [
+  ['Tech', ['AI products', 'Software development', 'Mobile apps', 'Data analysis', 'Cybersecurity', 'Hardware',
+    'Robotics', 'Semiconductors', 'Chip packaging', 'Game development', 'Blockchain', 'Open data']],
+  ['Design', ['Product design', 'UI/UX design', 'Graphic design', 'Branding', 'Architecture', 'Fashion', 'User research']],
+  ['Business', ['Startups', 'Fundraising', 'Pricing', 'Sales', 'Marketing', 'E-commerce', 'Fintech', 'Investing',
+    'Small business', 'Supply chains', 'AI in supply chains', 'Family business']],
+  ['Science & health', ['Health tech', 'Biotech', 'Medicine', 'Psychology', 'Neuroscience', 'Space', 'Education', 'EdTech']],
+  ['Society', ['Climate tech', 'Sustainability', 'Social impact', 'Policy & law', 'Urban planning', 'Community building', 'Agriculture']],
+  ['Creative', ['Writing', 'Film & video', 'Photography', 'Music', 'Art & illustration', 'Content creation', 'Podcasts']],
+  ['Career', ['Side projects', 'Career change', 'Job interviews', 'Hiring', 'Leadership', 'Public speaking',
+    'Studying abroad', 'Working abroad']],
+  ['Life', ['Travel', 'Food', 'Sports', 'Languages', 'Mental health']],
 ];
+export const CURIOUS_OPTIONS = CURIOUS_GROUPS.flatMap(([, list]) => list);
 export const MAX_CURIOUS = 6;
 
 export const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];

@@ -1,14 +1,29 @@
 /* HTML: create an account, log in, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031c';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031d';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031c';
-import { field, select } from '../../shared/forms.js?v=20261031c';
-import { CONTACTS, CURIOUS_OPTIONS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031c';
-import { S, U } from '../state.js?v=20261031c';
-import { esc } from '../../shared/core.js?v=20261031c';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031d';
+import { field, select } from '../../shared/forms.js?v=20261031d';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031d';
+import { S, U } from '../state.js?v=20261031d';
+import { esc } from '../../shared/core.js?v=20261031d';
 
-// The choices from shared/profile.js (plus anything already on your profile)
-const curiousChecks = (picked) => `<div class="checks">${[...new Set([...picked, ...CURIOUS_OPTIONS])].map((x) => `<label class="check"><input type="checkbox" name="curious" value="${esc(x)}" ${picked.includes(x) ? 'checked' : ''}><span>${esc(L(x))}</span></label>`).join('')}</div>`;
+// "Curious about": what you picked is shown; "Choose more" opens every group of choices.
+// Ticking a box does not redraw the page, so a ticked box stays where it is until you save.
+// The groups' names and the choices are shown in the chosen language; English is what is saved.
+const box = (x, on) => `<label class="check"><input type="checkbox" name="curious" value="${esc(x)}" ${on ? 'checked' : ''}><span>${esc(L(x))}</span></label>`;
+function curiousChecks(picked) {
+  const groups = CURIOUS_GROUPS.map(([name, list]) => {
+    const rest = list.filter((x) => !picked.includes(x));
+    return rest.length ? `<p class="choose__group">${esc(L(name))}</p><div class="checks">${rest.map((x) => box(x, false)).join('')}</div>` : '';
+  }).join('');
+  return `
+    <div class="checks">${picked.length ? picked.map((x) => box(x, true)).join('') : `<p class="hint">${L`Nothing picked yet.`}</p>`}</div>
+    <details class="choose">
+      <summary><span class="choose__more">${picked.length ? L`Show more topics` : L`Pick topics`}</span><span class="choose__less">${L`Show less`}</span><i class="ph ph-caret-down" aria-hidden="true"></i></summary>
+      ${groups}
+    </details>
+    <p class="hint" id="curious-full" hidden>${L`You can pick up to ${MAX_CURIOUS}. Untick one to choose another.`}</p>`;
+}
 
 // The profile: visible from the start, then sealed details
 export function profileFields(me) {

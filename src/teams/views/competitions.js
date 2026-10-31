@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031c';
-import { L } from '../../shared/i18n.js?v=20261031c';
-import { cupFor } from '../../shared/cup.js?v=20261031c';
-import { field, select } from '../../shared/forms.js?v=20261031c';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031c';
-import { S, U } from '../state.js?v=20261031c';
-import { roleChips } from '../ui.js?v=20261031c';
-import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031c';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, tagsOf, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031c';
-import { P } from '../sample-people.js?v=20261031c';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031c';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031c';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031d';
+import { L } from '../../shared/i18n.js?v=20261031d';
+import { cupFor } from '../../shared/cup.js?v=20261031d';
+import { field, select } from '../../shared/forms.js?v=20261031d';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031d';
+import { S, U } from '../state.js?v=20261031d';
+import { roleChips } from '../ui.js?v=20261031d';
+import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031d';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, tagsOf, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031d';
+import { P } from '../sample-people.js?v=20261031d';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031d';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031d';
 
 export const PAGE = 30;
 

@@ -18,22 +18,23 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn } from '../shared/account.js?v=20261031c';
-import { logError } from '../shared/log.js?v=20261031c';
-import { whoAmI } from './forms.js?v=20261031c';
+import { enabledProviders, loadProfile, returningFromSignIn } from '../shared/account.js?v=20261031d';
+import { logError } from '../shared/log.js?v=20261031d';
+import { whoAmI } from './forms.js?v=20261031d';
 
-import { $ } from '../shared/core.js?v=20261031c';
-import { at } from '../shared/cup.js?v=20261031c';
-import { closesText } from '../shared/sugar.js?v=20261031c';
-import { S, U, saveMe } from './state.js?v=20261031c';
-import { loadComps } from './competitions.js?v=20261031c';
-import { go, route } from './router.js?v=20261031c';
-import { chatById } from './chats.js?v=20261031c';
-import { closeModal } from './views/modal.js?v=20261031c';
-import { PAGE } from './views/competitions.js?v=20261031c';
-import { render } from './render.js?v=20261031c';
-import { formData, forms } from './forms.js?v=20261031c';
-import { acts } from './actions.js?v=20261031c';
+import { $ } from '../shared/core.js?v=20261031d';
+import { at } from '../shared/cup.js?v=20261031d';
+import { closesText } from '../shared/sugar.js?v=20261031d';
+import { S, U, saveMe } from './state.js?v=20261031d';
+import { MAX_CURIOUS } from '../shared/profile.js?v=20261031d';
+import { loadComps } from './competitions.js?v=20261031d';
+import { go, route } from './router.js?v=20261031d';
+import { chatById } from './chats.js?v=20261031d';
+import { closeModal } from './views/modal.js?v=20261031d';
+import { PAGE } from './views/competitions.js?v=20261031d';
+import { render } from './render.js?v=20261031d';
+import { formData, forms } from './forms.js?v=20261031d';
+import { acts } from './actions.js?v=20261031d';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -55,6 +56,14 @@ document.addEventListener('input', (e) => {
   render({ focus: 'c-search' });
   const el = document.getElementById('c-search');
   if (el) el.setSelectionRange(at, at);
+});
+// "Curious about": stop at MAX_CURIOUS ticks and say why
+document.addEventListener('change', (e) => {
+  if (e.target.name !== 'curious') return;
+  const tooMany = e.target.checked && e.target.form.querySelectorAll('input[name="curious"]:checked').length > MAX_CURIOUS;
+  if (tooMany) e.target.checked = false;
+  const full = document.getElementById('curious-full');
+  if (full) full.hidden = !tooMany;
 });
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('[data-form]');

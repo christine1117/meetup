@@ -644,3 +644,56 @@
   font: inherit;
   font-size: 0.9375rem;
 }
+
+/* ---------- Curious about: picked ones, then "Show more topics" ---------- */
+
+.choose {
+  margin-top: 10px;
+}
+
+.choose summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px dashed #b9ad98;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.choose summary::-webkit-details-marker {
+  display: none;
+}
+
+.choose summary:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.choose summary i {
+  transition: transform 0.2s;
+}
+
+.choose[open] summary i {
+  transform: rotate(180deg);
+}
+
+.choose__less,
+.choose[open] .choose__more {
+  display: none;
+}
+
+.choose[open] .choose__less {
+  display: inline;
+}
+
+.choose__group {
+  margin: 16px 0 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}

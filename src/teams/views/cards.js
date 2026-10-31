@@ -1,15 +1,15 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
-import { L } from '../../shared/i18n.js?v=20261031c';
+import { L } from '../../shared/i18n.js?v=20261031d';
 
-import { esc } from '../../shared/core.js?v=20261031c';
-import { flavorChip } from '../../shared/flavors.js?v=20261031c';
-import { cupFor } from '../../shared/cup.js?v=20261031c';
-import { S, U } from '../state.js?v=20261031c';
-import { roleChips } from '../ui.js?v=20261031c';
-import { ROLES, cardTopics, goalName, hoursName } from '../options.js?v=20261031c';
-import { P } from '../sample-people.js?v=20261031c';
-import { freshRoles } from '../matching.js?v=20261031c';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031c';
+import { esc } from '../../shared/core.js?v=20261031d';
+import { flavorChip } from '../../shared/flavors.js?v=20261031d';
+import { cupFor } from '../../shared/cup.js?v=20261031d';
+import { S, U } from '../state.js?v=20261031d';
+import { roleChips } from '../ui.js?v=20261031d';
+import { ROLES, cardTopics, goalName, hoursName } from '../options.js?v=20261031d';
+import { P } from '../sample-people.js?v=20261031d';
+import { freshRoles } from '../matching.js?v=20261031d';
+import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031d';
 
 export function personCard(p, cid) {
   const card = S.cards[cid];
