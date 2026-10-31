@@ -6,6 +6,7 @@
 export default {
   ", ": "、",
   ", plus 1 mentor": "，另加 1 位指導老師",
+  ", plus up to {0} mentors": "，另加最多 {0} 位指導老師",
   ", plus {0} mentors": "，另加 {0} 位指導老師",
   ", waiting for them to accept": "，等待對方接受",
   ", with {0} toppings": "，加了 {0} 種配料",

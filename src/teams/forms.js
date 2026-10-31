@@ -1,19 +1,19 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031k';
-import { logError } from '../shared/log.js?v=20261031k';
-import { L } from '../shared/i18n.js?v=20261031k';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031k';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031m';
+import { logError } from '../shared/log.js?v=20261031m';
+import { L } from '../shared/i18n.js?v=20261031m';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031m';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031k';
-import { isCold } from '../shared/sugar.js?v=20261031k';
-import { S, U, save, saveMe } from './state.js?v=20261031k';
-import { toast } from './ui.js?v=20261031k';
-import { MAX_ROLES } from './options.js?v=20261031k';
-import { COMP } from './competitions.js?v=20261031k';
-import { go } from './router.js?v=20261031k';
-import { DEFAULT_MAX, isFull } from './rules.js?v=20261031k';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031k';
-import { render } from './render.js?v=20261031k';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031m';
+import { isCold } from '../shared/sugar.js?v=20261031m';
+import { S, U, save, saveMe } from './state.js?v=20261031m';
+import { toast } from './ui.js?v=20261031m';
+import { MAX_ROLES } from './options.js?v=20261031m';
+import { COMP } from './competitions.js?v=20261031m';
+import { go } from './router.js?v=20261031m';
+import { isFull, withinRules } from './rules.js?v=20261031m';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031m';
+import { render } from './render.js?v=20261031m';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -76,7 +76,7 @@ export const forms = {
     S.cards[cid] = { canDo, topic: (d.topic || '').slice(0, 160), goal: d.goal, hours: Number(d.hours) };
     if (COMP[cid]) S.compCache[cid] = COMP[cid];
     if (form.dataset.team) {
-      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: d.pitch || '', members: ['me'], needs: pickRoles(fd, 'needs'), max: Number(d.max) || DEFAULT_MAX, code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
+      S.teams.push({ id: uid(), comp: cid, name: d.team, pitch: '', members: ['me'], needs: pickRoles(fd, 'needs'), max: withinRules(cid, Number(d.max)), code: uid(), msgs: [{ from: 'sys', text: 'Team created. Invite friends with the link, or find the rest in the competition.', at: Date.now() }] });
     }
     U.form = null;
     save();
@@ -98,7 +98,7 @@ export const forms = {
     const t = S.teams.find((x) => x.id === form.dataset.id);
     if (!t) return;
     t.pitch = d.pitch;
-    t.max = Math.max(Number(d.max) || DEFAULT_MAX, t.members.length);
+    t.max = Math.max(withinRules(t.comp, Number(d.max)), t.members.length);
     if (!isFull(t)) t.needs = pickRoles(new FormData(form), 'needs');
     save();
     toast(L`Saved`);

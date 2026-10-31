@@ -5,7 +5,7 @@
    The crawler checks every record before saving, and the app checks again
    when loading. A record that breaks the contract is dropped, never shown. */
 
-import { L } from './i18n.js?v=20261031k';
+import { L } from './i18n.js?v=20261031m';
 
 export const SOURCES = ['devpost', 'mlh', 'bhuntr'];
 // Categories the LLM picks from (crawler/extract/schema.py), with their English names
@@ -72,7 +72,8 @@ export function teamSizeText(team) {
 // One track's rule, e.g. "高中組: 2–4 people, plus 1 mentor". name: the track name to show.
 export function trackText(t, name = t.name) {
   const size = teamSizeText({ min: t.min ?? (t.solo ? 1 : null), max: t.max ?? null, unlimited: !!t.unlimited });
-  const mentors = t.mentors ? (t.mentors > 1 ? L`, plus ${t.mentors} mentors` : L`, plus 1 mentor`) : '';
+  // mentors is the most allowed ("1-2名指導老師" is up to 2)
+  const mentors = t.mentors ? (t.mentors > 1 ? L`, plus up to ${t.mentors} mentors` : L`, plus 1 mentor`) : '';
   return `${name ? `${name}: ` : ''}${size}${mentors}`;
 }
 

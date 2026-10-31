@@ -1,16 +1,16 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031k';
-import { L } from '../../shared/i18n.js?v=20261031k';
-import { cupFor } from '../../shared/cup.js?v=20261031k';
-import { field, select } from '../../shared/forms.js?v=20261031k';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031k';
-import { S, U } from '../state.js?v=20261031k';
-import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031k';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031k';
-import { P } from '../sample-people.js?v=20261031k';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031k';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031k';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031m';
+import { L } from '../../shared/i18n.js?v=20261031m';
+import { cupFor } from '../../shared/cup.js?v=20261031m';
+import { field, select } from '../../shared/forms.js?v=20261031m';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031m';
+import { S, U } from '../state.js?v=20261031m';
+import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031m';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031m';
+import { P } from '../sample-people.js?v=20261031m';
+import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031m';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031m';
 
 export const PAGE = 20;  // competitions per page
 
@@ -91,14 +91,13 @@ export function cardForm(cid, withTeam) {
   <form class="panel stack" data-form="card" data-comp="${cid}" data-team="${withTeam ? 1 : ''}" novalidate>
     <h2>${withTeam ? L`Start a team` : L`Your competition card`}</h2>
     ${withTeam ? field('team', L`Team name`, '', { req: true, ph: L`e.g. Clear Air` }) : ''}
-    ${withTeam ? field('pitch', L`What are you building?`, '', { area: true, ph: L`One or two sentences. You can change it later.` }) : ''}
     <div class="field"><p class="field__label">${L`Your role`} <span class="hint-inline">${L`Pick 1 or 2`}</span></p>${roleChecks('canDo', prev.canDo, undefined, true)}</div>
     <div class="row2">
       ${select('goal', L`Your goal`, goalOptions(), prev.goal)}
       ${select('hours', L`Time each week`, hourOptions(), String(prev.hours))}
     </div>
     ${field('topic', L`Topic or idea you’d like to work on`, prev.topic || (prev.topics || []).join(', '), { ph: L`e.g. Air quality near schools`, hint: L`Optional. One sentence is enough.` })}
-    ${withTeam ? select('max', L`Team size limit`, SIZE_CHOICES.map((n) => [String(n), L`${n} people`]), String(defaultMax(cid)), rules) : ''}
+    ${withTeam ? select('max', L`Team size limit`, sizeChoices(cid).map((n) => [String(n), L`${n} people`]), String(defaultMax(cid)), rules) : ''}
     ${withTeam ? `<div class="field"><p class="field__label">${L`Still need`} <span class="hint-inline">${L`Optional. Can include a role you already have.`}</span></p>${roleChecks('needs', [], undefined, true)}</div>` : ''}
     <p class="error" id="card-error" hidden>${withTeam ? L`Pick 1 or 2 roles and add a team name.` : L`Pick 1 or 2 roles.`}</p>
     <div class="btnrow">

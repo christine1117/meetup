@@ -1,15 +1,15 @@
 /* Chats: sending, half sugar notes, teaming up and ending politely.
    reply() plays the other side until there is a server. */
-import { L } from '../shared/i18n.js?v=20261031k';
+import { L } from '../shared/i18n.js?v=20261031m';
 
-import { later, pick, uid } from '../shared/core.js?v=20261031k';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031k';
-import { S, U, save } from './state.js?v=20261031k';
-import { toast } from './ui.js?v=20261031k';
-import { LINES, MATE_LINES, P } from './sample-people.js?v=20261031k';
-import { go } from './router.js?v=20261031k';
-import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261031k';
-import { render } from './render.js?v=20261031k';
+import { later, pick, uid } from '../shared/core.js?v=20261031m';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031m';
+import { S, U, save } from './state.js?v=20261031m';
+import { toast } from './ui.js?v=20261031m';
+import { LINES, MATE_LINES, P } from './sample-people.js?v=20261031m';
+import { go } from './router.js?v=20261031m';
+import { defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261031m';
+import { render } from './render.js?v=20261031m';
 
 export const chatById = (id) => S.chats.find((c) => c.id === id);
 export const chatName = (c) => (c.kind === 'team' ? teamsIn(c.comp).find((t) => t.id === c.ref).name : (c.revealed ? P[c.ref].real.name : P[c.ref].alias));
@@ -57,7 +57,7 @@ export function startChat(cid, kind, ref, text) {
 
 // How big the team would be after this chat ends in a team up
 export const sizeAfter = (c) => voters(c).length;
-export const tooBig = (c) => sizeAfter(c) > (sideTeam(c) ? teamMax(sideTeam(c)) : DEFAULT_MAX);
+export const tooBig = (c) => sizeAfter(c) > (sideTeam(c) ? teamMax(sideTeam(c)) : defaultMax(c.comp));
 
 // End a chat for a reason nobody has to explain
 export function endChat(c, text, mine = true) {
