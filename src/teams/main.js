@@ -18,22 +18,22 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { loadProfile } from '../shared/account.js?v=20261030g';
-import { logError } from '../shared/log.js?v=20261030g';
-import { whoAmI } from './forms.js?v=20261030g';
+import { loadProfile } from '../shared/account.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031a';
+import { whoAmI } from './forms.js?v=20261031a';
 
-import { $ } from '../shared/core.js?v=20261030g';
-import { at } from '../shared/cup.js?v=20261030g';
-import { closesText } from '../shared/sugar.js?v=20261030g';
-import { S, U, saveMe } from './state.js?v=20261030g';
-import { loadComps } from './competitions.js?v=20261030g';
-import { go, route } from './router.js?v=20261030g';
-import { chatById } from './chats.js?v=20261030g';
-import { closeModal } from './views/modal.js?v=20261030g';
-import { PAGE } from './views/competitions.js?v=20261030g';
-import { render } from './render.js?v=20261030g';
-import { formData, forms } from './forms.js?v=20261030g';
-import { acts } from './actions.js?v=20261030g';
+import { $ } from '../shared/core.js?v=20261031a';
+import { at } from '../shared/cup.js?v=20261031a';
+import { closesText } from '../shared/sugar.js?v=20261031a';
+import { S, U, saveMe } from './state.js?v=20261031a';
+import { loadComps } from './competitions.js?v=20261031a';
+import { go, route } from './router.js?v=20261031a';
+import { chatById } from './chats.js?v=20261031a';
+import { closeModal } from './views/modal.js?v=20261031a';
+import { PAGE } from './views/competitions.js?v=20261031a';
+import { render } from './render.js?v=20261031a';
+import { formData, forms } from './forms.js?v=20261031a';
+import { acts } from './actions.js?v=20261031a';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');

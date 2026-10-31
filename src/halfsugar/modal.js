@@ -1,14 +1,14 @@
 /* ---------- Pop-up window: gift boxes and profiles ---------- */
 
-import { $, esc } from '../shared/core.js?v=20261030g';
-import { L, tr } from '../shared/i18n.js?v=20261030g';
-import { drinkFor, flavorChip } from '../shared/flavors.js?v=20261030g';
-import { contactOf } from '../shared/profile.js?v=20261030g';
-import { P } from './people.js?v=20261030g';
-import { STAGES, myCurious, myShare } from './matching.js?v=20261030g';
-import { S, U } from './state.js?v=20261030g';
-import { MAX_SHOWN, TIER_NAME, TOPPING, drinkCup, toppingIcon, toppingSlots, toppingsOf } from './toppings.js?v=20261030g';
-import { render } from './shell.js?v=20261030g';
+import { $, esc } from '../shared/core.js?v=20261031a';
+import { L, tr } from '../shared/i18n.js?v=20261031a';
+import { drinkFor, flavorChip } from '../shared/flavors.js?v=20261031a';
+import { contactOf } from '../shared/profile.js?v=20261031a';
+import { P } from './people.js?v=20261031a';
+import { STAGES, myCurious, myShare } from './matching.js?v=20261031a';
+import { S, U } from './state.js?v=20261031a';
+import { MAX_SHOWN, TIER_NAME, TOPPING, drinkCup, toppingIcon, toppingSlots, toppingsOf } from './toppings.js?v=20261031a';
+import { render } from './shell.js?v=20261031a';
 
 
 export const modalEl = document.createElement('div');
@@ -62,7 +62,7 @@ export function profileModal(pid) {
   const revealed = t && t.reveal.me && t.reveal.them;
   const stage = (STAGES.find(([v]) => v === p.stage) || [])[1];
   const fun = p.fun || p.proof;
-  const chips = (list) => list.map((x) => `<span>${esc(x)}</span>`).join('');
+  const chips = (list) => list.map((x) => `<span>${esc(L(x))}</span>`).join('');
   return `
     <div class="modal__card modal__card--profile" tabindex="-1">
       <button class="modal__x" data-act="modal-close" type="button" aria-label="${esc(L`Close`)}"><i class="ph ph-x" aria-hidden="true"></i></button>

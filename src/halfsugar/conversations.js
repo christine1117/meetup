@@ -1,15 +1,15 @@
 /* ---------- Conversations ---------- */
 
-import { later, uid } from '../shared/core.js?v=20261030g';
-import { L } from '../shared/i18n.js?v=20261030g';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030g';
-import { P } from './people.js?v=20261030g';
-import { learnWeights, stampMatch } from './matching.js?v=20261030g';
-import { S, U, save } from './state.js?v=20261030g';
-import { viewing } from './router.js?v=20261030g';
-import { toast } from './ui.js?v=20261030g';
-import { earnBox } from './toppings.js?v=20261030g';
-import { render } from './shell.js?v=20261030g';
+import { later, uid } from '../shared/core.js?v=20261031a';
+import { L } from '../shared/i18n.js?v=20261031a';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031a';
+import { P } from './people.js?v=20261031a';
+import { learnWeights, stampMatch } from './matching.js?v=20261031a';
+import { S, U, save } from './state.js?v=20261031a';
+import { viewing } from './router.js?v=20261031a';
+import { toast } from './ui.js?v=20261031a';
+import { earnBox } from './toppings.js?v=20261031a';
+import { render } from './shell.js?v=20261031a';
 
 
 export const thread = (tid) => S.threads.find((t) => t.id === tid);

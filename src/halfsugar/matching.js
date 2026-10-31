@@ -7,22 +7,19 @@
    4. Every chat remembers the score it started with. Once enough chats have
       finished, the weights move toward what actually led to good chats
       (reaching half sugar). */
+import { CURIOUS_OPTIONS, MAX_CURIOUS } from '../shared/profile.js?v=20261031a';
 
-import { L } from '../shared/i18n.js?v=20261030g';
-import { fieldsOf } from '../shared/flavors.js?v=20261030g';
-import { REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030g';
-import { P, PEOPLE, SEED_THOUGHTS, rolesOf } from './people.js?v=20261030g';
-import { S } from './state.js?v=20261030g';
+import { L } from '../shared/i18n.js?v=20261031a';
+import { fieldsOf } from '../shared/flavors.js?v=20261031a';
+import { REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261031a';
+import { P, PEOPLE, SEED_THOUGHTS, rolesOf } from './people.js?v=20261031a';
+import { S } from './state.js?v=20261031a';
 
 
 // What people are curious about, and what they can share. Free tags, with suggestions to tap.
-export const TAG_SUGGESTIONS = [
-  'AI products', 'AI in supply chains', 'Supply chains', 'Semiconductors', 'Chip packaging', 'Hardware',
-  'Pricing', 'Fundraising', 'Sales', 'Marketing', 'Branding', 'Product design', 'User research', 'Data analysis',
-  'Fintech', 'Health tech', 'Climate tech', 'Open data', 'Education', 'Writing', 'Community building',
-  'Small business', 'Side projects', 'Hiring', 'Job interviews', 'Career change', 'Studying abroad', 'Working abroad',
-];
-export const MAX_TAGS = 6;
+// The choices live in shared/profile.js, so team mode offers the same ones
+export const TAG_SUGGESTIONS = CURIOUS_OPTIONS;
+export const MAX_TAGS = MAX_CURIOUS;
 
 // Compare tags loosely: case, spacing and a plural "s" do not matter,
 // and a longer tag counts if it contains a shorter one ("supply chain" in "AI in supply chains")

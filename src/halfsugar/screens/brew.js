@@ -1,15 +1,15 @@
 /* ---------- Screen: Build ---------- */
 
-import { esc } from '../../shared/core.js?v=20261030g';
-import { L, LANG } from '../../shared/i18n.js?v=20261030g';
-import { cupFor } from '../../shared/cup.js?v=20261030g';
-import { field, select } from '../../shared/forms.js?v=20261030g';
-import { BREW_KINDS, MAX_ROLES, P, ROLE_SUGGESTIONS, SEED_POSTS, hasEvent, kindName, openRoles, rolesOf } from '../people.js?v=20261030g';
-import { BREW_TOP_PICKS, dayKey, normTag, topPicks } from '../matching.js?v=20261030g';
-import { S, U } from '../state.js?v=20261030g';
-import { byline } from '../ui.js?v=20261030g';
-import { threadFor } from '../conversations.js?v=20261030g';
-import { responsesBlock } from './explore.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { L, LANG } from '../../shared/i18n.js?v=20261031a';
+import { cupFor } from '../../shared/cup.js?v=20261031a';
+import { field, select } from '../../shared/forms.js?v=20261031a';
+import { BREW_KINDS, MAX_ROLES, P, ROLE_SUGGESTIONS, SEED_POSTS, hasEvent, kindName, openRoles, rolesOf } from '../people.js?v=20261031a';
+import { BREW_TOP_PICKS, dayKey, normTag, topPicks } from '../matching.js?v=20261031a';
+import { S, U } from '../state.js?v=20261031a';
+import { byline } from '../ui.js?v=20261031a';
+import { threadFor } from '../conversations.js?v=20261031a';
+import { responsesBlock } from './explore.js?v=20261031a';
 
 
 export const dateText = (d) => new Date(`${d}T00:00`).toLocaleDateString(LANG === 'zh' ? 'zh-TW' : 'en-US', { month: 'short', day: 'numeric' });

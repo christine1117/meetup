@@ -14,7 +14,7 @@ from typing import Any, Protocol
 
 from .schema import Extraction, RawCompetition
 
-PROMPT_VERSION = "2"
+PROMPT_VERSION = "4"
 
 SYSTEM = """You read competition pages and extract the allowed number of participants per team.
 
@@ -34,11 +34,22 @@ Rules:
    false if a team is required (僅接受團體參賽, team required).
    individual_only: true only if teams are NOT allowed at all (限個人參賽, individuals only, solo only).
    "僅接受團體參賽" means teams only: individual_only is false.
+8b. teams_allowed: true only if the text plainly says people may enter as a team (組隊, 團體報名,
+   每隊, teams of, team members). Do not assume teams are allowed. If the text says there is no limit
+   on team size (團隊人數無上限, 人數不限), set unlimited true on that rule and leave max null.
+   Different plans or tracks with different sizes are separate rules (for example
+   "團隊人數無限制，若使用訂閱方案則為最多5人" is one rule with unlimited true and one rule,
+   track "訂閱方案", with max 5).
 9. needs_review is only about team size: set it when the size rules are ambiguous or contradict each
    other (for example the overview says 2–4 and the rules say 3–5). Do NOT set it because a size is
    simply not stated (use null), or because of age, eligibility or other details.
 10. Also give a one-sentence summary of who can enter (eligibility), under 120 characters, in the
     language of the source, with an exact quote as evidence, when the text says.
+11. listing: pick one category, decide the region, and describe the competition in English (en) and in
+    Traditional Chinese as used in Taiwan (zh): name, organizer, one-sentence summary, eligibility,
+    up to 5 short tags. Write naturally, like a person from that place would, not word for word.
+    Keep brand and proper names as they are. For each team rule also give the track name and the quote
+    in both languages (track_en, track_zh, evidence_en, evidence_zh).
 Return nothing that is not supported by the text."""
 
 
@@ -74,7 +85,14 @@ def cache_key(provider: str, model: str, text: str) -> str:
 
 
 def user_message(comp: RawCompetition, text: str) -> str:
-    return f"Competition: {comp.name}\nOrganizer: {comp.organizer}\n\nSource text:\n{text}"
+    facts = [f"Competition: {comp.name}", f"Organizer: {comp.organizer}", f"Listed on: {comp.source}"]
+    if comp.where:
+        facts.append(f"Where: {comp.where}")
+    if comp.tags:
+        facts.append(f"Tags: {', '.join(comp.tags)}")
+    if comp.summary:
+        facts.append(f"Summary: {comp.summary}")
+    return "\n".join(facts) + f"\n\nSource text:\n{text}"
 
 
 class Extractor:
@@ -116,7 +134,7 @@ class ClaudeExtractor(Extractor):
     def ask(self, comp, text):
         response = self.client.messages.create(
             model=self.model,
-            max_tokens=2000,
+            max_tokens=4000,
             system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
             tools=[TOOL],
             tool_choice={"type": "tool", "name": TOOL["name"]},
@@ -141,7 +159,7 @@ class OpenAIExtractor(Extractor):
         extra = {"reasoning_effort": "low"} if self.model.startswith(("gpt-5", "o1", "o3", "o4")) else {}
         response = self.client.chat.completions.create(
             model=self.model,
-            max_completion_tokens=8000,
+            max_completion_tokens=12000,
             **extra,
             messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": user_message(comp, text)}],
             tools=[{"type": "function", "function": {"name": TOOL["name"], "description": TOOL["description"],

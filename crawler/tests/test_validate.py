@@ -26,7 +26,7 @@ def test_only_a_maximum_keeps_min_null():
     d = decide(comp(), Extraction(team_rules=[rule("每組最多5人", max_members=5)]), src)
     assert d.status == "published" and d.listed
     assert d.tracks[0].min is None and d.tracks[0].max == 5
-    assert overall(d.tracks) == {"min": None, "max": 5}
+    assert overall(d.tracks) == {"min": None, "max": 5, "unlimited": False}
 
 
 def test_tracks_are_kept_apart():
@@ -35,7 +35,7 @@ def test_tracks_are_kept_apart():
                                 rule("大專組每隊3至5人", track="大專組", min_members=3, max_members=5)])
     d = decide(comp(), ex, src)
     assert [(t.name, t.min, t.max) for t in d.tracks] == [("高中組", 2, 4), ("大專組", 3, 5)]
-    assert overall(d.tracks) == {"min": 2, "max": 5}
+    assert overall(d.tracks) == {"min": 2, "max": 5, "unlimited": False}
 
 
 def test_conflicting_pages_go_to_review_without_sizes():
@@ -84,7 +84,7 @@ def test_alone_or_team_reads_as_one_to_eight():
     src = "可以個人或最多8人的團隊形式參賽，強烈鼓勵跨領域合作。"
     d = decide(comp(), Extraction(team_rules=[rule("可以個人或最多8人的團隊形式參賽", max_members=8, individual_allowed=True)]), src)
     assert d.status == "published"
-    assert overall(d.tracks) == {"min": 1, "max": 8}
+    assert overall(d.tracks) == {"min": 1, "max": 8, "unlimited": False}
 
 
 def test_individual_only_is_excluded():
@@ -133,14 +133,14 @@ def test_team_only_is_never_excluded_as_individual_only():
     src = "參賽資格全國大專校院在學學生可報名。僅接受團體參賽，每組以2至5人為限，每位學生可加入多個團體。"
     ex = Extraction(individual_only=True, team_rules=[rule("僅接受團體參賽，每組以2至5人為限", min_members=2, max_members=5, individual_allowed=False)])
     d = decide(comp(), ex, src)
-    assert d.listed and overall(d.tracks) == {"min": 2, "max": 5}
+    assert d.listed and overall(d.tracks) == {"min": 2, "max": 5, "unlimited": False}
 
 
 def test_overall_size_with_an_individual_track_and_an_open_team_track():
     from crawler.extract.schema import Track
     tracks = [Track(name="個人組", max=1, solo=True, evidence="a"), Track(name="團體組", min=2, max=None, evidence="b")]
-    assert overall(tracks) == {"min": 1, "max": None}
-    assert overall([Track(name=None, max=4, evidence="c")]) == {"min": None, "max": 4}
+    assert overall(tracks) == {"min": 1, "max": None, "unlimited": False}
+    assert overall([Track(name=None, max=4, evidence="c")]) == {"min": None, "max": 4, "unlimited": False}
 
 
 def test_long_eligibility_is_cut_not_rejected():
@@ -163,3 +163,47 @@ def test_mentor_count_must_be_the_number_in_the_quote():
     src2 = "每隊組員學生人數2-6名，指導老師1-2名。"
     d = decide(comp(), Extraction(team_rules=[rule(src2, min_members=2, max_members=6, mentors_max=2)]), src2)
     assert d.tracks[0].mentors == 2
+
+
+def test_listing_category_region_and_languages_reach_the_website():
+    from crawler.extract.schema import Listing, Texts
+    from crawler.run import listing_record
+    src = "參賽資格：全國大專院校學生。每隊2至4人。"
+    lst = Listing(category="design", region="tw",
+                  en=Texts(name="Tsinghua Mask Teaching Award", organizer="National Tsing Hua University", summary="Teaching awards."),
+                  zh=Texts(name="清華光罩教學獎", organizer="國立清華大學", summary="教學獎項。"))
+    ex = Extraction(team_rules=[rule("每隊2至4人", min_members=2, max_members=4, track_en=None, evidence_en="2 to 4 people per team")], listing=lst)
+    c = comp(region="intl")
+    rec = listing_record(c, decide(c, ex, src))
+    assert rec["region"] == "tw", "the LLM's region wins over the old keyword guess"
+    assert rec["category"] == "design" and rec["kind"] == "Design"
+    assert rec["i18n"]["en"]["name"] == "Tsinghua Mask Teaching Award"
+    assert rec["tracks"][0]["evidence_en"] == "2 to 4 people per team"
+
+
+def test_the_number_must_count_people():
+    src = "每人限提交1件參賽作品。"
+    d = decide(comp(), Extraction(team_rules=[rule("每人限提交1件參賽作品", min_members=1)]), src)
+    assert "number_not_about_people" in [i.code for i in d.issues] and d.tracks == []
+    for quote, lo, hi in [("Teams of up to 4.", None, 4), ("每隊3~5人", 3, 5), ("每組 1~5 位成員", 1, 5), ("Team size: [1 to 4]", 1, 4),
+                          ("可以個人或最多8人的團隊形式參賽", None, 8), ("隊伍組成：每隊2名選手", 2, 2), ("每組以2至5人為限", 2, 5),
+                          ("Teams must have 3 to 4 members.", 3, 4), ("each team of four", None, 4)]:
+        d = decide(comp(), Extraction(team_rules=[rule(quote, min_members=lo, max_members=hi)]), quote)
+        assert d.tracks, quote
+
+
+def test_no_limit_on_team_size():
+    src = "團隊人數無限制，若使用訂閱方案則為最多5人。"
+    ex = Extraction(teams_allowed=True, team_rules=[rule("團隊人數無限制", unlimited=True),
+                                                     rule("若使用訂閱方案則為最多5人", track="訂閱方案", max_members=5)])
+    d = decide(comp(), ex, src)
+    assert d.listed and overall(d.tracks)["unlimited"] is True
+    assert [(t.name, t.max) for t in d.tracks] == [(None, None), ("訂閱方案", 5)]
+
+
+def test_not_listed_unless_the_text_says_teams_can_enter():
+    src = "全民皆可報名，每人限提交1件作品。"
+    d = decide(comp(), Extraction(team_rules=[rule("全民皆可報名", individual_allowed=True)]), src)
+    assert not d.listed and "no_team_rules" in [i.code for i in d.issues]
+    d = decide(comp(), Extraction(teams_allowed=True, team_rules=[]), "可個人或組隊參賽")
+    assert d.listed and d.tracks == []

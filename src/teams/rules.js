@@ -3,20 +3,21 @@
    recommendations (using matching.js).
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
+import { L } from '../shared/i18n.js?v=20261031a';
 
-import { S } from './state.js?v=20261030g';
-import { compOf } from './competitions.js?v=20261030g';
-import { P, demoPeople, seedTeam } from './sample-people.js?v=20261030g';
-import { roleFit, vibe } from './matching.js?v=20261030g';
+import { S } from './state.js?v=20261031a';
+import { compOf } from './competitions.js?v=20261031a';
+import { P, demoPeople, seedTeam } from './sample-people.js?v=20261031a';
+import { roleFit, vibe } from './matching.js?v=20261031a';
 
-export const personOf = (id) => (id === 'me' ? { ...S.me, alias: 'You', id: 'me' } : P[id]);
+export const personOf = (id) => (id === 'me' ? { ...S.me, alias: L`You`, id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in
 export const teamsIn = (cid) => {
   const seed = seedTeam(cid);
   return [...(seed && !S.teams.some((x) => x.id === seed.id) ? [seed] : []), ...S.teams.filter((t) => t.comp === cid)];
 };
 export const myTeam = (cid) => S.teams.find((t) => t.comp === cid && t.members.includes('me'));
-export const members = (t) => `${t.members.length} ${t.members.length === 1 ? 'member' : 'members'}`;
+export const members = (t) => (t.members.length === 1 ? L`1 member` : L`${t.members.length} members`);
 // Each team sets its own size limit (the rules differ per competition)
 export const DEFAULT_MAX = 5;
 export const SIZE_CHOICES = [2, 3, 4, 5, 6, 8, 10];
@@ -24,7 +25,7 @@ export const SIZE_CHOICES = [2, 3, 4, 5, 6, 8, 10];
 export const defaultMax = (cid) => { const m = compOf(cid).team && compOf(cid).team.max; return m && m >= 2 ? Math.min(m, 10) : DEFAULT_MAX; };
 export const teamMax = (t) => t.max || DEFAULT_MAX;
 export const isFull = (t) => t.members.length >= teamMax(t);
-export const spots = (t) => `${t.members.length} of ${teamMax(t)} spots`;
+export const spots = (t) => L`${t.members.length} of ${teamMax(t)} spots`;
 export const myRoles = (cid) => (S.cards[cid] ? S.cards[cid].canDo : []);
 export const teamRoles = (t) => [...new Set(t.members.flatMap((m) => (m === 'me' ? myRoles(t.comp) : P[m].canDo)))];
 export const needsOf = (t) => t.needs || [];
@@ -42,7 +43,7 @@ export function voters(c) {
   return [...new Set(list)];
 }
 export const isGroup = (c) => voters(c).length > 2;
-export const nick = (id, c) => (id === 'me' ? 'You' : c && c.revealed ? P[id].real.name : P[id].alias);
+export const nick = (id, c) => (id === 'me' ? L`You` : c && c.revealed ? P[id].real.name : P[id].alias);
 export const PASS_TEXT = 'Thanks for chatting! I don’t think it’s the right fit this time. Good luck with the competition.';
 
 export function roleCounts(ids, cid) {

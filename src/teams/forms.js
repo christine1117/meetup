@@ -1,23 +1,25 @@
 /* What happens when a form is sent. */
-import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261030g';
-import { logError } from '../shared/log.js?v=20261030g';
+import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031a';
+import { L } from '../shared/i18n.js?v=20261031a';
+import { MAX_CURIOUS } from '../shared/profile.js?v=20261031a';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261030g';
-import { isCold } from '../shared/sugar.js?v=20261030g';
-import { S, U, save, saveMe } from './state.js?v=20261030g';
-import { toast } from './ui.js?v=20261030g';
-import { MAX_ROLES } from './options.js?v=20261030g';
-import { COMP } from './competitions.js?v=20261030g';
-import { go } from './router.js?v=20261030g';
-import { DEFAULT_MAX, isFull } from './rules.js?v=20261030g';
-import { chatById, push, reply, startChat } from './chats.js?v=20261030g';
-import { render } from './render.js?v=20261030g';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031a';
+import { isCold } from '../shared/sugar.js?v=20261031a';
+import { S, U, save, saveMe } from './state.js?v=20261031a';
+import { toast } from './ui.js?v=20261031a';
+import { MAX_ROLES } from './options.js?v=20261031a';
+import { COMP } from './competitions.js?v=20261031a';
+import { go } from './router.js?v=20261031a';
+import { DEFAULT_MAX, isFull } from './rules.js?v=20261031a';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031a';
+import { render } from './render.js?v=20261031a';
 
-// The profile as the form gives it
-const meFrom = (d) => ({
+// The profile as the form gives it ("curious" is several ticked boxes)
+const meFrom = (d, form) => ({
   ...(S.me || {}), alias: d.alias, field: d.field, city: d.city, meet: d.meet, fun: d.fun,
   name: d.name, title: d.title, school: d.school, company: d.company, contactType: d.contactType, contact: d.contact,
-  curious: String(d.curious || '').split(/[,，、]/).map((t) => t.trim()).filter(Boolean).slice(0, 8),
+  curious: new FormData(form).getAll('curious').slice(0, MAX_CURIOUS),
 });
 
 // The signed-in user, in the small shape the app keeps
@@ -32,46 +34,46 @@ export const forms = {
   async me(form, d) {
     if (!d.alias) { $('#me-error', form).hidden = false; return; }
     const first = !S.me;
-    const me = meFrom(d);
+    const me = meFrom(d, form);
     saveMe(me);
     if (U.user) {
-      try { await saveProfile(me); } catch (err) { logError('profile', err); toast('Saved here, but not to your account. Try again later.'); }
+      try { await saveProfile(me); } catch (err) { logError('profile', err); toast(L`Saved here, but not to your account. Try again later.`); }
     }
     U.needProfile = false;
     if (first) go('comps');
-    else toast('Saved');
+    else toast(L`Saved`);
     render({ fresh: true });
   },
   async signup(form, d) {
     const local = form.dataset.local === '1';
-    const me = local ? S.me : meFrom(d);
+    const me = local ? S.me : meFrom(d, form);
     const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
-    if (!me || !me.alias) return stop('Please add a nickname.');
-    if (!/^\S+@\S+\.\S+$/.test(d.email || '')) return stop('That email does not look right.');
-    if ((d.password || '').length < 8) return stop('Use a password with at least 8 characters.');
+    if (!me || !me.alias) return stop(L`Please add a nickname.`);
+    if (!/^\S+@\S+\.\S+$/.test(d.email || '')) return stop(L`That email does not look right.`);
+    if ((d.password || '').length < 8) return stop(L`Use a password with at least 8 characters.`);
     U.busy = true; U.authMsg = null; render();
     try {
       const result = await signUp(d.email, d.password, me);
       U.busy = false;
       if (result.confirm) {
         U.auth = 'login';
-        U.authMsg = { ok: true, text: 'Almost there: we sent you an email. Confirm it, then log in here.' };
+        U.authMsg = { ok: true, text: L`Almost there: we sent you an email. Confirm it, then log in here.` };
         render({ fresh: true });
         return;
       }
       saveMe(me);
       U.user = await whoAmI();
-      toast('Account created');
+      toast(L`Account created`);
       go('comps');
       render({ fresh: true });
     } catch (err) {
       logError('signup', err);
-      stop(authMessage(err));
+      stop(L(authMessage(err)));
     }
   },
   async login(form, d) {
     const stop = (text) => { U.busy = false; U.authMsg = { text }; render(); };
-    if (!d.email || !d.password) return stop('Please enter your email and password.');
+    if (!d.email || !d.password) return stop(L`Please enter your email and password.`);
     U.busy = true; U.authMsg = null; render();
     try {
       const me = await logIn(d.email, d.password);
@@ -87,7 +89,7 @@ export const forms = {
       render({ fresh: true });
     } catch (err) {
       logError('login', err);
-      stop(authMessage(err));
+      stop(L(authMessage(err)));
     }
   },
   card(form, d) {
@@ -123,7 +125,7 @@ export const forms = {
     t.max = Math.max(Number(d.max) || DEFAULT_MAX, t.members.length);
     if (!isFull(t)) t.needs = new FormData(form).getAll('needs');
     save();
-    toast('Saved');
+    toast(L`Saved`);
     render({ fresh: true });
   },
   teammsg(form, d) {

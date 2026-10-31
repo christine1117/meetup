@@ -50,18 +50,20 @@ class SupabaseStore:
         self._post("extraction_reviews", [{**i, "competition_id": r["competition"]["id"]} for r in rows for i in r["issues"]], upsert=False)
 
 
-def db_rows(raw, decision, published: dict | None) -> dict:
-    """The database shape for one competition."""
+def db_rows(raw, decision, record: dict) -> dict:
+    """The database shape for one competition (record: what the website gets, from run.listing_record)."""
     return {
         "competition": {
-            "id": raw.id, "source": raw.source, "region": raw.region, "kind": raw.kind, "name": raw.name,
+            "id": raw.id, "source": raw.source, "region": record["region"], "kind": record["kind"], "name": raw.name,
             "organizer": raw.organizer, "url": raw.url, "start_at": raw.start, "end_at": raw.end,
             "deadline_at": raw.deadline, "location": raw.where, "tags": raw.tags, "prize": raw.prize,
             "summary": raw.summary, "eligibility": decision.eligibility,
             "eligibility_evidence": decision.eligibility_evidence,
             "status": decision.status, "listed": decision.listed,
+            "category": record["category"], "i18n": record["i18n"],
         },
         "tracks": [{"track": t.name, "min_members": t.min, "max_members": t.max, "individual_allowed": t.solo,
-                    "mentors_max": t.mentors, "evidence": t.evidence} for t in decision.tracks],
+                    "mentors_max": t.mentors, "evidence": t.evidence, "unlimited": bool(t.unlimited), "track_en": t.name_en, "track_zh": t.name_zh,
+                    "evidence_en": t.evidence_en, "evidence_zh": t.evidence_zh} for t in decision.tracks],
         "issues": [{"issue": i.code, "detail": i.detail} for i in decision.issues],
     }

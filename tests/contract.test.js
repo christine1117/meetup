@@ -26,7 +26,8 @@ test('broken records are caught', () => {
 test('team size text', () => {
   assert.equal(teamSizeText({ min: 2, max: 5 }), '2–5 people');
   assert.equal(teamSizeText({ min: 1, max: 8 }), '1–8 people');
-  assert.equal(teamSizeText({ min: null, max: 4 }), 'Max 4 people', 'no minimum is made up');
+  assert.equal(teamSizeText({ min: null, max: 4 }), '1–4 people', 'only a maximum: one person up to the maximum');
+  assert.equal(teamSizeText({ min: null, max: null, unlimited: true }), 'No size limit');
   assert.equal(teamSizeText({ min: 3, max: null }), '3+ people');
   assert.equal(teamSizeText({ min: 4, max: 4 }), '4 per team');
   assert.equal(teamSizeText({ min: null, max: null }), 'Team size on the official page');
@@ -35,7 +36,8 @@ test('team size text', () => {
 test('track text', () => {
   assert.equal(trackText({ name: '高中組', min: 2, max: 4, evidence: 'x' }), '高中組: 2–4 people');
   assert.equal(trackText({ name: null, min: null, max: 8, solo: true, evidence: 'x' }), '1–8 people');
-  assert.equal(trackText({ name: null, min: null, max: 5, mentors: 1, evidence: 'x' }), 'Max 5 people, plus 1 mentor');
+  assert.equal(trackText({ name: null, min: null, max: 5, mentors: 1, evidence: 'x' }), '1–5 people, plus 1 mentor');
+  assert.equal(trackText({ name: '訂閱方案', min: null, max: 5, evidence: 'x' }), '訂閱方案: 1–5 people');
 });
 
 test('tracks and eligibility are checked too', () => {
@@ -59,6 +61,7 @@ test('a database row becomes a contract record', async () => {
   };
   const c = competitionFromRow(row);
   assert.deepEqual(checkCompetition(c), []);
-  assert.deepEqual(c.team, { min: 1, max: 8 });
-  assert.deepEqual(overallSize([{ max: 1, solo: true }, { min: 2, max: null }]), { min: 1, max: null });
+  assert.deepEqual(c.team, { min: 1, max: 8, unlimited: false });
+  assert.deepEqual(overallSize([{ max: 1, solo: true }, { min: 2, max: null }]), { min: 1, max: null, unlimited: false });
+  assert.deepEqual(overallSize([{ unlimited: true }, { max: 5, name: 'plan' }]), { min: null, max: null, unlimited: true });
 });

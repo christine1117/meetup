@@ -1,13 +1,13 @@
 /* ---------- Screen: profile ---------- */
 
-import { accountFields, authNote, busyAttr } from './account.js?v=20261030g';
-import { esc } from '../../shared/core.js?v=20261030g';
-import { L } from '../../shared/i18n.js?v=20261030g';
-import { FIELDS, fieldName, flavorName, flavorsLabel } from '../../shared/flavors.js?v=20261030g';
-import { field, select } from '../../shared/forms.js?v=20261030g';
-import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261030g';
-import { MAX_TAGS, TAG_SUGGESTIONS, myCurious, normTag } from '../matching.js?v=20261030g';
-import { S, U } from '../state.js?v=20261030g';
+import { accountFields, authNote, busyAttr } from './account.js?v=20261031a';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031a';
+import { FIELDS, fieldName, flavorName, flavorsLabel } from '../../shared/flavors.js?v=20261031a';
+import { field, select } from '../../shared/forms.js?v=20261031a';
+import { CONTACTS, MEETS } from '../../shared/profile.js?v=20261031a';
+import { MAX_TAGS, TAG_SUGGESTIONS, myCurious, normTag } from '../matching.js?v=20261031a';
+import { S, U } from '../state.js?v=20261031a';
 
 
 // Type tags (Enter or a comma adds one) or tap a suggestion. scope is 'quiz' or 'me'.
@@ -16,13 +16,13 @@ export function tagEditor(scope, key, list, label) {
   return `
       <div class="field tags" role="group" aria-labelledby="${key}-label">
         <p class="field__label" id="${key}-label">${label}</p>
-        ${list.length ? `<ul class="tags__list">${list.map((t) => `<li class="tag-chip">${esc(t)}<button type="button" data-act="tag-remove" data-scope="${scope}" data-key="${key}" data-value="${esc(t)}" aria-label="${esc(L`Remove ${t}`)}"><i class="ph ph-x" aria-hidden="true"></i></button></li>`).join('')}</ul>` : ''}
+        ${list.length ? `<ul class="tags__list">${list.map((t) => `<li class="tag-chip">${esc(L(t))}<button type="button" data-act="tag-remove" data-scope="${scope}" data-key="${key}" data-value="${esc(t)}" aria-label="${esc(L`Remove ${t}`)}"><i class="ph ph-x" aria-hidden="true"></i></button></li>`).join('')}</ul>` : ''}
         ${list.length < MAX_TAGS ? `
         <div class="tags__add">
           <input id="c-tag-${key}" data-tag-input data-scope="${scope}" data-key="${key}" autocomplete="off" aria-label="${esc(label)}" placeholder="${esc(L`Type and press Enter`)}">
           <button class="btn btn--ghost btn--sm" data-act="tag-add" data-scope="${scope}" data-key="${key}" type="button">${L`Add`}</button>
         </div>
-        <div class="tags__suggest">${left.map((x) => `<button class="cat cat--sm" data-act="tag-add" data-scope="${scope}" data-key="${key}" data-value="${esc(x)}" type="button">+ ${esc(x)}</button>`).join('')}</div>` : `<p class="hint">${L`Up to ${MAX_TAGS}.`}</p>`}
+        <div class="tags__suggest">${left.map((x) => `<button class="cat cat--sm" data-act="tag-add" data-scope="${scope}" data-key="${key}" data-value="${esc(x)}" type="button">+ ${esc(L(x))}</button>`).join('')}</div>` : `<p class="hint">${L`Up to ${MAX_TAGS}.`}</p>`}
       </div>`;
 }
 

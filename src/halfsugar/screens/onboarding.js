@@ -2,15 +2,15 @@
    A few quick questions, one per screen, then the profile form.
    Single-choice answers move on by themselves. */
 
-import { authNote, loginForm } from './account.js?v=20261030g';
-import { esc } from '../../shared/core.js?v=20261030g';
-import { L } from '../../shared/i18n.js?v=20261030g';
-import { FIELDS, LOGO, drinkFor, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261030g';
-import { cup, cupFor } from '../../shared/cup.js?v=20261030g';
-import { field } from '../../shared/forms.js?v=20261030g';
-import { MEETS } from '../../shared/profile.js?v=20261030g';
-import { U } from '../state.js?v=20261030g';
-import { profileForm, tagEditor } from './profile-form.js?v=20261030g';
+import { authNote, loginForm } from './account.js?v=20261031a';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031a';
+import { FIELDS, LOGO, drinkFor, fieldName, flavor, flavorName } from '../../shared/flavors.js?v=20261031a';
+import { cup, cupFor } from '../../shared/cup.js?v=20261031a';
+import { field } from '../../shared/forms.js?v=20261031a';
+import { MEETS } from '../../shared/profile.js?v=20261031a';
+import { U } from '../state.js?v=20261031a';
+import { profileForm, tagEditor } from './profile-form.js?v=20261031a';
 
 
 export const QUIZ_STEPS = 3;
@@ -51,8 +51,8 @@ export function viewOnboard() {
   if (U.authView === 'login') {
     return `
   <main class="onboard">
-    <div class="onboard__top"><p class="logo">${LOGO}</p></div>
-    <h1 lang="en">${L`Welcome back.`}</h1>
+    <div class="onboard__top"><p class="logo">${LOGO}</p>${langSwitch()}</div>
+    <h1>${L`Welcome back.`}</h1>
     ${loginForm()}
     <p class="hint">${L`New here?`} <button class="link-btn" data-act="auth-view" data-view="" type="button">${L`Start with a few questions`}</button></p>
   </main>`;
@@ -66,6 +66,7 @@ export function viewOnboard() {
     <div class="onboard__top">
       <p class="logo">${LOGO}</p>
       <div class="btnrow">
+        ${langSwitch()}
         <button class="btn btn--ghost btn--sm" data-act="dev-skip" type="button"><i class="ph ph-fast-forward" aria-hidden="true"></i>Dev: skip</button>
       </div>
     </div>

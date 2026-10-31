@@ -16,18 +16,18 @@
    (posts, messages, profiles) stays in the language it was written in.
    ========================================================= */
 
-import { loadProfile } from '../shared/account.js?v=20261030g';
-import { signedIn } from './forms.js?v=20261030g';
-import '../shared/log.js?v=20261030g';
-import { later } from '../shared/core.js?v=20261030g';
-import { logError } from '../shared/log.js?v=20261030g';
-import { learnWeights } from './matching.js?v=20261030g';
-import { S, U, save } from './state.js?v=20261030g';
-import { resolveReveal, scheduleAccept } from './conversations.js?v=20261030g';
-import { scheduleIncoming } from './simulate.js?v=20261030g';
-import { render } from './shell.js?v=20261030g';
+import { loadProfile } from '../shared/account.js?v=20261031a';
+import { signedIn } from './forms.js?v=20261031a';
+import '../shared/log.js?v=20261031a';
+import { later } from '../shared/core.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031a';
+import { learnWeights } from './matching.js?v=20261031a';
+import { S, U, save } from './state.js?v=20261031a';
+import { resolveReveal, scheduleAccept } from './conversations.js?v=20261031a';
+import { scheduleIncoming } from './simulate.js?v=20261031a';
+import { render } from './shell.js?v=20261031a';
 // Clicks, typing and timers are wired up here
-import './events.js?v=20261030g';
+import './events.js?v=20261031a';
 
 
 /* ---------- Start ---------- */

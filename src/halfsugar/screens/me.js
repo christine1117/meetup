@@ -1,13 +1,13 @@
 /* ---------- Screen: Me ----------
    Your drink and toppings on top, then your profile (shared with team mode). */
 
-import { accountPanel } from './account.js?v=20261030g';
-import { esc } from '../../shared/core.js?v=20261030g';
-import { L } from '../../shared/i18n.js?v=20261030g';
-import { drinkFor } from '../../shared/flavors.js?v=20261030g';
-import { S, U } from '../state.js?v=20261030g';
-import { MAX_SHOWN, TOPPING, drinkCup, myToppings, shownToppings, toppingIcon, toppingSlots } from '../toppings.js?v=20261030g';
-import { profileForm } from './profile-form.js?v=20261030g';
+import { accountPanel } from './account.js?v=20261031a';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031a';
+import { drinkFor } from '../../shared/flavors.js?v=20261031a';
+import { S, U } from '../state.js?v=20261031a';
+import { MAX_SHOWN, TOPPING, drinkCup, myToppings, shownToppings, toppingIcon, toppingSlots } from '../toppings.js?v=20261031a';
+import { profileForm } from './profile-form.js?v=20261031a';
 
 
 export function viewMe() {

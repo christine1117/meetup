@@ -1,22 +1,22 @@
 /* ---------- Forms ---------- */
 
-import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261030g';
-import { logError } from '../shared/log.js?v=20261030g';
-import { $, later, uid } from '../shared/core.js?v=20261030g';
-import { L } from '../shared/i18n.js?v=20261030g';
-import { isCold, sugarOf } from '../shared/sugar.js?v=20261030g';
-import { P, SEED_POSTS, hasEvent } from './people.js?v=20261030g';
-import { brewMatches } from './matching.js?v=20261030g';
-import { D, S, U, save } from './state.js?v=20261030g';
-import { go } from './router.js?v=20261030g';
-import { toast } from './ui.js?v=20261030g';
-import { createThread, pushMsg, scheduleAccept, sugarNotes, themReply, thread } from './conversations.js?v=20261030g';
-import { scheduleIncoming } from './simulate.js?v=20261030g';
-import { renderModal } from './modal.js?v=20261030g';
-import { postById } from './screens/explore.js?v=20261030g';
-import { syncRoleDescs } from './screens/brew.js?v=20261030g';
-import { dropReply } from './screens/mystery.js?v=20261030g';
-import { render } from './shell.js?v=20261030g';
+import { authMessage, currentUser, logIn, saveProfile, signUp } from '../shared/account.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031a';
+import { $, later, uid } from '../shared/core.js?v=20261031a';
+import { L } from '../shared/i18n.js?v=20261031a';
+import { isCold, sugarOf } from '../shared/sugar.js?v=20261031a';
+import { P, SEED_POSTS, hasEvent } from './people.js?v=20261031a';
+import { brewMatches } from './matching.js?v=20261031a';
+import { D, S, U, save } from './state.js?v=20261031a';
+import { go } from './router.js?v=20261031a';
+import { toast } from './ui.js?v=20261031a';
+import { createThread, pushMsg, scheduleAccept, sugarNotes, themReply, thread } from './conversations.js?v=20261031a';
+import { scheduleIncoming } from './simulate.js?v=20261031a';
+import { renderModal } from './modal.js?v=20261031a';
+import { postById } from './screens/explore.js?v=20261031a';
+import { syncRoleDescs } from './screens/brew.js?v=20261031a';
+import { dropReply } from './screens/mystery.js?v=20261031a';
+import { render } from './shell.js?v=20261031a';
 
 
 // The signed-in user, in the small shape the app keeps

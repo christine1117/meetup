@@ -1,19 +1,20 @@
 /* What each button does (buttons carry data-act="name"). */
-import { logOut } from '../shared/account.js?v=20261030g';
-import { clearProfile } from '../shared/profile.js?v=20261030g';
+import { logOut } from '../shared/account.js?v=20261031a';
+import { clearProfile } from '../shared/profile.js?v=20261031a';
+import { L, setLang } from '../shared/i18n.js?v=20261031a';
 
-import { later, pick } from '../shared/core.js?v=20261030g';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030g';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261030g';
-import { toast } from './ui.js?v=20261030g';
-import { DAY } from './competitions.js?v=20261030g';
-import { FRIENDS } from './sample-people.js?v=20261030g';
-import { go } from './router.js?v=20261030g';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261030g';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261030g';
-import { closeModal, renderModal } from './views/modal.js?v=20261030g';
-import { PAGE } from './views/competitions.js?v=20261030g';
-import { render } from './render.js?v=20261030g';
+import { later, pick } from '../shared/core.js?v=20261031a';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031a';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031a';
+import { toast } from './ui.js?v=20261031a';
+import { DAY } from './competitions.js?v=20261031a';
+import { FRIENDS } from './sample-people.js?v=20261031a';
+import { go } from './router.js?v=20261031a';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031a';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031a';
+import { closeModal, renderModal } from './views/modal.js?v=20261031a';
+import { PAGE } from './views/competitions.js?v=20261031a';
+import { render } from './render.js?v=20261031a';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
@@ -29,7 +30,7 @@ export const acts = {
   teamup(el) {
     const c = chatById(el.dataset.id);
     if (!c || c.votes.me || c.status !== 'open' || sugarOf(c) < REVEAL_AT) return;
-    if (tooBig(c)) { toast('This team is full'); return; }
+    if (tooBig(c)) { toast(L`This team is full`); return; }
     c.votes.me = true;
     c.msgs.push({ from: 'sys', text: 'You said yes. Waiting for everyone else.', at: Date.now() });
     save();
@@ -41,7 +42,7 @@ export const acts = {
       later(1800, () => {
         if (c.status !== 'open' || c.teamed) return;
         c.votes = {};
-        push(c, 'them', 'Let us talk a little more first.', others[0]);
+        push(c, 'them', L`Let us talk a little more first.`, others[0]);
         render();
       });
       return;
@@ -59,7 +60,7 @@ export const acts = {
     const c = chatById(el.dataset.id);
     if (!c || c.status !== 'open') return;
     U.leave = null;
-    endChat(c, PASS_TEXT);
+    endChat(c, L(PASS_TEXT));
     save();
     render({ fresh: true });
   },
@@ -68,27 +69,27 @@ export const acts = {
     const c = chatById(el.dataset.id);
     if (!c || c.status !== 'open') return;
     const who = c.kind === 'team' ? pick(voters(c).filter((v) => v !== 'me')) : c.ref;
-    c.msgs.push({ from: 'them', who, text: PASS_TEXT, at: Date.now() });
+    c.msgs.push({ from: 'them', who, text: L(PASS_TEXT), at: Date.now() });
     endChat(c);
     save();
     render({ fresh: true });
   },
   call(el) {
     window.open(`https://meet.jit.si/HalfSugarTeams-${el.dataset.id}`, '_blank', 'noopener');
-    toast('Video room opened in a new tab');
+    toast(L`Video room opened in a new tab`);
   },
   copy(el) {
-    const done = () => toast('Invite link copied');
+    const done = () => toast(L`Invite link copied`);
     try { navigator.clipboard.writeText(el.dataset.link).then(done, done); } catch { done(); }
   },
   'dev-friend'(el) {
     const t = S.teams.find((x) => x.id === el.dataset.id);
-    if (isFull(t)) { toast('The team is full'); return; }
+    if (isFull(t)) { toast(L`The team is full`); return; }
     const f = FRIENDS.find((x) => !t.members.includes(x.id) && !S.teams.some((y) => y.comp === t.comp && y.members.includes(x.id)));
     if (!f) { toast('No more demo friends'); return; }
     t.members.push(f.id);
     t.needs = needsOf(t).filter((r) => !f.canDo.includes(r));
-    t.msgs.push({ from: 'sys', text: `${f.real.name} joined with your invite link.`, at: Date.now() });
+    t.msgs.push({ from: 'sys', text: '{0} joined with your invite link.', vars: [f.real.name], at: Date.now() });
     // A full team stops talking to newcomers
     if (isFull(t)) S.chats.filter((x) => x.comp === t.comp && x.kind === 'person' && x.status === 'open' && !x.teamed).forEach((x) => endChat(x, 'The team is full now, so this chat ended.', false));
     save();
@@ -96,6 +97,8 @@ export const acts = {
   },
   'dev-time'(el) { const c = chatById(el.dataset.id); const before = sugarOf(c); c.devMin = (c.devMin || 0) + 5; if (before < REVEAL_AT && sugarOf(c) >= REVEAL_AT) c.msgs.push({ from: 'sys', text: 'Half sugar! You can team up now.', at: Date.now() }); save(); render(); },
   'dev-days'(el) { const c = chatById(el.dataset.id); c.msgs.forEach((m) => { m.at -= 3 * DAY + 60000; }); c.at -= 3 * DAY + 60000; save(); render(); },
+  lang(el) { setLang(el.dataset.value); render({ fresh: true }); },
+  cat(el) { U.cat = el.dataset.value; U.shown = PAGE; render(); },
   'auth-mode'(el) { U.auth = el.dataset.mode; U.authMsg = null; render({ fresh: true }); },
   async logout() {
     await logOut();
@@ -104,7 +107,7 @@ export const acts = {
     S.me = null;
     save();
     U.auth = 'login';
-    U.authMsg = { ok: true, text: 'You are logged out.' };
+    U.authMsg = { ok: true, text: L`You are logged out.` };
     go('comps');
     render({ fresh: true });
   },

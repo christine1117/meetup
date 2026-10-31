@@ -1,20 +1,20 @@
 /* ---------- Shell ---------- */
 
-import { $, esc } from '../shared/core.js?v=20261030g';
-import { logError } from '../shared/log.js?v=20261030g';
-import { L, LANG } from '../shared/i18n.js?v=20261030g';
-import { LOGO } from '../shared/flavors.js?v=20261030g';
-import { D, S, U } from './state.js?v=20261030g';
-import { parseRoute } from './router.js?v=20261030g';
-import { app } from './ui.js?v=20261030g';
-import { thread } from './conversations.js?v=20261030g';
-import { viewOnboard } from './screens/onboarding.js?v=20261030g';
-import { viewExplore, viewPost } from './screens/explore.js?v=20261030g';
-import { viewBuild } from './screens/brew.js?v=20261030g';
-import { viewDrop } from './screens/mystery.js?v=20261030g';
-import { viewChats, viewThread } from './screens/chats.js?v=20261030g';
-import { viewAbout } from './screens/about.js?v=20261030g';
-import { viewMe } from './screens/me.js?v=20261030g';
+import { $, esc } from '../shared/core.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031a';
+import { L, LANG, langSwitch } from '../shared/i18n.js?v=20261031a';
+import { LOGO } from '../shared/flavors.js?v=20261031a';
+import { D, S, U } from './state.js?v=20261031a';
+import { parseRoute } from './router.js?v=20261031a';
+import { app } from './ui.js?v=20261031a';
+import { thread } from './conversations.js?v=20261031a';
+import { viewOnboard } from './screens/onboarding.js?v=20261031a';
+import { viewExplore, viewPost } from './screens/explore.js?v=20261031a';
+import { viewBuild } from './screens/brew.js?v=20261031a';
+import { viewDrop } from './screens/mystery.js?v=20261031a';
+import { viewChats, viewThread } from './screens/chats.js?v=20261031a';
+import { viewAbout } from './screens/about.js?v=20261031a';
+import { viewMe } from './screens/me.js?v=20261031a';
 
 
 export const NAV = [
@@ -42,6 +42,7 @@ export function shell(route, body) {
       </nav>
       <div class="side__foot">
         <a class="side__about" href="#/about" ${route.name === 'about' ? 'aria-current="page"' : ''}><i class="ph ph-info" aria-hidden="true"></i>${L`What is Half Sugar?`}</a>
+        ${langSwitch()}
       </div>
     </aside>
     <main class="main ${isChat ? 'main--chat' : ''}" id="main">${body}</main>

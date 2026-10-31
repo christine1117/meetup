@@ -1,17 +1,18 @@
 /* Layout and drawing: the side nav, and render(), which draws the
    current route and shows a way out if something breaks. */
+import { L, LANG, langSwitch } from '../shared/i18n.js?v=20261031a';
 
-import { esc } from '../shared/core.js?v=20261030g';
-import { LOGO } from '../shared/flavors.js?v=20261030g';
-import { logError } from '../shared/log.js?v=20261030g';
-import { S, U } from './state.js?v=20261030g';
-import { app } from './ui.js?v=20261030g';
-import { route } from './router.js?v=20261030g';
-import { chatById } from './chats.js?v=20261030g';
-import { viewAccount, viewMe, viewOnboard } from './views/profile.js?v=20261030g';
-import { viewComp, viewComps } from './views/competitions.js?v=20261030g';
-import { viewChat, viewChats } from './views/chats.js?v=20261030g';
-import { viewTeam } from './views/team.js?v=20261030g';
+import { esc } from '../shared/core.js?v=20261031a';
+import { LOGO } from '../shared/flavors.js?v=20261031a';
+import { logError } from '../shared/log.js?v=20261031a';
+import { S, U } from './state.js?v=20261031a';
+import { app } from './ui.js?v=20261031a';
+import { route } from './router.js?v=20261031a';
+import { chatById } from './chats.js?v=20261031a';
+import { viewAccount, viewMe, viewOnboard } from './views/profile.js?v=20261031a';
+import { viewComp, viewComps } from './views/competitions.js?v=20261031a';
+import { viewChat, viewChats } from './views/chats.js?v=20261031a';
+import { viewTeam } from './views/team.js?v=20261031a';
 
 export const NAV = [['comps', 'Competitions', 'ph-trophy'], ['chats', 'Teams & chats', 'ph-chats-circle'], ['me', 'Me', 'ph-user']];
 
@@ -22,7 +23,8 @@ export function shell(r, body) {
   <div class="app">
     <aside class="side">
       <a class="logo" href="#/comps">${LOGO}<span class="logo__sub">Teams</span></a>
-      <nav class="nav" aria-label="Main">${NAV.map(([n, label, icon]) => `<a href="#/${n}" ${here === n ? 'aria-current="page"' : ''}><i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${label}</span></span></a>`).join('')}</nav>
+      <nav class="nav" aria-label="Main">${NAV.map(([n, label, icon]) => `<a href="#/${n}" ${here === n ? 'aria-current="page"' : ''}><i class="ph ${icon}" aria-hidden="true"></i><span class="nav__text"><span>${L(label)}</span></span></a>`).join('')}</nav>
+      <div class="side__foot">${langSwitch()}</div>
     </aside>
     <main class="main ${full ? 'main--chat' : ''} ${location.hash !== U.lastPath ? 'enter' : ''}" id="main">${body}</main>
   </div>`;
@@ -30,6 +32,7 @@ export function shell(r, body) {
 
 export function render(opt = {}) {
   try {
+    document.documentElement.lang = LANG === 'zh' ? 'zh-Hant' : 'en';
     const r = route();
     const path = location.hash;
     const keep = {};
@@ -56,6 +59,6 @@ export function render(opt = {}) {
     U.lastPath = path;
   } catch (err) {
     logError('render', err);
-    app.innerHTML = `<main class="onboard"><h1>Something went wrong.</h1><p class="hint">${esc(err.message)}</p><button class="btn btn--primary" data-act="reset-yes" type="button">Clear data and restart</button></main>`;
+    app.innerHTML = `<main class="onboard"><h1>${L`Something went wrong.`}</h1><p class="hint">${esc(err.message)}</p><button class="btn btn--primary" data-act="reset-yes" type="button">${L`Clear data and restart`}</button></main>`;
   }
 }

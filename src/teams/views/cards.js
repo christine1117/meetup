@@ -1,14 +1,15 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
+import { L } from '../../shared/i18n.js?v=20261031a';
 
-import { esc } from '../../shared/core.js?v=20261030g';
-import { flavorChip } from '../../shared/flavors.js?v=20261030g';
-import { cupFor } from '../../shared/cup.js?v=20261030g';
-import { S, U } from '../state.js?v=20261030g';
-import { roleChips } from '../ui.js?v=20261030g';
-import { ROLES, goalName, hoursName } from '../options.js?v=20261030g';
-import { P } from '../sample-people.js?v=20261030g';
-import { freshRoles } from '../matching.js?v=20261030g';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { flavorChip } from '../../shared/flavors.js?v=20261031a';
+import { cupFor } from '../../shared/cup.js?v=20261031a';
+import { S, U } from '../state.js?v=20261031a';
+import { roleChips } from '../ui.js?v=20261031a';
+import { ROLES, goalName, hoursName } from '../options.js?v=20261031a';
+import { P } from '../sample-people.js?v=20261031a';
+import { freshRoles } from '../matching.js?v=20261031a';
+import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031a';
 
 export function personCard(p, cid) {
   const card = S.cards[cid];
@@ -22,11 +23,11 @@ export function personCard(p, cid) {
         <div><button class="name-btn" data-act="open" data-kind="person" data-ref="${p.id}" data-comp="${cid}" type="button"><strong>${esc(p.alias)}</strong></button> ${flavorChip(p)}<p class="meta">${esc(p.city)} · ${esc(goalName(p.goal))} · ${esc(hoursName(p.hours))}</p></div>
       </div>
       <dl class="brief">
-        <div><dt>Role</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
-        ${p.topics.length ? `<div><dt>Cares about</dt><dd class="chips">${roleChips(p.topics, card.topics)}</dd></div>` : ''}
-        <div><dt>Built</dt><dd>${esc(p.work)}</dd></div>
+        <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
+        ${p.topics.length ? `<div><dt>${L`Cares about`}</dt><dd class="chips">${roleChips(p.topics, card.topics)}</dd></div>` : ''}
+        <div><dt>${L`Built`}</dt><dd>${esc(p.work)}</dd></div>
       </dl>
-      ${hiBox(cid, 'person', p.id, existing, mine ? `Invite ${p.alias}` : 'Say hi')}
+      ${hiBox(cid, 'person', p.id, existing, mine ? L`Invite ${p.alias}` : L`Say hi`)}
     </article>`;
 }
 
@@ -42,33 +43,33 @@ export function teamCard(t, cid) {
       </div>
       ${t.pitch ? `<p class="pitch">${esc(t.pitch)}</p>` : ''}
       <dl class="brief">
-        <div><dt>Roles</dt><dd class="chips">${roleChips(teamRoles(t))}</dd></div>
-        ${needsOf(t).length ? `<div><dt>Still need</dt><dd class="chips">${roleChips(needsOf(t), card.canDo)}</dd></div>` : ''}
-        ${!needsOf(t).length && freshRoles(card.canDo, counts).length ? `<div><dt>You’d add</dt><dd class="chips">${roleChips(freshRoles(card.canDo, counts), card.canDo)}</dd></div>` : ''}
+        <div><dt>${L`Roles`}</dt><dd class="chips">${roleChips(teamRoles(t))}</dd></div>
+        ${needsOf(t).length ? `<div><dt>${L`Still need`}</dt><dd class="chips">${roleChips(needsOf(t), card.canDo)}</dd></div>` : ''}
+        ${!needsOf(t).length && freshRoles(card.canDo, counts).length ? `<div><dt>${L`You’d add`}</dt><dd class="chips">${roleChips(freshRoles(card.canDo, counts), card.canDo)}</dd></div>` : ''}
       </dl>
-      ${hiBox(cid, 'team', t.id, existing, 'Say hi to the team')}
+      ${hiBox(cid, 'team', t.id, existing, L`Say hi to the team`)}
     </article>`;
 }
 
 export function hiBox(cid, kind, ref, existing, label) {
-  if (existing) return `<a class="btn btn--ghost btn--sm" href="#/chat/${existing.id}">Open chat</a>`;
+  if (existing) return `<a class="btn btn--ghost btn--sm" href="#/chat/${existing.id}">${L`Open chat`}</a>`;
   const key = `${kind}:${ref}`;
   const team = myTeam(cid);
-  const note = kind === 'team' ? 'Everyone on the team will see this. Names stay hidden until you team up.'
-    : team && team.members.length > 1 ? 'Your whole team will be in this chat. Names stay hidden until you team up.'
-      : 'Say what you can bring. Names stay hidden until you team up.';
+  const note = kind === 'team' ? L`Everyone on the team will see this. Names stay hidden until you team up.`
+    : team && team.members.length > 1 ? L`Your whole team will be in this chat. Names stay hidden until you team up.`
+      : L`Say what you can bring. Names stay hidden until you team up.`;
   if (U.hi === key) {
     return `
       <form class="stack reply" data-form="hi" data-kind="${kind}" data-ref="${ref}" data-comp="${cid}" novalidate>
-        <label class="sr" for="c-hi">Your message</label>
+        <label class="sr" for="c-hi">${L`Your message`}</label>
         <textarea id="c-hi" name="hi" rows="2" placeholder="${esc(note)}"></textarea>
         <div class="btnrow">
-          <button class="btn btn--dark btn--sm" type="submit">Send</button>
-          <button class="btn btn--ghost btn--sm" data-act="hi" data-key="" type="button">Cancel</button>
+          <button class="btn btn--dark btn--sm" type="submit">${L`Send`}</button>
+          <button class="btn btn--ghost btn--sm" data-act="hi" data-key="" type="button">${L`Cancel`}</button>
         </div>
       </form>`;
   }
   return `<button class="btn btn--dark btn--sm" data-act="hi" data-key="${key}" type="button">${esc(label)}</button>`;
 }
 
-export const roleChecks = (name, picked, list = ROLES) => `<div class="checks">${list.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${r}" ${picked.includes(r) ? 'checked' : ''}><span>${r}</span></label>`).join('')}</div>`;
+export const roleChecks = (name, picked, list = ROLES) => `<div class="checks">${list.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${r}" ${picked.includes(r) ? 'checked' : ''}><span>${L(r)}</span></label>`).join('')}</div>`;

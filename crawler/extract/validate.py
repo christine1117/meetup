@@ -43,6 +43,23 @@ def mentor_counts(quote: str) -> set[int]:
     return found
 
 
+PEOPLE_AFTER = re.compile(r"^\s*(?:[-~～至到]\s*\S{1,2}\s*)?(?:人|名|位|成員|隊員|組員|學生|members?|people|persons|participants|individuals|students|hackers|teammates)", re.I)
+TEAM_NEAR = re.compile(r"隊|組|團|teams?\b", re.I)
+
+
+def number_is_about_people(quote: str, n: int) -> bool:
+    """Is n in the quote as a count of people ("每隊 3 人", "teams of up to 4"),
+    not of something else ("每人限提交 1 件作品")?"""
+    words = {1: "one|一", 2: "two|二|兩|两|雙", 3: "three|三", 4: "four|四", 5: "five|五", 6: "six|六", 7: "seven|七", 8: "eight|八", 9: "nine|九", 10: "ten|十"}
+    pattern = rf"(?<!\d){n}(?!\d)" + (rf"|\b(?:{words[n]})\b|{words[n]}" if n in words else "")
+    for m in re.finditer(pattern, quote, re.I):
+        after = quote[m.end(): m.end() + 8]
+        around = quote[max(0, m.start() - 30): m.end() + 20]
+        if PEOPLE_AFTER.match(after) or TEAM_NEAR.search(around):
+            return True
+    return False
+
+
 def only_about_mentors(quote: str) -> bool:
     """True when every number in the quote is a count of mentors
     ("指導老師1名", "1 名指導老師", "one mentor"), not of participants."""
@@ -102,6 +119,10 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
             issues.append(Issue(code="min_greater_than_max", detail=f"min {r.min_members} > max {r.max_members} ({where})"))
             continue
         # A quote that only talks about teachers cannot be a participant count
+        sizes = [n for n in (r.min_members, r.max_members) if n is not None]
+        if sizes and not all(number_is_about_people(r.evidence, n) for n in sizes):
+            issues.append(Issue(code="number_not_about_people", detail=f"The quote does not give that number of people ({where})"))
+            continue
         if (r.min_members or r.max_members) and only_about_mentors(r.evidence):
             issues.append(Issue(code="mentors_counted", detail=f"The number seems to be about mentors ({where})"))
             continue
@@ -122,17 +143,18 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
                                 detail=f"{r.track or 'all'}: {seen[k]} vs {size}. Check the official rules."))
         seen.setdefault(k, size)
 
-    team_ok = comp.team_by_default or any(
-        r.max_members is None or r.max_members >= 2 for r in good if not (r.individual_allowed is False and r.max_members == 1)
+    # Only competitions where people can enter as a team are listed: the text has to say so
+    # (a size of 2 or more, "no limit on team size", or plainly "teams may enter").
+    # Hackathon sites are team events by nature, so they are listed either way.
+    team_ok = comp.team_by_default or ex.teams_allowed is True or any(
+        (r.max_members or 0) >= 2 or (r.min_members or 0) >= 2 or r.unlimited for r in good
     )
     if ex.individual_only and not any((r.max_members or 0) >= 2 for r in good):
         return Decision(status="excluded", issues=[Issue(code="individual_only", detail="Individuals only.")])
-    if not good and not comp.team_by_default:
-        # Not listed: either clearly not a team competition, or a person should check first
-        status = "review" if issues else "excluded"
-        return Decision(status=status, issues=issues or [Issue(code="no_team_rules", detail="No sign that teams can enter.")])
     if not team_ok:
-        return Decision(status="excluded", issues=[Issue(code="no_team_rules", detail="Every rule is one person per entry.")])
+        # Not listed: the text never says people can enter as a team (or a person should check first)
+        status = "review" if issues and good else "excluded"
+        return Decision(status=status, issues=issues + [Issue(code="no_team_rules", detail="The text does not say people can enter as a team.")])
 
     # Any doubt about sizes: list the competition, but do not publish sizes until a person checks
     blocking = {"conflicting_sources", "llm_unsure"}
@@ -142,13 +164,15 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
         merged: dict[str, Track] = {}
         for r in good:
             k = track_key(r.track)
-            t = merged.get(k) or Track(name=r.track, evidence=r.evidence)
+            t = merged.get(k) or Track(name=r.track, evidence=r.evidence, name_en=r.track_en, name_zh=r.track_zh,
+                                       evidence_en=r.evidence_en, evidence_zh=r.evidence_zh)
             t.min = t.min if t.min is not None else r.min_members
             t.max = t.max if t.max is not None else r.max_members
             t.solo = t.solo if t.solo is not None else r.individual_allowed
             t.mentors = t.mentors if t.mentors is not None else r.mentors_max
+            t.unlimited = t.unlimited or r.unlimited or None
             merged[k] = t
-        tracks = [t for t in merged.values() if t.min or t.max or t.solo is not None]
+        tracks = [t for t in merged.values() if t.min or t.max or t.unlimited]
 
     elig = ex.eligibility
     elig_ok = bool(elig and quoted(elig.evidence, source_text))
@@ -161,14 +185,18 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Dec
         eligibility=elig.summary if elig_ok else None,
         eligibility_evidence=elig.evidence if elig_ok else None,
         issues=issues,
+        listing=ex.listing,
     )
 
 
 def overall(tracks: list[Track]) -> dict:
     """One min/max for the list view, across tracks (the detail page shows each track).
-    The maximum is only known if every track that allows teams states one."""
+    The maximum is only known if every track that allows teams states one.
+    "unlimited" when a track says there is no limit on team size."""
     if not tracks:
-        return {"min": None, "max": None}
+        return {"min": None, "max": None, "unlimited": False}
+    if any(t.unlimited for t in tracks):
+        return {"min": None, "max": None, "unlimited": True}
     mins = [t.min if t.min is not None else (1 if t.solo else None) for t in tracks]
     team_tracks = [t for t in tracks if t.max is None or t.max >= 2]
     maxes = [t.max for t in team_tracks]
@@ -176,4 +204,4 @@ def overall(tracks: list[Track]) -> dict:
     low = min(m for m in mins if m is not None) if all(m is not None for m in mins) else None
     if low is not None and top is not None and low > top:
         low = None
-    return {"min": low, "max": top if top is not None and top >= 2 else None}
+    return {"min": low, "max": top if top is not None and top >= 2 else None, "unlimited": False}

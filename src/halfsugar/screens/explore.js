@@ -1,15 +1,15 @@
 /* ---------- Screen: Explore ---------- */
 
-import { esc } from '../../shared/core.js?v=20261030g';
-import { L } from '../../shared/i18n.js?v=20261030g';
-import { flavorChip } from '../../shared/flavors.js?v=20261030g';
-import { at, cupFor } from '../../shared/cup.js?v=20261030g';
-import { field, select } from '../../shared/forms.js?v=20261030g';
-import { CATEGORIES, P, SEED_THOUGHTS, catName } from '../people.js?v=20261030g';
-import { TOP_PICKS, dayKey, topPicks } from '../matching.js?v=20261030g';
-import { S, U } from '../state.js?v=20261030g';
-import { parseRoute } from '../router.js?v=20261030g';
-import { byline } from '../ui.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031a';
+import { flavorChip } from '../../shared/flavors.js?v=20261031a';
+import { at, cupFor } from '../../shared/cup.js?v=20261031a';
+import { field, select } from '../../shared/forms.js?v=20261031a';
+import { CATEGORIES, P, SEED_THOUGHTS, catName } from '../people.js?v=20261031a';
+import { TOP_PICKS, dayKey, topPicks } from '../matching.js?v=20261031a';
+import { S, U } from '../state.js?v=20261031a';
+import { parseRoute } from '../router.js?v=20261031a';
+import { byline } from '../ui.js?v=20261031a';
 
 
 export function responsesBlock(item, key) {

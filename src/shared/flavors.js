@@ -1,7 +1,7 @@
 /* Fields and their boba flavors, the logo, and the flavor chip. */
 
-import { esc } from './core.js?v=20261030g';
-import { L } from './i18n.js?v=20261030g';
+import { esc } from './core.js?v=20261031a';
+import { L } from './i18n.js?v=20261031a';
 
 export const FIELDS = ['Design', 'Engineering', 'Founder', 'Research', 'Content', 'Business', 'Other'];
 export const fieldName = (f) => L(f);

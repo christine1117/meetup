@@ -1,15 +1,16 @@
 /* HTML: the pop-up for a person or a team. */
+import { L } from '../../shared/i18n.js?v=20261031a';
 
-import { $, esc } from '../../shared/core.js?v=20261030g';
-import { flavorChip } from '../../shared/flavors.js?v=20261030g';
-import { cupFor } from '../../shared/cup.js?v=20261030g';
-import { S, U } from '../state.js?v=20261030g';
-import { avatar, roleChips } from '../ui.js?v=20261030g';
-import { goalName, hoursName } from '../options.js?v=20261030g';
-import { compOf } from '../competitions.js?v=20261030g';
-import { P } from '../sample-people.js?v=20261030g';
-import { freshRoles } from '../matching.js?v=20261030g';
-import { chatWith, isFull, knows, myRoles, myTeam, needsOf, personOf, roleCounts, sideOf, spots, teamsIn } from '../rules.js?v=20261030g';
+import { $, esc } from '../../shared/core.js?v=20261031a';
+import { flavorChip } from '../../shared/flavors.js?v=20261031a';
+import { cupFor } from '../../shared/cup.js?v=20261031a';
+import { S, U } from '../state.js?v=20261031a';
+import { avatar, roleChips } from '../ui.js?v=20261031a';
+import { goalName, hoursName } from '../options.js?v=20261031a';
+import { compOf } from '../competitions.js?v=20261031a';
+import { P } from '../sample-people.js?v=20261031a';
+import { freshRoles } from '../matching.js?v=20261031a';
+import { chatWith, isFull, knows, myRoles, myTeam, needsOf, personOf, roleCounts, sideOf, spots, teamsIn } from '../rules.js?v=20261031a';
 
 export const modalEl = document.createElement('div');
 modalEl.id = 'modal';
@@ -19,21 +20,21 @@ document.body.appendChild(modalEl);
 export function modalAction(cid, kind, ref, mineAlready) {
   if (mineAlready) return '';
   const c = chatWith(cid, kind, ref);
-  if (c && c.status === 'closed') return '<p class="meta">This chat ended.</p>';
-  if (c) return location.hash === `#/chat/${c.id}` ? '' : `<a class="btn btn--dark btn--sm" href="#/chat/${c.id}">Open chat</a>`;
+  if (c && c.status === 'closed') return `<p class="meta">${L`This chat ended.`}</p>`;
+  if (c) return location.hash === `#/chat/${c.id}` ? '' : `<a class="btn btn--dark btn--sm" href="#/chat/${c.id}">${L`Open chat`}</a>`;
   if (!S.cards[cid]) return `<a class="btn btn--dark btn--sm" href="#/comp/${cid}">Join ${esc(compOf(cid).name)} to say hi</a>`;
-  if (kind === 'team' && myTeam(cid)) return '<p class="meta">You are already in a team for this competition.</p>';
+  if (kind === 'team' && myTeam(cid)) return `<p class="meta">${L`You are already in a team for this competition.`}</p>`;
   const team = myTeam(cid);
   const full = kind === 'team' ? isFull(teamsIn(cid).find((t) => t.id === ref)) : team && isFull(team);
-  if (full) return `<p class="meta">${kind === 'team' ? 'This team is full.' : 'Your team is full.'}</p>`;
-  const note = kind === 'team' ? 'Everyone on the team will see this. Names stay hidden until you team up.'
-    : team && team.members.length > 1 ? 'Your whole team will be in this chat. Names stay hidden until you team up.'
-      : 'Say what you can bring. Names stay hidden until you team up.';
+  if (full) return `<p class="meta">${kind === 'team' ? L`This team is full.` : L`Your team is full.`}</p>`;
+  const note = kind === 'team' ? L`Everyone on the team will see this. Names stay hidden until you team up.`
+    : team && team.members.length > 1 ? L`Your whole team will be in this chat. Names stay hidden until you team up.`
+      : L`Say what you can bring. Names stay hidden until you team up.`;
   return `
     <form class="stack" data-form="hi" data-kind="${kind}" data-ref="${ref}" data-comp="${cid}" novalidate>
-      <label class="sr" for="c-hi">Your message</label>
+      <label class="sr" for="c-hi">${L`Your message`}</label>
       <textarea id="c-hi" name="hi" rows="2" placeholder="${esc(note)}"></textarea>
-      <button class="btn btn--dark btn--sm" type="submit">${kind === 'person' && team ? 'Invite' : 'Say hi'}</button>
+      <button class="btn btn--dark btn--sm" type="submit">${kind === 'person' && team ? L`Invite` : L`Say hi`}</button>
     </form>`;
 }
 
@@ -56,16 +57,16 @@ export function personModal(pid, cid) {
         </div>
       </div>
       <dl class="brief">
-        <div><dt>Role</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
-        ${p.topics.length ? `<div><dt>Cares about</dt><dd class="chips">${roleChips(p.topics, card ? card.topics : [])}</dd></div>` : ''}
-        <div><dt>Built</dt><dd>${esc(p.work)}</dd></div>
+        <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
+        ${p.topics.length ? `<div><dt>${L`Cares about`}</dt><dd class="chips">${roleChips(p.topics, card ? card.topics : [])}</dd></div>` : ''}
+        <div><dt>${L`Built`}</dt><dd>${esc(p.work)}</dd></div>
       </dl>
       ${known ? `
       <dl class="brief brief--locked">
-        <div><dt>Name</dt><dd>${esc(p.real.name)}</dd></div>
-        <div><dt>School</dt><dd>${esc(p.real.school)}</dd></div>
-        <div><dt>Contact</dt><dd>${esc(p.real.contact)}</dd></div>
-      </dl>` : '<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>Name and school stay hidden until you team up.</p>'}
+        <div><dt>${L`Name`}</dt><dd>${esc(p.real.name)}</dd></div>
+        <div><dt>${L`School`}</dt><dd>${esc(p.real.school)}</dd></div>
+        <div><dt>${L`Contact`}</dt><dd>${esc(p.real.contact)}</dd></div>
+      </dl>` : `<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Name and school stay hidden until you team up.`}</p>`}
       <div class="pf__actions">${modalAction(cid, 'person', pid, known)}</div>
     </div>`;
 }
@@ -84,18 +85,18 @@ export function teamModal(tid, cid) {
           <p class="meta">${esc(compOf(cid).name)} · ${spots(t)}</p>
         </div>
       </div>
-      ${t.pitch ? `<div class="pf__tags"><p class="field__label">What we’re building</p><p class="pitch pitch--big">${esc(t.pitch)}</p></div>` : ''}
-      ${needsOf(t).length ? `<div class="pf__tags"><p class="field__label">Still need</p><p class="chips">${roleChips(needsOf(t), card ? card.canDo : [])}</p></div>` : ''}
+      ${t.pitch ? `<div class="pf__tags"><p class="field__label">${L`What we’re building`}</p><p class="pitch pitch--big">${esc(t.pitch)}</p></div>` : ''}
+      ${needsOf(t).length ? `<div class="pf__tags"><p class="field__label">${L`Still need`}</p><p class="chips">${roleChips(needsOf(t), card ? card.canDo : [])}</p></div>` : ''}
       <div class="pf__tags">
-        <p class="field__label">Who’s in it</p>
+        <p class="field__label">${L`Who’s in it`}</p>
         <ul class="mates">${t.members.map((m) => {
           const p = personOf(m);
-          const name = m === 'me' ? 'You' : mine ? p.real.name : p.alias;
+          const name = m === 'me' ? L`You` : mine ? p.real.name : p.alias;
           return `<li>${m === 'me' ? avatar(p) : `<button class="avatar avatar--cup avatar-btn" data-act="open" data-kind="person" data-ref="${m}" data-comp="${cid}" type="button" aria-label="${esc(name)}">${cupFor(p)}</button>`}<div><strong>${esc(name)}</strong><p class="chips chips--sm">${roleChips(m === 'me' ? myRoles(cid) : p.canDo)}</p></div></li>`;
         }).join('')}</ul>
       </div>
-      ${mine ? '' : '<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>Names stay hidden until you team up.</p>'}
-      <div class="pf__actions">${mine ? `<a class="btn btn--dark btn--sm" href="#/team/${t.id}">Open team</a>` : modalAction(cid, 'team', tid, false)}</div>
+      ${mine ? '' : `<p class="pf__sealed"><i class="ph ph-lock-simple" aria-hidden="true"></i>${L`Names stay hidden until you team up.`}</p>`}
+      <div class="pf__actions">${mine ? `<a class="btn btn--dark btn--sm" href="#/team/${t.id}">${L`Open team`}</a>` : modalAction(cid, 'team', tid, false)}</div>
     </div>`;
 }
 

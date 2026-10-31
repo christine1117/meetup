@@ -51,6 +51,26 @@ def when(x: dict) -> float:
     return float("inf")
 
 
+CATEGORY_NAME = {"hackathon": "Hackathon", "tech": "Tech & AI", "startup": "Startup & business", "design": "Design",
+                 "film_photo": "Film & photo", "writing": "Writing", "art": "Art", "performance": "Music & performance",
+                 "science": "Science", "social_impact": "Social impact", "sports": "Sports & games", "other": "Other"}
+
+
+def listing_record(raw, d) -> dict:
+    """What the website gets for one competition: the facts, the verified team size,
+    and the listing in English and Chinese when the LLM has read it."""
+    record = raw.model_dump(exclude={"pages", "team_by_default"})
+    lst = d.listing
+    category = lst.category if lst else ("hackathon" if raw.team_by_default else "other")
+    record.update(
+        team=overall(d.tracks), tracks=[t.model_dump() for t in d.tracks], eligibility=d.eligibility,
+        category=category, kind=CATEGORY_NAME[category],
+        region=lst.region if lst else raw.region,
+        i18n={"en": lst.en.model_dump(), "zh": lst.zh.model_dump()} if lst else {},
+    )
+    return record
+
+
 class LLMRunner:
     """Asks the LLM about many competitions at once (a few at a time), saves the
     cache as it goes, and stops asking after 5 failures in a row."""
@@ -152,11 +172,10 @@ def main() -> int:
             if d.issues:
                 reviews.append({"id": raw.id, "name": raw.name, "url": raw.url, "status": d.status,
                                 "issues": [i.model_dump() for i in d.issues]})
-            db.append(db_rows(raw, d, None))
+            db.append(db_rows(raw, d, listing_record(raw, d)))
             if not d.listed:
                 continue
-            record = raw.model_dump(exclude={"pages", "team_by_default"})
-            record.update(team=overall(d.tracks), tracks=[t.model_dump() for t in d.tracks], eligibility=d.eligibility)
+            record = listing_record(raw, d)
             try:
                 items.append(Published.model_validate(record).model_dump())  # the data contract, checked
                 listed += 1

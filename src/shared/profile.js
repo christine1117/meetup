@@ -4,6 +4,15 @@
 
 export const PROFILE_KEY = 'meetup.v1';
 
+// "Curious about" is picked from this list in both apps (up to MAX_CURIOUS)
+export const CURIOUS_OPTIONS = [
+  'AI products', 'AI in supply chains', 'Supply chains', 'Semiconductors', 'Chip packaging', 'Hardware',
+  'Pricing', 'Fundraising', 'Sales', 'Marketing', 'Branding', 'Product design', 'User research', 'Data analysis',
+  'Fintech', 'Health tech', 'Climate tech', 'Open data', 'Education', 'Writing', 'Community building',
+  'Small business', 'Side projects', 'Hiring', 'Job interviews', 'Career change', 'Studying abroad', 'Working abroad',
+];
+export const MAX_CURIOUS = 6;
+
 export const MEETS = [['online', 'Online'], ['inperson', 'In person'], ['both', 'Either is fine']];
 
 // How to reach you once the seal is popped

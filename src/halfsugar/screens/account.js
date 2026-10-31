@@ -1,10 +1,10 @@
 /* ---------- Accounts ----------
    The same account and profile as team mode (see ../../shared/account.js). */
 
-import { esc } from '../../shared/core.js?v=20261030g';
-import { L } from '../../shared/i18n.js?v=20261030g';
-import { field } from '../../shared/forms.js?v=20261030g';
-import { U } from '../state.js?v=20261030g';
+import { esc } from '../../shared/core.js?v=20261031a';
+import { L } from '../../shared/i18n.js?v=20261031a';
+import { field } from '../../shared/forms.js?v=20261031a';
+import { U } from '../state.js?v=20261031a';
 
 export const accountFields = (isNew) => `
     <div class="row2">

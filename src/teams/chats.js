@@ -1,14 +1,15 @@
 /* Chats: sending, half sugar notes, teaming up and ending politely.
    reply() plays the other side until there is a server. */
+import { L } from '../shared/i18n.js?v=20261031a';
 
-import { later, pick, uid } from '../shared/core.js?v=20261030g';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261030g';
-import { S, U, save } from './state.js?v=20261030g';
-import { toast } from './ui.js?v=20261030g';
-import { LINES, MATE_LINES, P } from './sample-people.js?v=20261030g';
-import { go } from './router.js?v=20261030g';
-import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261030g';
-import { render } from './render.js?v=20261030g';
+import { later, pick, uid } from '../shared/core.js?v=20261031a';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031a';
+import { S, U, save } from './state.js?v=20261031a';
+import { toast } from './ui.js?v=20261031a';
+import { LINES, MATE_LINES, P } from './sample-people.js?v=20261031a';
+import { go } from './router.js?v=20261031a';
+import { DEFAULT_MAX, defaultMax, isFull, isGroup, myRoles, myTeam, needsOf, sideTeam, teamMax, teamsIn, voters } from './rules.js?v=20261031a';
+import { render } from './render.js?v=20261031a';
 
 export const chatById = (id) => S.chats.find((c) => c.id === id);
 export const chatName = (c) => (c.kind === 'team' ? teamsIn(c.comp).find((t) => t.id === c.ref).name : (c.revealed ? P[c.ref].real.name : P[c.ref].alias));
@@ -89,8 +90,8 @@ export function formTeam(c) {
   team.needs = needsOf(team).filter((r) => !got.includes(r));
   team.msgs = team.msgs || [];
   team.code = team.code || uid();
-  const name = newcomer === 'me' ? `${S.me.name || S.me.alias} (you)` : P[newcomer].real.name;
-  team.msgs.push({ from: 'sys', text: fresh ? 'Team formed. Names are now visible to everyone in the team.' : `${name} joined the team after chatting to half sugar.`, at: Date.now() });
+  const name = newcomer === 'me' ? L`${S.me.name || S.me.alias} (you)` : P[newcomer].real.name;
+  team.msgs.push({ from: 'sys', text: fresh ? 'Team formed. Names are now visible to everyone in the team.' : '{0} joined the team after chatting to half sugar.', vars: fresh ? [] : [name], at: Date.now() });
   c.teamed = true;
   c.revealed = true;
   c.team = team.id;
@@ -98,11 +99,11 @@ export function formTeam(c) {
 
   // You can only be in one team per competition: end your chats with other teams politely
   S.chats.filter((x) => x !== c && x.comp === cid && x.status === 'open' && !x.teamed).forEach((x) => {
-    if (x.kind === 'team') endChat(x, 'I just joined a team. Thanks for chatting, and good luck!');
+    if (x.kind === 'team') endChat(x, L`I just joined a team. Thanks for chatting, and good luck!`);
     else if (isFull(team)) endChat(x, 'The team is full now, so this chat ended.', false);
     else if (isGroup(x)) x.msgs.push({ from: 'sys', text: 'You are in a team now, so your teammates are in this chat too.', at: Date.now() });
   });
   save();
-  toast('You teamed up!');
+  toast(L`You teamed up!`);
   go('team/' + team.id);
 }

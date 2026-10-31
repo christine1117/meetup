@@ -1,21 +1,21 @@
 /* ---------- Buttons ---------- */
 
-import { logOut } from '../shared/account.js?v=20261030g';
-import { $, later } from '../shared/core.js?v=20261030g';
-import { L } from '../shared/i18n.js?v=20261030g';
-import { CLOSE_AFTER_DAYS, REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261030g';
-import { MAX_ROLES, P, openRoles, rolesOf } from './people.js?v=20261030g';
-import { MAX_TAGS, normTag } from './matching.js?v=20261030g';
-import { D, KEY, S, U, save } from './state.js?v=20261030g';
-import { go } from './router.js?v=20261030g';
-import { toast } from './ui.js?v=20261030g';
-import { createThread, pushMsg, resolveReveal, sugarNotes, thread } from './conversations.js?v=20261030g';
-import { MAX_SHOWN, earnBox, openNextBox, shownToppings } from './toppings.js?v=20261030g';
-import { REDUCED_MOTION, closeModal, renderModal } from './modal.js?v=20261030g';
-import { syncRoleDescs } from './screens/brew.js?v=20261030g';
-import { dropDecide, dropEnd, dropStart } from './screens/mystery.js?v=20261030g';
-import { render } from './shell.js?v=20261030g';
-import { tagList } from './screens/profile-form.js?v=20261030g';
+import { logOut } from '../shared/account.js?v=20261031a';
+import { $, later } from '../shared/core.js?v=20261031a';
+import { L, setLang } from '../shared/i18n.js?v=20261031a';
+import { CLOSE_AFTER_DAYS, REVEAL_AT, isCold, sugarOf } from '../shared/sugar.js?v=20261031a';
+import { MAX_ROLES, P, openRoles, rolesOf } from './people.js?v=20261031a';
+import { MAX_TAGS, normTag } from './matching.js?v=20261031a';
+import { D, KEY, S, U, save } from './state.js?v=20261031a';
+import { go } from './router.js?v=20261031a';
+import { toast } from './ui.js?v=20261031a';
+import { createThread, pushMsg, resolveReveal, sugarNotes, thread } from './conversations.js?v=20261031a';
+import { MAX_SHOWN, earnBox, openNextBox, shownToppings } from './toppings.js?v=20261031a';
+import { REDUCED_MOTION, closeModal, renderModal } from './modal.js?v=20261031a';
+import { syncRoleDescs } from './screens/brew.js?v=20261031a';
+import { dropDecide, dropEnd, dropStart } from './screens/mystery.js?v=20261031a';
+import { render } from './shell.js?v=20261031a';
+import { tagList } from './screens/profile-form.js?v=20261031a';
 
 
 export function takeResponse(el) {
@@ -252,6 +252,7 @@ export const acts = {
   },
 
   // Development shortcut: skip onboarding with a sample card. Remove before launch.
+  lang(el) { setLang(el.dataset.value); render({ fresh: true }); },
   'auth-view'(el) { U.authView = el.dataset.view || null; U.authMsg = null; render({ fresh: true }); },
   async logout() {
     await logOut();

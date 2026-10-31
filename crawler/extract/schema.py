@@ -17,6 +17,16 @@ from pydantic import BaseModel, Field, field_validator
 Source = Literal["devpost", "mlh", "bhuntr"]
 Region = Literal["tw", "intl"]
 Status = Literal["published", "review", "excluded", "pending"]
+Category = Literal["hackathon", "tech", "startup", "design", "film_photo", "writing", "art", "performance",
+                   "science", "social_impact", "sports", "other"]
+CATEGORY_HELP = (
+    "hackathon: build something in a set time, usually software; tech: coding, AI, data, engineering, robotics; "
+    "startup: business plans, pitching, marketing; design: product, graphic, interior, architecture; "
+    "film_photo: video, film, photography, animation; writing: essays, fiction, scripts, poetry; "
+    "art: drawing, painting, illustration, comics, crafts; performance: music, singing, dance, theatre; "
+    "science: research, maths, science fairs, quizzes; social_impact: public good, sustainability, community, policy; "
+    "sports: races, sports, e-sports, board games; other: anything else."
+)
 
 
 class PageText(BaseModel):
@@ -78,11 +88,18 @@ class TeamRule(BaseModel):
     individual_allowed: Optional[bool] = Field(
         None, description="True if one person may enter alone, false if a team is required, null if not stated."
     )
+    unlimited: bool = Field(
+        False, description="True only if the text says there is no limit on team size (團隊人數無上限, 人數不限, no limit on team size)."
+    )
     evidence: str = Field(
         ..., min_length=2,
         description="An exact quote copied character for character from the source text that states this rule.",
     )
     page: Optional[str] = Field(None, description="Which page the quote comes from, as labelled in the source text.")
+    track_en: Optional[str] = Field(None, description="The track name in English (null if no track).")
+    track_zh: Optional[str] = Field(None, description="The track name in Traditional Chinese as used in Taiwan (null if no track).")
+    evidence_en: Optional[str] = Field(None, description="The quote translated into English (the same as the quote if it is English).")
+    evidence_zh: Optional[str] = Field(None, description="The quote translated into Traditional Chinese (the same as the quote if it is Chinese).")
 
 
 class Eligibility(BaseModel):
@@ -99,6 +116,43 @@ class Eligibility(BaseModel):
     evidence: str = Field(..., min_length=2, description="An exact quote from the source text about who can enter.")
 
 
+def _cut(n: int):
+    def cut(v):
+        return v if not isinstance(v, str) or len(v) <= n else v[: n - 1].rstrip() + "…"
+    return cut
+
+
+class Texts(BaseModel):
+    """The competition described in one language."""
+
+    name: str = Field(..., min_length=1, max_length=200, description="Its name. Keep brand and proper names as they are; translate descriptive titles.")
+    organizer: str = Field("", max_length=200, description="The organizer, by its official name in this language if it has one, otherwise translated.")
+    summary: str = Field("", max_length=300, description="One sentence (under 140 characters) on what the competition is about.")
+    eligibility: Optional[str] = Field(None, max_length=300, description="Who can enter, in one short sentence, or null if the text does not say.")
+    tags: list[str] = Field(default_factory=list, max_length=6, description="Up to 5 short topic tags.")
+
+    @field_validator("summary", "eligibility", mode="before")
+    @classmethod
+    def shorten(cls, v):
+        return _cut(300)(v)
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def few_tags(cls, v):
+        return [str(t)[:40] for t in v][:6] if isinstance(v, list) else v
+
+
+class Listing(BaseModel):
+    """What the competition is, for browsing: its category, region, and both languages."""
+
+    category: Category = Field(..., description="One category. " + CATEGORY_HELP)
+    region: Region = Field(..., description='"tw" if it is organized in Taiwan or mainly for people in Taiwan (Taiwanese '
+                           'schools, government or companies); "intl" if it is organized abroad. A foreign competition '
+                           'listed on a Taiwanese site is "intl".')
+    en: Texts = Field(..., description="Everything in natural English.")
+    zh: Texts = Field(..., description="Everything in natural Traditional Chinese as used in Taiwan.")
+
+
 class Extraction(BaseModel):
     team_rules: list[TeamRule] = Field(
         default_factory=list,
@@ -107,11 +161,16 @@ class Extraction(BaseModel):
     individual_only: bool = Field(
         False, description="True only when the text says entries are individual only (no teams at all)."
     )
+    teams_allowed: Optional[bool] = Field(
+        None, description="True only if the text explicitly says people may enter as a team (組隊, 團體報名, teams of...). "
+        "False if teams are not allowed. Null if the text does not say. Do not assume."
+    )
     eligibility: Optional[Eligibility] = Field(None, description="Who can enter, if the text says.")
     needs_review: bool = Field(
         False, description="True when the rules are ambiguous, contradict each other, or you are unsure."
     )
     review_reason: Optional[str] = Field(None, description="Why a person should check this, when needs_review is true.")
+    listing: Optional[Listing] = Field(None, description="Category, region, and the competition in English and in Traditional Chinese.")
 
 
 class Track(BaseModel):
@@ -121,8 +180,13 @@ class Track(BaseModel):
     min: Optional[int] = None
     max: Optional[int] = None
     solo: Optional[bool] = None  # one person may enter alone
+    unlimited: Optional[bool] = None  # the rules say there is no limit on team size
     mentors: Optional[int] = None
-    evidence: str
+    evidence: str  # the exact quote, in the page's own language
+    name_en: Optional[str] = None
+    name_zh: Optional[str] = None
+    evidence_en: Optional[str] = None
+    evidence_zh: Optional[str] = None
 
 
 class Issue(BaseModel):
@@ -137,11 +201,13 @@ class Decision(BaseModel):
     eligibility: Optional[str] = None
     eligibility_evidence: Optional[str] = None
     issues: list[Issue] = Field(default_factory=list)
+    listing: Optional[Listing] = None
 
 
 class TeamSize(BaseModel):
     min: Optional[int] = Field(None, ge=1, le=100)
     max: Optional[int] = Field(None, ge=2, le=100)
+    unlimited: bool = False
 
 
 class Published(BaseModel):
@@ -164,3 +230,6 @@ class Published(BaseModel):
     team: TeamSize
     tracks: list[Track] = Field(default_factory=list)
     eligibility: Optional[str] = Field(None, max_length=300)
+    category: Category = "other"
+    # The listing in each language: {"en": {name, organizer, summary, eligibility, tags}, "zh": {...}}
+    i18n: dict = Field(default_factory=dict)

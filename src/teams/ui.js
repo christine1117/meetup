@@ -1,7 +1,8 @@
 /* Small page pieces: the root element, toasts, role chips, avatars. */
+import { L } from '../shared/i18n.js?v=20261031a';
 
-import { esc } from '../shared/core.js?v=20261030g';
-import { cupFor } from '../shared/cup.js?v=20261030g';
+import { esc } from '../shared/core.js?v=20261031a';
+import { cupFor } from '../shared/cup.js?v=20261031a';
 
 export const app = document.getElementById('app');
 export const toastEl = document.getElementById('toast');
@@ -13,6 +14,7 @@ export const toast = (msg) => {
   clearTimeout(toast.t);
   toast.t = setTimeout(() => { toastEl.hidden = true; }, 3000);
 };
-export const roleChips = (list, match = []) => list.map((r) => `<span class="${match.includes(r) ? 'is-match' : ''}">${esc(r)}</span>`).join('');
+// Roles and topics are stored in English and shown in the chosen language
+export const roleChips = (list, match = []) => list.map((r) => `<span class="${match.includes(r) ? 'is-match' : ''}">${esc(L(r))}</span>`).join('');
 
 export const avatar = (p) => `<span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>`;

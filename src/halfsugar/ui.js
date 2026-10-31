@@ -6,10 +6,10 @@ export const originName = (o) => L(ORIGIN[o]);
 
 /* ---------- Small pieces ---------- */
 
-import { esc } from '../shared/core.js?v=20261030g';
-import { L } from '../shared/i18n.js?v=20261030g';
-import { flavorChip } from '../shared/flavors.js?v=20261030g';
-import { cupFor } from '../shared/cup.js?v=20261030g';
+import { esc } from '../shared/core.js?v=20261031a';
+import { L } from '../shared/i18n.js?v=20261031a';
+import { flavorChip } from '../shared/flavors.js?v=20261031a';
+import { cupFor } from '../shared/cup.js?v=20261031a';
 
 
 
