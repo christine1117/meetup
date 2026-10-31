@@ -14,18 +14,29 @@ PAUSE = 0.7  # seconds between pages on the same site
 _client = httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=20, follow_redirects=True)
 
 
-def get(url: str, *, as_json: bool = False, tries: int = 3):
+def _fetch(url: str, as_json: bool, tries: int) -> httpx.Response:
     last: Exception | None = None
     for attempt in range(1, tries + 1):
         try:
             r = _client.get(url, headers={"Accept": "application/json"} if as_json else None)
             r.raise_for_status()
-            return r.json() if as_json else r.text
+            return r
         except Exception as err:  # network errors and bad status codes alike
             last = err
             if attempt < tries:
                 time.sleep(1.5 * attempt)
     raise last  # type: ignore[misc]
+
+
+def get(url: str, *, as_json: bool = False, tries: int = 3):
+    r = _fetch(url, as_json, tries)
+    return r.json() if as_json else r.text
+
+
+def get_page(url: str, *, tries: int = 3) -> tuple[str, str]:
+    """(html, the address it ended up at after redirects), to follow its links."""
+    r = _fetch(url, False, tries)
+    return r.text, str(r.url)
 
 
 def pause() -> None:

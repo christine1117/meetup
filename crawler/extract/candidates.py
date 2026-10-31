@@ -18,6 +18,16 @@ CUES = re.compile(
     r"student|mentor|advisor|coach|group",
     re.I,
 )
+# Says how big a team can be ("teams of up to 4", "2-4 members", "最多 5 人"). Only used to
+# decide whether to look further on a site; the LLM still reads and decides.
+_N = r"(?:\d{1,2}|one|two|three|four|five|six|seven|eight)"
+SIZE_HINT = re.compile(
+    rf"team(?:s)?\s+(?:size|sizes|of\s+(?:up\s+to\s+)?{_N}|can\s+(?:have|be|consist)|must|may\s+(?:have|consist)|consist|between|up\s+to)"
+    rf"|(?:max(?:imum)?|min(?:imum)?|up\s+to|at\s+most|at\s+least)\s+(?:of\s+)?{_N}\s+(?:team\s*)?(?:members|people|participants|hackers|persons|students)"
+    rf"|{_N}\s*(?:-|–|to)\s*{_N}\s+(?:members|people|participants|hackers|persons|students)"
+    r"|每隊|每組|人數|[1-9一二三四五六七八九十]\s*(?:至|到|-|–|~|～)\s*[1-9一二三四五六七八九十]\s*(?:人|名)|最多\s*[1-9一二三四五六七八九十]+\s*(?:人|名)",
+    re.I,
+)
 SPLIT = re.compile(r"(?<=[。；;！!？?])|(?<=\.)\s+|\n+")
 
 
@@ -25,12 +35,16 @@ def sentences(text: str) -> list[str]:
     return [s.strip() for s in SPLIT.split(re.sub(r"[ \t　]+", " ", text)) if s and s.strip()]
 
 
-def relevant(text: str, limit: int = 4000) -> str:
+def mentions_size(text: str) -> bool:
+    return bool(SIZE_HINT.search(text or ""))
+
+
+def relevant(text: str, limit: int = 4000, cues: re.Pattern = CUES) -> str:
     """The sentences of one page worth showing the LLM (plus their neighbours)."""
     parts = sentences(text)
     keep: set[int] = set()
     for i, s in enumerate(parts):
-        if CUES.search(s):
+        if cues.search(s):
             keep.update({i - 1, i, i + 1})
     return " ".join(parts[i] for i in sorted(keep) if 0 <= i < len(parts))[:limit]
 
