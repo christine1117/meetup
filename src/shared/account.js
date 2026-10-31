@@ -8,9 +8,9 @@
    A copy of the profile also stays in this browser (shared/profile.js), so the
    apps keep working the same way they always have. */
 
-import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031b';
-import { writeProfile } from './profile.js?v=20261031b';
-import { logError } from './log.js?v=20261031b';
+import { db, SUPABASE_KEY, SUPABASE_URL } from './supabase.js?v=20261031c';
+import { writeProfile } from './profile.js?v=20261031c';
+import { logError } from './log.js?v=20261031c';
 
 const PENDING = 'halfsugar.pendingProfile';
 

@@ -1,11 +1,11 @@
 /* HTML: create an account, log in, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031b';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031c';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031b';
-import { field, select } from '../../shared/forms.js?v=20261031b';
-import { CONTACTS, CURIOUS_OPTIONS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031b';
-import { S, U } from '../state.js?v=20261031b';
-import { esc } from '../../shared/core.js?v=20261031b';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031c';
+import { field, select } from '../../shared/forms.js?v=20261031c';
+import { CONTACTS, CURIOUS_OPTIONS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031c';
+import { S, U } from '../state.js?v=20261031c';
+import { esc } from '../../shared/core.js?v=20261031c';
 
 // The choices from shared/profile.js (plus anything already on your profile)
 const curiousChecks = (picked) => `<div class="checks">${[...new Set([...picked, ...CURIOUS_OPTIONS])].map((x) => `<label class="check"><input type="checkbox" name="curious" value="${esc(x)}" ${picked.includes(x) ? 'checked' : ''}><span>${esc(L(x))}</span></label>`).join('')}</div>`;

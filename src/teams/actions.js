@@ -1,21 +1,21 @@
 /* What each button does (buttons carry data-act="name"). */
-import { authMessage, logOut, signInWith } from '../shared/account.js?v=20261031b';
-import { clearProfile } from '../shared/profile.js?v=20261031b';
-import { L, setLang } from '../shared/i18n.js?v=20261031b';
-import { logError } from '../shared/log.js?v=20261031b';
+import { authMessage, logOut, signInWith } from '../shared/account.js?v=20261031c';
+import { clearProfile } from '../shared/profile.js?v=20261031c';
+import { L, setLang } from '../shared/i18n.js?v=20261031c';
+import { logError } from '../shared/log.js?v=20261031c';
 
-import { later, pick } from '../shared/core.js?v=20261031b';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031b';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261031b';
-import { toast } from './ui.js?v=20261031b';
-import { DAY } from './competitions.js?v=20261031b';
-import { FRIENDS } from './sample-people.js?v=20261031b';
-import { go } from './router.js?v=20261031b';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031b';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031b';
-import { closeModal, renderModal } from './views/modal.js?v=20261031b';
-import { PAGE } from './views/competitions.js?v=20261031b';
-import { render } from './render.js?v=20261031b';
+import { later, pick } from '../shared/core.js?v=20261031c';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261031c';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261031c';
+import { toast } from './ui.js?v=20261031c';
+import { DAY } from './competitions.js?v=20261031c';
+import { FRIENDS } from './sample-people.js?v=20261031c';
+import { go } from './router.js?v=20261031c';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261031c';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261031c';
+import { closeModal, renderModal } from './views/modal.js?v=20261031c';
+import { PAGE } from './views/competitions.js?v=20261031c';
+import { render } from './render.js?v=20261031c';
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },

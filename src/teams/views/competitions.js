@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031b';
-import { L } from '../../shared/i18n.js?v=20261031b';
-import { cupFor } from '../../shared/cup.js?v=20261031b';
-import { field, select } from '../../shared/forms.js?v=20261031b';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031b';
-import { S, U } from '../state.js?v=20261031b';
-import { roleChips } from '../ui.js?v=20261031b';
-import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031b';
-import { COMP, DATA, SOURCE_NAME, compOf, dataState, dateText, regionName, searchText, tagsOf, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031b';
-import { P } from '../sample-people.js?v=20261031b';
-import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031b';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031b';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031c';
+import { L } from '../../shared/i18n.js?v=20261031c';
+import { cupFor } from '../../shared/cup.js?v=20261031c';
+import { field, select } from '../../shared/forms.js?v=20261031c';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031c';
+import { S, U } from '../state.js?v=20261031c';
+import { roleChips } from '../ui.js?v=20261031c';
+import { goalName, goalOptions, hourOptions, hoursName } from '../options.js?v=20261031c';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, tagsOf, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031c';
+import { P } from '../sample-people.js?v=20261031c';
+import { SIZE_CHOICES, defaultMax, isFull, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031c';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031c';
 
 export const PAGE = 30;
 
@@ -118,7 +118,7 @@ export function viewComp(cid) {
       <p class="meta">${L`Read from the official page. Check the rules there before you sign up.`}</p>
     </div>` : ''}
     ${tags.length ? `<p class="chips">${roleChips(tags)}</p>` : ''}
-    ${safeUrl(c.url) ? `<div class="btnrow"><a class="btn btn--ghost btn--sm" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener">${L`Official page`}<i class="ph ph-arrow-up-right" aria-hidden="true"></i></a><span class="meta">${L`Listed on ${esc(SOURCE_NAME[c.source] || '')}. Sign up there too.`}</span></div>` : ''}
+    ${safeUrl(c.url) ? `<div class="btnrow"><a class="btn btn--ghost btn--sm" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener">${L`Official page`}<i class="ph ph-arrow-up-right" aria-hidden="true"></i></a></div>` : ''}
   </section>
 
   ${!card ? (U.form ? cardForm(cid, U.form === 'team') : `

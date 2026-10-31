@@ -18,22 +18,22 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn } from '../shared/account.js?v=20261031b';
-import { logError } from '../shared/log.js?v=20261031b';
-import { whoAmI } from './forms.js?v=20261031b';
+import { enabledProviders, loadProfile, returningFromSignIn } from '../shared/account.js?v=20261031c';
+import { logError } from '../shared/log.js?v=20261031c';
+import { whoAmI } from './forms.js?v=20261031c';
 
-import { $ } from '../shared/core.js?v=20261031b';
-import { at } from '../shared/cup.js?v=20261031b';
-import { closesText } from '../shared/sugar.js?v=20261031b';
-import { S, U, saveMe } from './state.js?v=20261031b';
-import { loadComps } from './competitions.js?v=20261031b';
-import { go, route } from './router.js?v=20261031b';
-import { chatById } from './chats.js?v=20261031b';
-import { closeModal } from './views/modal.js?v=20261031b';
-import { PAGE } from './views/competitions.js?v=20261031b';
-import { render } from './render.js?v=20261031b';
-import { formData, forms } from './forms.js?v=20261031b';
-import { acts } from './actions.js?v=20261031b';
+import { $ } from '../shared/core.js?v=20261031c';
+import { at } from '../shared/cup.js?v=20261031c';
+import { closesText } from '../shared/sugar.js?v=20261031c';
+import { S, U, saveMe } from './state.js?v=20261031c';
+import { loadComps } from './competitions.js?v=20261031c';
+import { go, route } from './router.js?v=20261031c';
+import { chatById } from './chats.js?v=20261031c';
+import { closeModal } from './views/modal.js?v=20261031c';
+import { PAGE } from './views/competitions.js?v=20261031c';
+import { render } from './render.js?v=20261031c';
+import { formData, forms } from './forms.js?v=20261031c';
+import { acts } from './actions.js?v=20261031c';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
