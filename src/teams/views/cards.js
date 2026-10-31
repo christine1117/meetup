@@ -1,15 +1,15 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
-import { L } from '../../shared/i18n.js?v=20261101d';
+import { L } from '../../shared/i18n.js?v=20261101g';
 
-import { esc } from '../../shared/core.js?v=20261101d';
-import { flavorChip } from '../../shared/flavors.js?v=20261101d';
-import { cupFor } from '../../shared/cup.js?v=20261101d';
-import { S, U } from '../state.js?v=20261101d';
-import { roleChips } from '../ui.js?v=20261101d';
-import { ROLES, cardTopics, goalName, hoursName, slotsText } from '../options.js?v=20261101d';
-import { P } from '../sample-people.js?v=20261101d';
-import { freshRoles } from '../matching.js?v=20261101d';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261101d';
+import { esc } from '../../shared/core.js?v=20261101g';
+import { flavorChip } from '../../shared/flavors.js?v=20261101g';
+import { cupFor } from '../../shared/cup.js?v=20261101g';
+import { S, U } from '../state.js?v=20261101g';
+import { roleChips } from '../ui.js?v=20261101g';
+import { ROLES, cardTopics, goalName, hoursName, slotsText } from '../options.js?v=20261101g';
+import { P } from '../sample-people.js?v=20261101g';
+import { freshRoles } from '../matching.js?v=20261101g';
+import { chatWith, myTeam, needsOf, requestWith, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261101g';
 
 // A recommended person (a real card) (spec §16 Screen 4). The list is in fit order;
 // the score is not shown, and shared "Curious about" topics count quietly.
@@ -34,9 +34,39 @@ export function matchCard(r, cid) {
         ${p.idea ? `<div><dt>${L`Idea`}</dt><dd>${esc(p.idea)}</dd></div>` : ''}
         ${p.built ? `<div><dt>${L`Built`}</dt><dd>${esc(p.built)}</dd></div>` : ''}
       </dl>
-      <button class="btn btn--ghost btn--sm" type="button" disabled>${L`Invite to chat (coming next)`}</button>
+      ${inviteBox(cid, p)}
     </article>`;
 }
+
+// The invitation part of a recommended person's card (spec §10): invite, waiting, answer, or accepted
+export function inviteBox(cid, p) {
+  const r = requestWith(cid, p.id);
+  if (r && r.status === 'pending' && r.mine) {
+    return `<div class="invite-state"><span class="meta"><i class="ph ph-hourglass-medium" aria-hidden="true"></i>${L`Invited. Waiting for an answer.`}</span><button class="link-btn" data-act="invite-withdraw" data-id="${r.id}" type="button">${L`Withdraw`}</button></div>`;
+  }
+  if (r && r.status === 'pending') {
+    return `
+      <div class="invite-state invite-state--in">
+        <p><b>${L`${esc(p.alias)} invited you to chat.`}</b></p>
+        ${r.note ? `<blockquote class="invite-note">${esc(r.note)}</blockquote>` : ''}
+        <div class="btnrow">${answerButtons(r)}</div>
+      </div>`;
+  }
+  if (r && r.status === 'chatting') return `<p class="meta invite-state"><i class="ph ph-check-circle" aria-hidden="true"></i>${L`You can chat. The chat room opens in the next step.`}</p>`;
+  if (U.invite === p.id) {
+    return `
+      <form class="stack reply" data-form="invite" data-comp="${cid}" data-ref="${p.id}" novalidate>
+        <label class="sr" for="c-invite">${L`Your message`}</label>
+        <textarea id="c-invite" name="note" rows="2" maxlength="200" placeholder="${esc(L`Optional: a line about what you can bring.`)}"></textarea>
+        <div class="btnrow">
+          <button class="btn btn--dark btn--sm" type="submit" ${U.busy ? 'disabled' : ''}>${L`Send invitation`}</button>
+          <button class="btn btn--ghost btn--sm" data-act="invite-open" data-ref="" type="button">${L`Cancel`}</button>
+        </div>
+      </form>`;
+  }
+  return `<button class="btn btn--dark btn--sm" data-act="invite-open" data-ref="${p.id}" type="button">${L`Invite to chat`}</button>`;
+}
+export const answerButtons = (r) => `<button class="btn btn--dark btn--sm" data-act="invite-answer" data-id="${r.id}" data-accept="1" type="button">${L`Accept`}</button><button class="btn btn--ghost btn--sm" data-act="invite-answer" data-id="${r.id}" data-accept="" type="button">${L`Decline`}</button>`;
 
 export function personCard(p, cid) {
   const card = S.cards[cid];

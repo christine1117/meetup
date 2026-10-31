@@ -1,23 +1,49 @@
 /* What each button does (buttons carry data-act="name"). */
-import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261101d';
-import { clearProfile } from '../shared/profile.js?v=20261101d';
-import { L, setLang } from '../shared/i18n.js?v=20261101d';
-import { logError } from '../shared/log.js?v=20261101d';
+import { PROVIDERS, authMessage, logOut, signInWith } from '../shared/account.js?v=20261101g';
+import { clearProfile } from '../shared/profile.js?v=20261101g';
+import { L, setLang } from '../shared/i18n.js?v=20261101g';
+import { logError } from '../shared/log.js?v=20261101g';
 
-import { later, pick } from '../shared/core.js?v=20261101d';
-import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261101d';
-import { KEY, S, U, save, saveMe } from './state.js?v=20261101d';
-import { toast } from './ui.js?v=20261101d';
-import { DAY } from './competitions.js?v=20261101d';
-import { FRIENDS } from './sample-people.js?v=20261101d';
-import { go } from './router.js?v=20261101d';
-import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261101d';
-import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261101d';
-import { closeModal, renderModal } from './views/modal.js?v=20261101d';
-import { render } from './render.js?v=20261101d';
+import { later, pick } from '../shared/core.js?v=20261101g';
+import { REVEAL_AT, sugarOf } from '../shared/sugar.js?v=20261101g';
+import { KEY, S, U, save, saveMe } from './state.js?v=20261101g';
+import { toast } from './ui.js?v=20261101g';
+import { DAY } from './competitions.js?v=20261101g';
+import { FRIENDS } from './sample-people.js?v=20261101g';
+import { go } from './router.js?v=20261101g';
+import { answerInvite, inviteProblem, loadRequests, withdrawInvite } from './server.js?v=20261101g';
+import { PASS_TEXT, isFull, needsOf, voters } from './rules.js?v=20261101g';
+import { chatById, endChat, formTeam, push, tooBig } from './chats.js?v=20261101g';
+import { closeModal, renderModal } from './views/modal.js?v=20261101g';
+import { render } from './render.js?v=20261101g';
+
+// Run an invitation action, load the invitations again, and say how it went
+export async function inviteAction(work, done) {
+  U.busy = true;
+  render();
+  try {
+    await work();
+    await loadRequests();
+    toast(done);
+  } catch (err) {
+    logError('invitations', err);
+    toast(L(inviteProblem(err)));
+    await loadRequests().catch(() => {});
+  }
+  U.busy = false;
+  U.invite = null;
+  render({ fresh: true });
+}
 
 export const acts = {
   form(el) { U.form = el.dataset.what || null; render({ fresh: true }); },
+  // Invitations (spec §10)
+  'invite-open'(el) { U.invite = el.dataset.ref || null; render({ fresh: true, focus: U.invite ? 'c-invite' : null }); },
+  'invite-withdraw'(el) { inviteAction(() => withdrawInvite(el.dataset.id), L`Invitation withdrawn`); },
+  'invite-answer'(el) {
+    const accept = el.dataset.accept === '1';
+    inviteAction(() => answerInvite(el.dataset.id, accept), accept ? L`Accepted. You can chat.` : L`Declined`);
+  },
   region(el) { U.region = el.dataset.value; U.page = 1; render(); },
   page(el) { U.page = Number(el.dataset.value); render(); window.scrollTo(0, 0); },
   open(el) {

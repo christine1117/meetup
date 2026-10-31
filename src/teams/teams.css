@@ -893,3 +893,112 @@
   outline: 2px solid var(--orange-deep);
   outline-offset: 2px;
 }
+
+/* ---------- Invitations (spec §10) ---------- */
+
+.invite-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.invite-state i {
+  margin-right: 6px;
+  color: var(--orange-deep);
+}
+
+.invite-state--in {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--r-input);
+  background: var(--orange-soft);
+}
+
+.invite-state--in p {
+  margin: 0;
+}
+
+.invite-note,
+.req__note {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.req-title {
+  margin: 14px 0 8px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.reqs {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.req {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-input);
+  background: var(--surface);
+}
+
+.req__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.req__body small {
+  color: var(--muted);
+}
+
+.req__act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .req {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .req__act {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+/* The number of invitations waiting for you, on the menu */
+.nav a {
+  position: relative;
+}
+
+.nav__badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--orange);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}

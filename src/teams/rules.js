@@ -3,13 +3,13 @@
    recommendations (using matching.js).
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
-import { L } from '../shared/i18n.js?v=20261101d';
+import { L } from '../shared/i18n.js?v=20261101g';
 
-import { S } from './state.js?v=20261101d';
-import { compOf } from './competitions.js?v=20261101d';
-import { P, seedTeam } from './sample-people.js?v=20261101d';
-import { rank, soloMatch, teamMatch } from './matching.js?v=20261101d';
-import { OTHERS } from './server.js?v=20261101d';
+import { S } from './state.js?v=20261101g';
+import { compOf } from './competitions.js?v=20261101g';
+import { P, seedTeam } from './sample-people.js?v=20261101g';
+import { rank, soloMatch, teamMatch } from './matching.js?v=20261101g';
+import { OTHERS } from './server.js?v=20261101g';
 
 export const personOf = (id) => (id === 'me' ? { ...S.me, alias: L`You`, id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in
@@ -72,6 +72,14 @@ const meIn = (cid) => ({ ...S.cards[cid], curious: (S.me && S.me.curious) || [] 
 // Your team as matching sees it: its roles, what it still needs, and your goal, hours, free time and interests
 const teamView = (t, cid) => ({ counts: roleCounts(t.members, cid), needs: needsOf(t), ...meIn(cid) });
 
+// Your invitation with someone in a competition: an open one first, else the latest
+export function requestWith(cid, uid) {
+  const all = (S.requests || []).filter((r) => r.comp === cid && r.other === uid);
+  return all.find((r) => r.status === 'pending' || r.status === 'chatting') || all[0] || null;
+}
+// Invitations waiting for your answer (the number on the menu)
+export const waitingForMe = () => (S.requests || []).filter((r) => !r.mine && r.status === 'pending');
+
 /* Recommendations (spec §6): everyone else with a card in this competition, scored
    from both sides (matching.js). Real people only; teams join in a later step.
    The database only lets you see cards once you have one here yourself. */
@@ -79,7 +87,9 @@ export function recommendations(cid) {
   const team = myTeam(cid);
   if (!S.cards[cid] || (team && isFull(team))) return [];
   const me = meIn(cid);
-  return rank((OTHERS[cid] || []).map((p) => ({
+  // Someone who declined (or whom you declined) is not shown again here
+  const declined = (id) => (S.requests || []).some((r) => r.comp === cid && r.other === id && r.status === 'declined');
+  return rank((OTHERS[cid] || []).filter((p) => !declined(p.id)).map((p) => ({
     kind: 'person', id: p.id, ref: p.id, person: p,
     ...(team ? teamMatch(teamView(team, cid), p) : soloMatch(me, p)),
   })));

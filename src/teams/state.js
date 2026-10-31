@@ -3,10 +3,10 @@
    kept in this browser for now. Your profile is saved separately
    (see ../shared/profile.js). */
 
-import { readProfile, writeProfile } from '../shared/profile.js?v=20261101d';
+import { readProfile, writeProfile } from '../shared/profile.js?v=20261101g';
 
 export const KEY = 'halfsugar.teams.v1';
-export const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {} });
+export const blank = () => ({ me: null, cards: {}, chats: [], teams: [], compCache: {}, requests: [] });
 export function load() {
   try {
     const s = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY)) || {});
@@ -15,6 +15,7 @@ export function load() {
     // Older versions stored role slots; now a team just has an optional "still need" list
     s.teams.forEach((t) => { if (!t.needs) t.needs = (t.roles || []).filter((r) => !r.by).map((r) => r.name); delete t.roles; });
     s.cards = {}; // from the server only (older versions kept them here)
+    s.requests = [];
     if (!s.compCache || typeof s.compCache !== 'object') s.compCache = {};
     return s;
   } catch {
@@ -22,7 +23,7 @@ export function load() {
   }
 }
 export function save() {
-  try { localStorage.setItem(KEY, JSON.stringify({ ...S, cards: {} })); } catch { /* storage is off; the page still works */ }
+  try { localStorage.setItem(KEY, JSON.stringify({ ...S, cards: {}, requests: [] })); } catch { /* storage is off; the page still works */ }
 }
 export let S = load();
 

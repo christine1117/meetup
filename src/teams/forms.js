@@ -1,21 +1,22 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261101d';
-import { logError } from '../shared/log.js?v=20261101d';
-import { L } from '../shared/i18n.js?v=20261101d';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261101d';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261101g';
+import { logError } from '../shared/log.js?v=20261101g';
+import { L } from '../shared/i18n.js?v=20261101g';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261101g';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261101d';
-import { isCold } from '../shared/sugar.js?v=20261101d';
-import { S, U, save, saveMe } from './state.js?v=20261101d';
-import { toast } from './ui.js?v=20261101d';
-import { MAX_ROLES, SLOTS } from './options.js?v=20261101d';
-import { loadOthers, saveCard } from './server.js?v=20261101d';
-import { COMP } from './competitions.js?v=20261101d';
-import { go } from './router.js?v=20261101d';
-import { isFull, withinRules } from './rules.js?v=20261101d';
-import { chatById, push, reply, startChat } from './chats.js?v=20261101d';
-import { render } from './render.js?v=20261101d';
-import { savedNote } from './views/profile.js?v=20261101d';
+import { $, later, pick, uid } from '../shared/core.js?v=20261101g';
+import { isCold } from '../shared/sugar.js?v=20261101g';
+import { S, U, save, saveMe } from './state.js?v=20261101g';
+import { toast } from './ui.js?v=20261101g';
+import { MAX_ROLES, SLOTS } from './options.js?v=20261101g';
+import { loadOthers, saveCard, sendInvite } from './server.js?v=20261101g';
+import { inviteAction } from './actions.js?v=20261101g';
+import { COMP } from './competitions.js?v=20261101g';
+import { go } from './router.js?v=20261101g';
+import { isFull, withinRules } from './rules.js?v=20261101g';
+import { chatById, push, reply, startChat } from './chats.js?v=20261101g';
+import { render } from './render.js?v=20261101g';
+import { savedNote } from './views/profile.js?v=20261101g';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -132,6 +133,10 @@ export const forms = {
     render({ fresh: true });
     // Now you can see the others in this competition
     loadOthers(cid).then(() => render()).catch((err) => logError('recommendations', err));
+  },
+  // Invite someone to chat, with an optional line (spec §10)
+  invite(form, d) {
+    inviteAction(() => sendInvite(form.dataset.comp, form.dataset.ref, (d.note || '').slice(0, 200)), L`Invitation sent`);
   },
   hi(form, d) {
     if (!d.hi) { $('#c-hi', form).focus(); return; }

@@ -1,21 +1,44 @@
 /* HTML: the chat list and one chat. */
-import { L } from '../../shared/i18n.js?v=20261101d';
-import { tr } from '../../shared/i18n.js?v=20261101d';
+import { L } from '../../shared/i18n.js?v=20261101g';
+import { tr } from '../../shared/i18n.js?v=20261101g';
 
-import { esc } from '../../shared/core.js?v=20261101d';
-import { cupFor } from '../../shared/cup.js?v=20261101d';
-import { REVEAL_AT, closesText, isCold, sugarMeter, sugarOf } from '../../shared/sugar.js?v=20261101d';
-import { S, U } from '../state.js?v=20261101d';
-import { compOf } from '../competitions.js?v=20261101d';
-import { P } from '../sample-people.js?v=20261101d';
-import { PASS_TEXT, isGroup, needsOf, nick, personOf, spots, teamRoles, teamsIn, voters } from '../rules.js?v=20261101d';
-import { chatName, tooBig } from '../chats.js?v=20261101d';
+import { esc } from '../../shared/core.js?v=20261101g';
+import { cupFor } from '../../shared/cup.js?v=20261101g';
+import { REVEAL_AT, closesText, isCold, sugarMeter, sugarOf } from '../../shared/sugar.js?v=20261101g';
+import { S, U } from '../state.js?v=20261101g';
+import { COMP, compOf, textOf } from '../competitions.js?v=20261101g';
+import { answerButtons } from './cards.js?v=20261101g';
+import { P } from '../sample-people.js?v=20261101g';
+import { PASS_TEXT, isGroup, needsOf, nick, personOf, spots, teamRoles, teamsIn, voters } from '../rules.js?v=20261101g';
+import { chatName, tooBig } from '../chats.js?v=20261101g';
+
+// Invitations (spec §16 Screen 5): waiting for your answer, sent, accepted
+function invitations() {
+  const list = S.requests || [];
+  const inbox = list.filter((r) => !r.mine && r.status === 'pending');
+  const sent = list.filter((r) => r.mine && r.status === 'pending');
+  const open = list.filter((r) => r.status === 'chatting');
+  if (!inbox.length && !sent.length && !open.length) return '';
+  const row = (r, actions) => `
+    <li class="req">
+      <span class="avatar avatar--cup" aria-hidden="true">${cupFor({ field: r.field })}</span>
+      <div class="req__body"><strong>${esc(r.alias)}</strong><small>${esc(textOf(COMP[r.comp] || r.competition || compOf(r.comp), 'name'))}</small>${r.note ? `<p class="req__note">${esc(r.note)}</p>` : ''}</div>
+      <div class="req__act">${actions}</div>
+    </li>`;
+  const group = (title, items, actions) => (items.length ? `<h3 class="req-title">${title}</h3><ul class="reqs">${items.map((r) => row(r, actions(r))).join('')}</ul>` : '');
+  return `
+  <h2 class="sec-title">${L`Invitations`}</h2>
+  ${group(L`Waiting for your answer`, inbox, answerButtons)}
+  ${group(L`Sent`, sent, (r) => `<span class="meta">${L`Waiting`}</span><button class="link-btn" data-act="invite-withdraw" data-id="${r.id}" type="button">${L`Withdraw`}</button>`)}
+  ${group(L`Accepted`, open, () => `<span class="meta">${L`The chat room opens in the next step.`}</span>`)}`;
+}
 
 export function viewChats() {
   const done = (c) => isCold(c) || c.status === 'closed';
   const chats = [...S.chats].sort((a, b) => done(a) - done(b) || b.at - a.at);
   return `
   <header class="head"><div><h1>${L`Teams & chats`}</h1><p class="sub">${L`Chat to half sugar, then team up.`}</p></div></header>
+  ${U.user ? invitations() : ''}
   ${S.teams.length ? `
   <h2 class="sec-title">${L`Your teams`}</h2>
   ${S.teams.map((t) => `

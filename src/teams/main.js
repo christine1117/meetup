@@ -18,26 +18,26 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261101d';
-import { L } from '../shared/i18n.js?v=20261101d';
-import { logError } from '../shared/log.js?v=20261101d';
-import { whoAmI } from './forms.js?v=20261101d';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261101g';
+import { L } from '../shared/i18n.js?v=20261101g';
+import { logError } from '../shared/log.js?v=20261101g';
+import { whoAmI } from './forms.js?v=20261101g';
 
-import { $ } from '../shared/core.js?v=20261101d';
-import { at } from '../shared/cup.js?v=20261101d';
-import { closesText } from '../shared/sugar.js?v=20261101d';
-import { S, U, saveMe } from './state.js?v=20261101d';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261101d';
-import { loadComps } from './competitions.js?v=20261101d';
-import { OTHERS, loadCards, loadOthers } from './server.js?v=20261101d';
-import { toast } from './ui.js?v=20261101d';
-import { go, route } from './router.js?v=20261101d';
-import { chatById } from './chats.js?v=20261101d';
-import { closeModal } from './views/modal.js?v=20261101d';
-import { curiousChecks } from './views/profile.js?v=20261101d';
-import { render } from './render.js?v=20261101d';
-import { autosave, formData, forms } from './forms.js?v=20261101d';
-import { acts } from './actions.js?v=20261101d';
+import { $ } from '../shared/core.js?v=20261101g';
+import { at } from '../shared/cup.js?v=20261101g';
+import { closesText } from '../shared/sugar.js?v=20261101g';
+import { S, U, saveMe } from './state.js?v=20261101g';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261101g';
+import { loadComps } from './competitions.js?v=20261101g';
+import { OTHERS, loadCards, loadOthers, loadRequests } from './server.js?v=20261101g';
+import { toast } from './ui.js?v=20261101g';
+import { go, route } from './router.js?v=20261101g';
+import { chatById } from './chats.js?v=20261101g';
+import { closeModal } from './views/modal.js?v=20261101g';
+import { curiousChecks } from './views/profile.js?v=20261101g';
+import { render } from './render.js?v=20261101g';
+import { autosave, formData, forms } from './forms.js?v=20261101g';
+import { acts } from './actions.js?v=20261101g';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -118,13 +118,29 @@ window.addEventListener('hashchange', () => {
   }
   U.form = null;
   U.hi = null;
+  U.invite = null;
   U.leave = null;
   if (U.modal) closeModal();
   U.authMsg = null;
   U.saved = false;
   render();
   loadRecommendations();
+  if (U.user) loadRequests().then(() => render()).catch((err) => logError('invitations', err));
 });
+// New invitations show up without a reload (checked every 30 seconds while the page is open).
+// The page is only drawn again when something changed, and never while you are typing.
+setInterval(async () => {
+  if (!U.user || document.hidden || U.busy || U.invite) return;
+  const before = JSON.stringify(S.requests);
+  try {
+    await loadRequests();
+  } catch (err) {
+    logError('invitations', err);
+    return;
+  }
+  const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if (JSON.stringify(S.requests) !== before && !typing) render();
+}, 30000);
 setInterval(() => {
   const r = route();
   if (r.name === 'chat') {
@@ -160,8 +176,9 @@ if (hasLogin || back) {
       markUnsynced(false);
     } else if (me) saveMe(me);
     else U.needProfile = true;               // new here: fill in the profile next
-    // Your participation cards (one per competition), then the people to recommend
+    // Your participation cards (one per competition), your invitations, then the people to recommend
     await loadCards().catch((err) => logError('cards', err));
+    await loadRequests().catch((err) => logError('invitations', err));
     loadRecommendations();
   }).catch((err) => {
     logError('account', err);
