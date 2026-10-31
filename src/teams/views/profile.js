@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031f';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031g';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031f';
-import { field, select } from '../../shared/forms.js?v=20261031f';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031f';
-import { S, U } from '../state.js?v=20261031f';
-import { PROVIDERS } from '../../shared/account.js?v=20261031f';
-import { esc } from '../../shared/core.js?v=20261031f';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031g';
+import { field, select } from '../../shared/forms.js?v=20261031g';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031g';
+import { S, U } from '../state.js?v=20261031g';
+import { PROVIDERS } from '../../shared/account.js?v=20261031g';
+import { esc } from '../../shared/core.js?v=20261031g';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -75,7 +75,7 @@ export function authForms() {
   return `
     ${signInButtons()}
     ${note()}
-    <p class="hint">${L`No password needed. Your name, school and contact stay hidden until you team up.`} <a href="privacy.html">${L`Privacy`}</a></p>`;
+    <p class="hint"><a href="privacy.html">${L`Privacy`}</a></p>`;
 }
 
 export function viewOnboard() {
@@ -101,7 +101,7 @@ export function viewAccount() {
 export function viewMe() {
   return `
   <header class="head"><div><h1>${L`Me`}</h1><p class="sub">${L`The sealed part unlocks when you team up.`}</p></div></header>
-  <form class="stack" data-form="me" novalidate>
+  <form class="stack" data-form="me" data-auto="1" novalidate>
     ${profileFields(S.me)}
     <p class="error" id="me-error" hidden>${L`Please add a nickname.`}</p>
     <button class="btn btn--primary" type="submit">${L`Save`}</button>
@@ -111,7 +111,7 @@ export function viewMe() {
     ${U.user
       ? `<p>${L`Signed in as ${`<b>${esc(U.user.email)}</b>`}. Your profile is saved to your account.`}</p>
          <button class="btn btn--ghost" data-act="logout" type="button">${L`Log out`}</button>`
-      : `<p>${L`Not signed in: your profile is only in this browser.`}</p>
+      : `<p>${L`Not signed in.`}</p>
          <a class="btn btn--dark btn--sm" href="#/account">${L`Sign in with Google or LinkedIn`}</a>`}
   </section>
   <section class="panel note">

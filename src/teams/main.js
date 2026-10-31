@@ -18,25 +18,25 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031f';
-import { L } from '../shared/i18n.js?v=20261031f';
-import { logError } from '../shared/log.js?v=20261031f';
-import { whoAmI } from './forms.js?v=20261031f';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031g';
+import { L } from '../shared/i18n.js?v=20261031g';
+import { logError } from '../shared/log.js?v=20261031g';
+import { whoAmI } from './forms.js?v=20261031g';
 
-import { $ } from '../shared/core.js?v=20261031f';
-import { at } from '../shared/cup.js?v=20261031f';
-import { closesText } from '../shared/sugar.js?v=20261031f';
-import { S, U, saveMe } from './state.js?v=20261031f';
-import { MAX_CURIOUS } from '../shared/profile.js?v=20261031f';
-import { loadComps } from './competitions.js?v=20261031f';
-import { go, route } from './router.js?v=20261031f';
-import { chatById } from './chats.js?v=20261031f';
-import { closeModal } from './views/modal.js?v=20261031f';
-import { curiousChecks } from './views/profile.js?v=20261031f';
-import { PAGE } from './views/competitions.js?v=20261031f';
-import { render } from './render.js?v=20261031f';
-import { formData, forms } from './forms.js?v=20261031f';
-import { acts } from './actions.js?v=20261031f';
+import { $ } from '../shared/core.js?v=20261031g';
+import { at } from '../shared/cup.js?v=20261031g';
+import { closesText } from '../shared/sugar.js?v=20261031g';
+import { S, U, saveMe } from './state.js?v=20261031g';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031g';
+import { loadComps } from './competitions.js?v=20261031g';
+import { go, route } from './router.js?v=20261031g';
+import { chatById } from './chats.js?v=20261031g';
+import { closeModal } from './views/modal.js?v=20261031g';
+import { curiousChecks } from './views/profile.js?v=20261031g';
+import { PAGE } from './views/competitions.js?v=20261031g';
+import { render } from './render.js?v=20261031g';
+import { autosave, formData, forms } from './forms.js?v=20261031g';
+import { acts } from './actions.js?v=20261031g';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -61,18 +61,22 @@ document.addEventListener('input', (e) => {
 });
 // "Curious about": a ticked topic moves up to the picked ones (and back when unticked).
 // Stop at MAX_CURIOUS ticks and say why.
+// The Me page (data-auto) saves after every change.
 document.addEventListener('change', (e) => {
-  if (e.target.name !== 'curious') return;
-  const wrap = e.target.closest('[data-curious]');
-  const picked = [...wrap.querySelectorAll('input[name="curious"]:checked')].map((x) => x.value);
-  if (e.target.checked && picked.length > MAX_CURIOUS) {
-    e.target.checked = false;
-    $('#curious-full', wrap).hidden = false;
-    return;
+  const form = e.target.closest('form');
+  if (e.target.name === 'curious') {
+    const wrap = e.target.closest('[data-curious]');
+    const picked = [...wrap.querySelectorAll('input[name="curious"]:checked')].map((x) => x.value);
+    if (e.target.checked && picked.length > MAX_CURIOUS) {
+      e.target.checked = false;
+      $('#curious-full', wrap).hidden = false;
+      return;
+    }
+    wrap.innerHTML = curiousChecks(picked, wrap.querySelector('details').open);
+    const same = [...wrap.querySelectorAll('input[name="curious"]')].find((x) => x.value === e.target.value);
+    if (same) same.focus({ preventScroll: true });
   }
-  wrap.innerHTML = curiousChecks(picked, wrap.querySelector('details').open);
-  const same = [...wrap.querySelectorAll('input[name="curious"]')].find((x) => x.value === e.target.value);
-  if (same) same.focus({ preventScroll: true });
+  if (form && form.dataset.auto) autosave(form);
 });
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('[data-form]');
@@ -128,8 +132,11 @@ if (hasLogin || back) {
     U.user = user;
     if (!user) return;
     const me = await loadProfile();
-    if (me) saveMe(me);
-    else if (S.me) await saveProfile(S.me);  // a profile made in this browser before signing in
+    if (S.me && (!me || isUnsynced())) {
+      // Made in this browser before signing in, or changed here while the account missed it
+      await saveProfile(S.me);
+      markUnsynced(false);
+    } else if (me) saveMe(me);
     else U.needProfile = true;               // new here: fill in the profile next
   }).catch((err) => {
     logError('account', err);

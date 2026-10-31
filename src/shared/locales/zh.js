@@ -337,6 +337,7 @@ export default {
   "No toppings yet.": "還沒有配料。",
   "None": "無",
   "Not a fit": "不太適合",
+  "Not signed in.": "尚未登入。",
   "Not signed in: your profile is only in this browser.": "還沒登入：個人資料只存在這個瀏覽器。",
   "Not signed in: your profile is only in this browser. Make an account to keep it on any device.": "還沒登入：個人資料只存在這個瀏覽器。建立帳號，換裝置也找得到。",
   "Not too sweet, not too serious. Half sugar is the order for people who want balance: less performing, and still something real to take home. It is also the moment a chat reaches 50%, when you can finally see who you have been talking to.": "不過甜，也不嚴肅，剛剛好。少一點表演，多一點收穫。半糖也是聊天抵達 50% 的時刻：你終於知道，對方是誰。",

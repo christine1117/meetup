@@ -1,16 +1,16 @@
 /* HTML: the pop-up for a person or a team. */
-import { L } from '../../shared/i18n.js?v=20261031f';
+import { L } from '../../shared/i18n.js?v=20261031g';
 
-import { $, esc } from '../../shared/core.js?v=20261031f';
-import { flavorChip } from '../../shared/flavors.js?v=20261031f';
-import { cupFor } from '../../shared/cup.js?v=20261031f';
-import { S, U } from '../state.js?v=20261031f';
-import { avatar, roleChips } from '../ui.js?v=20261031f';
-import { cardTopics, goalName, hoursName } from '../options.js?v=20261031f';
-import { compOf } from '../competitions.js?v=20261031f';
-import { P } from '../sample-people.js?v=20261031f';
-import { freshRoles } from '../matching.js?v=20261031f';
-import { chatWith, isFull, knows, myRoles, myTeam, needsOf, personOf, roleCounts, sideOf, spots, teamsIn } from '../rules.js?v=20261031f';
+import { $, esc } from '../../shared/core.js?v=20261031g';
+import { flavorChip } from '../../shared/flavors.js?v=20261031g';
+import { cupFor } from '../../shared/cup.js?v=20261031g';
+import { S, U } from '../state.js?v=20261031g';
+import { avatar, roleChips } from '../ui.js?v=20261031g';
+import { cardTopics, goalName, hoursName } from '../options.js?v=20261031g';
+import { compOf } from '../competitions.js?v=20261031g';
+import { P } from '../sample-people.js?v=20261031g';
+import { freshRoles } from '../matching.js?v=20261031g';
+import { chatWith, isFull, knows, myRoles, myTeam, needsOf, personOf, roleCounts, sideOf, spots, teamsIn } from '../rules.js?v=20261031g';
 
 export const modalEl = document.createElement('div');
 modalEl.id = 'modal';

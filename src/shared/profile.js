@@ -64,4 +64,19 @@ export function clearProfile() {
     delete saved.me;
     localStorage.setItem(PROFILE_KEY, JSON.stringify(saved));
   } catch { /* storage is off */ }
+  markUnsynced(false);
+}
+
+/* "This browser has changes the account has not got yet" (saving to the account
+   failed). Then the next sign-in sends this browser's profile up, instead of
+   bringing the older one down over it. */
+const UNSYNCED = 'halfsugar.unsynced';
+export function markUnsynced(on) {
+  try {
+    if (on) localStorage.setItem(UNSYNCED, '1');
+    else localStorage.removeItem(UNSYNCED);
+  } catch { /* storage is off */ }
+}
+export function isUnsynced() {
+  try { return localStorage.getItem(UNSYNCED) === '1'; } catch { return false; }
 }

@@ -557,49 +557,46 @@
   vertical-align: -2px;
 }
 
-/* Team-size rules and eligibility, read from the official page */
-.comp__rules {
+/* A competition's facts: dates, team size, eligibility */
+.facts {
   display: grid;
-  gap: 6px;
-  margin-top: 14px;
-  padding: 14px 16px;
-  border-radius: var(--r-input);
-  background: var(--bg);
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9375rem;
+  line-height: 1.55;
 }
 
-.comp__rules .field__label {
-  margin: 4px 0 0;
+.facts > li {
+  display: flex;
+  gap: 8px;
 }
 
-.comp__rules .field__label i {
-  margin-right: 6px;
+.facts > li > i {
+  flex: none;
+  margin-top: 3px;
   color: var(--orange-deep);
 }
 
-.comp__rules .meta {
-  margin: 4px 0 0;
-  font-size: 0.8125rem;
+.facts b {
+  margin-right: 4px;
+  font-weight: 600;
+}
+
+.facts__size {
+  color: var(--orange-deep);
+  font-weight: 600;
 }
 
 .tracks {
   display: grid;
-  gap: 8px;
-  margin: 0;
+  gap: 2px;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
-}
-
-.tracks q {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-
-.comp__elig {
-  margin: 0;
-  line-height: 1.6;
+  color: var(--ink);
+  font-weight: 400;
 }
 
 /* Category filter */

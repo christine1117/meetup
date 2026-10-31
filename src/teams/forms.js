@@ -1,19 +1,19 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031f';
-import { logError } from '../shared/log.js?v=20261031f';
-import { L } from '../shared/i18n.js?v=20261031f';
-import { MAX_CURIOUS } from '../shared/profile.js?v=20261031f';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031g';
+import { logError } from '../shared/log.js?v=20261031g';
+import { L } from '../shared/i18n.js?v=20261031g';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031g';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031f';
-import { isCold } from '../shared/sugar.js?v=20261031f';
-import { S, U, save, saveMe } from './state.js?v=20261031f';
-import { toast } from './ui.js?v=20261031f';
-import { MAX_ROLES } from './options.js?v=20261031f';
-import { COMP } from './competitions.js?v=20261031f';
-import { go } from './router.js?v=20261031f';
-import { DEFAULT_MAX, isFull } from './rules.js?v=20261031f';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031f';
-import { render } from './render.js?v=20261031f';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031g';
+import { isCold } from '../shared/sugar.js?v=20261031g';
+import { S, U, save, saveMe } from './state.js?v=20261031g';
+import { toast } from './ui.js?v=20261031g';
+import { MAX_ROLES } from './options.js?v=20261031g';
+import { COMP } from './competitions.js?v=20261031g';
+import { go } from './router.js?v=20261031g';
+import { DEFAULT_MAX, isFull } from './rules.js?v=20261031g';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031g';
+import { render } from './render.js?v=20261031g';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -38,15 +38,31 @@ export function pickRoles(fd, name) {
 
 export const formData = (form) => Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v).trim()]));
 
+// Save the profile here, and to the account when signed in
+async function keep(me) {
+  saveMe(me);
+  if (!U.user) return;
+  try {
+    await saveProfile(me);
+    markUnsynced(false);
+  } catch (err) {
+    logError('profile', err);
+    markUnsynced(true);
+    toast(L`Saved here, but not to your account. Try again later.`);
+  }
+}
+
+// The Me page saves as you go (a ticked topic, a field you leave), so leaving the page loses nothing
+export async function autosave(form) {
+  const d = formData(form);
+  if (d.alias) await keep(meFrom(d, form));
+}
+
 export const forms = {
   async me(form, d) {
     if (!d.alias) { $('#me-error', form).hidden = false; return; }
     const first = !S.me;
-    const me = meFrom(d, form);
-    saveMe(me);
-    if (U.user) {
-      try { await saveProfile(me); } catch (err) { logError('profile', err); toast(L`Saved here, but not to your account. Try again later.`); }
-    }
+    await keep(meFrom(d, form));
     U.needProfile = false;
     if (first) go('comps');
     else toast(L`Saved`);
