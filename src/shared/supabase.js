@@ -5,7 +5,7 @@
    row-level security rules (supabase/migrations), not by hiding these.
    The secret key never appears here; only the crawler has it. */
 
-import { logError } from './log.js?v=20261031v';
+import { logError } from './log.js?v=20261031w';
 
 export const SUPABASE_URL = 'https://vegdozzfxzhityjyejxy.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_SAkUJR7BS7kY1q1C5f-jow_1GNeh9wy';

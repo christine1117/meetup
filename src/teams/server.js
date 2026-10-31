@@ -2,18 +2,17 @@
    (spec.md §4). The database checks who may write what
    (supabase/migrations/0004_participations.sql). */
 
-import { db } from '../shared/supabase.js?v=20261031v';
-import { S, U } from './state.js?v=20261031v';
+import { db } from '../shared/supabase.js?v=20261031w';
+import { S, U } from './state.js?v=20261031w';
 
 // A row of the participations table <-> the card the pages use
 export const cardFromRow = (r) => ({
   canDo: r.offered_roles || [], wants: r.desired_roles || [], goal: r.goal, hours: r.weekly_hours,
-  idea: r.idea || '', built: r.built || '', lookingFor: r.looking_for, availability: r.availability || [],
+  idea: r.idea || '', built: r.built || '', availability: r.availability || [],
 });
 export const rowFromCard = (cid, userId, c) => ({
   competition_id: cid, user_id: userId, offered_roles: c.canDo, desired_roles: c.wants || [], goal: c.goal,
-  weekly_hours: Number(c.hours) || 6, idea: c.idea || '', built: c.built || '', looking_for: c.lookingFor || 'either',
-  availability: c.availability || [],
+  weekly_hours: Number(c.hours) || 6, idea: c.idea || '', built: c.built || '', availability: c.availability || [],
 });
 
 async function client() {

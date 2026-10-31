@@ -13,7 +13,6 @@ create table if not exists participations (
   weekly_hours      int  not null check (weekly_hours between 1 and 60),
   idea              text not null default '' check (length(idea) <= 300),  -- your idea for this competition
   built             text not null default '' check (length(built) <= 200), -- something you have built or done
-  looking_for       text not null default 'either' check (looking_for in ('solo', 'team', 'either')),
   availability      text[] not null default '{}' check (availability <@ array['weekday_day', 'weekday_evening', 'weekend']),
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),

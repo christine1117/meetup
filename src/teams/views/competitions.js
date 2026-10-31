@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031v';
-import { L } from '../../shared/i18n.js?v=20261031v';
-import { cupFor } from '../../shared/cup.js?v=20261031v';
-import { field, select } from '../../shared/forms.js?v=20261031v';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031v';
-import { S, U } from '../state.js?v=20261031v';
-import { LOOKING_FOR, WHEN, goalName, goalOptions, hourOptions, hoursName, lookingName, whenName } from '../options.js?v=20261031v';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031v';
-import { P } from '../sample-people.js?v=20261031v';
-import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031v';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031v';
-import { signInPrompt } from './profile.js?v=20261031v';
+import { esc, safeUrl } from '../../shared/core.js?v=20261031w';
+import { L } from '../../shared/i18n.js?v=20261031w';
+import { cupFor } from '../../shared/cup.js?v=20261031w';
+import { field, select } from '../../shared/forms.js?v=20261031w';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031w';
+import { S, U } from '../state.js?v=20261031w';
+import { WHEN, goalName, goalOptions, hourOptions, hoursName, whenName } from '../options.js?v=20261031w';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031w';
+import { P } from '../sample-people.js?v=20261031w';
+import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031w';
+import { personCard, roleChecks, teamCard } from './cards.js?v=20261031w';
+import { signInPrompt } from './profile.js?v=20261031w';
 
 export const PAGE = 20;  // competitions per page
 
@@ -91,14 +91,13 @@ const ticks = (name, list, picked = []) => `<div class="checks">${list.map(([v, 
 // The participation card (spec §4): what you bring to this competition. withTeam: also start a team.
 export function cardForm(cid, withTeam, editing = false) {
   // A new card starts from your card in another competition, without that competition's idea
-  const prev = S.cards[cid] || { ...(Object.values(S.cards)[0] || { canDo: [], wants: [], goal: 'win', hours: 6, built: '', lookingFor: 'either', availability: [] }), idea: '' };
+  const prev = S.cards[cid] || { ...(Object.values(S.cards)[0] || { canDo: [], wants: [], goal: 'win', hours: 6, built: '', availability: [] }), idea: '' };
   const rules = compOf(cid).team && compOf(cid).team.max ? L`The rules say ${teamSizeText(compOf(cid).team)}.` : L`Check the official rules.`;
   return `
   <form class="panel stack" data-form="card" data-comp="${cid}" data-team="${withTeam ? 1 : ''}" novalidate>
     <h2>${withTeam ? L`Start a team` : editing ? L`Edit your card` : L`Your competition card`}</h2>
     ${withTeam ? field('team', L`Team name`, '', { req: true, ph: L`e.g. Clear Air` }) : ''}
     <div class="field"><p class="field__label">${L`Your role`} <span class="hint-inline">${L`Pick 1 or 2`}</span></p>${roleChecks('canDo', prev.canDo, undefined, true)}</div>
-    ${withTeam ? '' : select('lookingFor', L`How do you want to team up?`, LOOKING_FOR.map(([v, l]) => [v, L(l)]), prev.lookingFor || 'either')}
     <div class="field"><p class="field__label">${withTeam ? L`Still need` : L`Roles you are looking for`} <span class="hint-inline">${L`Optional`}</span></p>${roleChecks(withTeam ? 'needs' : 'wants', withTeam ? [] : prev.wants || [], undefined, true)}</div>
     <div class="row2">
       ${select('goal', L`Your goal`, goalOptions(), prev.goal)}
@@ -118,7 +117,7 @@ export function cardForm(cid, withTeam, editing = false) {
 
 // Your card in this competition, with an edit button
 function myCard(cid, card) {
-  const facts = [lookingName(card.lookingFor), goalName(card.goal), hoursName(card.hours), ...(card.availability || []).map(whenName)];
+  const facts = [goalName(card.goal), hoursName(card.hours), ...(card.availability || []).map(whenName)];
   return `
   <section class="panel mycard">
     <div class="mycard__top">
@@ -168,8 +167,8 @@ export function viewComp(cid) {
   <section class="panel join">
     <h2>${L`Join this competition`}</h2>
     <div class="join__choices">
-      <button class="choice" data-act="form" data-what="solo" type="button"><i class="ph ph-user-plus" aria-hidden="true"></i><b>${L`I need a team`}</b><span>${L`Fill in a card and meet people`}</span></button>
-      <button class="choice" data-act="form" data-what="team" type="button"><i class="ph ph-users-three" aria-hidden="true"></i><b>${L`I have a team, we need more people`}</b><span>${L`Invite friends, find the rest here`}</span></button>
+      <button class="choice" data-act="form" data-what="solo" type="button"><i class="ph ph-user-plus" aria-hidden="true"></i><b>${L`I don’t have a team yet`}</b><span>${L`Fill in a card. We suggest people and teams for you.`}</span></button>
+      <button class="choice" data-act="form" data-what="team" type="button"><i class="ph ph-users-three" aria-hidden="true"></i><b>${L`I have a team and need people`}</b><span>${L`Create your team. We suggest people for it.`}</span></button>
     </div>
   </section>`) : `
   ${team ? `

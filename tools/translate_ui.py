@@ -80,7 +80,7 @@ def template_key(src: str, i: int) -> tuple[str, int]:
 
 
 # Lists whose labels are shown through L(...) at run time
-LISTS = re.compile(r"export const (ROLES|TOPICS|GOALS|HOURS|WHEN|LOOKING_FOR|CURIOUS_GROUPS|MEETS|CONTACTS|CATEGORIES|NAV|REGION_NAME|STAGES)\s*=\s*([\[{][\s\S]*?[\]}]);")
+LISTS = re.compile(r"export const (ROLES|TOPICS|GOALS|HOURS|WHEN|CURIOUS_GROUPS|MEETS|CONTACTS|CATEGORIES|NAV|REGION_NAME|STAGES)\s*=\s*([\[{][\s\S]*?[\]}]);")
 # Messages saved in English and translated when shown
 MESSAGES = re.compile(r"(?:text:|PASS_TEXT =|return|endChat\([^,]+,)\s*'([A-Z{][^'\n]{3,})'")
 

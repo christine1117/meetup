@@ -1,21 +1,21 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031v';
-import { logError } from '../shared/log.js?v=20261031v';
-import { L } from '../shared/i18n.js?v=20261031v';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031v';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031w';
+import { logError } from '../shared/log.js?v=20261031w';
+import { L } from '../shared/i18n.js?v=20261031w';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031w';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031v';
-import { isCold } from '../shared/sugar.js?v=20261031v';
-import { S, U, save, saveMe } from './state.js?v=20261031v';
-import { toast } from './ui.js?v=20261031v';
-import { MAX_ROLES, WHEN } from './options.js?v=20261031v';
-import { saveCard } from './server.js?v=20261031v';
-import { COMP } from './competitions.js?v=20261031v';
-import { go } from './router.js?v=20261031v';
-import { isFull, withinRules } from './rules.js?v=20261031v';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031v';
-import { render } from './render.js?v=20261031v';
-import { savedNote } from './views/profile.js?v=20261031v';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031w';
+import { isCold } from '../shared/sugar.js?v=20261031w';
+import { S, U, save, saveMe } from './state.js?v=20261031w';
+import { toast } from './ui.js?v=20261031w';
+import { MAX_ROLES, WHEN } from './options.js?v=20261031w';
+import { saveCard } from './server.js?v=20261031w';
+import { COMP } from './competitions.js?v=20261031w';
+import { go } from './router.js?v=20261031w';
+import { isFull, withinRules } from './rules.js?v=20261031w';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031w';
+import { render } from './render.js?v=20261031w';
+import { savedNote } from './views/profile.js?v=20261031w';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -43,7 +43,6 @@ export function cardFrom(fd, d, before = {}) {
   return {
     canDo: pickRoles(fd, 'canDo'),
     wants: fd.has('wantsOther') || fd.getAll('wants').length ? pickRoles(fd, 'wants').slice(0, 3) : before.wants || [],
-    lookingFor: d.lookingFor || before.lookingFor || 'either',
     goal: d.goal, hours: Number(d.hours),
     idea: (d.idea || '').slice(0, 300),
     built: (d.built || '').slice(0, 200),
