@@ -207,24 +207,6 @@ class Extraction(BaseModel):
     listing: Optional[Listing] = Field(None, description="Category, region, and the competition in English and in Traditional Chinese.")
 
 
-class Check(BaseModel):
-    """A second, separate reading of one team-size rule: does its quote really say this?"""
-
-    rule: int = Field(..., description="The number of the rule being checked, as given.")
-    size_ok: bool = Field(..., description="True if the quote itself says this many people may be on one team (min and max as given; a null bound claims nothing).")
-    mentors_ok: Optional[bool] = Field(None, description="Only when a mentor count is given: true if the quote says that many mentors / teachers / advisors.")
-    reason: str = Field("", description="One short sentence on why, above all when something is false.")
-
-    @field_validator("reason", mode="before")
-    @classmethod
-    def shorten(cls, v):
-        return _cut(300)(v)
-
-
-class Verification(BaseModel):
-    checks: list[Check] = Field(default_factory=list)
-
-
 class Track(BaseModel):
     """A verified team-size rule, as the website shows it."""
 

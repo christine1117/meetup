@@ -75,26 +75,24 @@ class LLMRunner:
     """Asks the LLM about many competitions at once (a few at a time), saves the
     cache as it goes, and stops asking after 5 failures in a row."""
 
-    def __init__(self, llm, cache, workers: int, ask=None, what: str = "read"):
+    def __init__(self, llm, cache, workers: int):
         self.llm, self.cache, self.workers = llm, cache, workers
-        self.ask = ask or llm.extract  # (raw, arg) -> answer; the first reading unless told otherwise
-        self.what = what
         self.lock = threading.Lock()
         self.fails_in_row = 0
         self.stopped = False
         self.done = 0
 
-    def one(self, raw, arg):
+    def one(self, raw, text):
         if self.stopped:
             return None
         try:
-            ex = self.ask(raw, arg)
+            ex = self.llm.extract(raw, text)
             with self.lock:
                 self.fails_in_row = 0
                 self.done += 1
                 if self.done % 25 == 0:
                     self.cache.save()  # keep what is already read, even if the run stops later
-                    log.info("  LLM: %d %s", self.done, self.what)
+                    log.info("  LLM: %d read", self.done)
             return ex
         except Exception as err:
             log.warning("  LLM failed for %s: %s", raw.id, err)
@@ -108,7 +106,7 @@ class LLMRunner:
 
     def run(self, jobs: list) -> dict:
         with ThreadPoolExecutor(max_workers=self.workers) as pool:
-            futures = {raw.id: pool.submit(self.one, raw, arg) for raw, arg in jobs}
+            futures = {raw.id: pool.submit(self.one, raw, text) for raw, text in jobs}
         return {k: f.result() for k, f in futures.items()}
 
 
@@ -154,15 +152,6 @@ def main() -> int:
         if runner.stopped:
             llm = None
 
-    # 2b. A second, separate reading of every team size found: does its quote really say so?
-    checks: dict = {}
-    if llm:
-        sized = [(raw, answers[raw.id]) for raw, _ in jobs if answers.get(raw.id) and any(
-            r.min_members is not None or r.max_members is not None or r.mentors_max is not None for r in answers[raw.id].team_rules)]
-        log.info("LLM: %d competitions to check a second time", len(sized))
-        checker = LLMRunner(llm, cache, cfg.llm_workers, ask=lambda raw, ex: llm.verify(raw, ex.team_rules), what="checked")
-        checks = checker.run(sized)
-
     # 3. Check every answer and decide what to publish
     reviews: list[dict] = []
     db: list[dict] = []
@@ -178,7 +167,7 @@ def main() -> int:
                 counts["kept as published"] = counts.get("kept as published", 0) + 1
                 listed += 1
                 continue
-            d = decide(raw, ex, text, checks.get(raw.id))
+            d = decide(raw, ex, text)
             counts[d.status] = counts.get(d.status, 0) + 1
             if d.issues:
                 reviews.append({"id": raw.id, "name": raw.name, "url": raw.url, "status": d.status,

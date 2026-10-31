@@ -8,13 +8,11 @@
 | Overview says 2–4, rules page says 3–5         | conflict: sizes not published, review     |
 | "最多 5 名學生及 1 名指導老師"                    | mentors kept apart from participants      |
 | The quote is not in the source text            | that rule's sizes are not published       |
-| A second reading says the quote does not say so| that rule's sizes are not published       |
 | The LLM says it is unsure                      | sizes not published, review               |
 
-The code only checks what needs no understanding of the wording: the quote is on
-the page, min <= max, two pages agree. Whether "1名組長及1~5名組員" means 2–6 is
-for a second, separate LLM reading (llm.Extractor.verify). Without one (no LLM
-this run), a simpler pattern check is used instead.
+Understanding the wording ("1名組長及1~5名組員" is 2–6 people, "一件作品" is not a
+person) is the LLM's job. The code only checks what needs no understanding: the
+quote is on the page, min <= max, two pages agree, the LLM is sure.
 
 Pure functions: tested in crawler/tests/test_validate.py.
 """
@@ -24,83 +22,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from .schema import Decision, Extraction, Issue, RawCompetition, TeamRule, Track, Verification
-
-MENTOR = re.compile(r"指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|advisers?|coach(?:es)?|supervisors?", re.I)
-NUMBER = re.compile(r"\d+|[一二兩三四五六七八九十]+")
-
-
-MENTOR_BEFORE = re.compile(r"(?:指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|coach(?:es)?)\s*(?:人數|為|需|須|:|：)?\s*(?:\d+\s*[-~～至到]\s*)?$", re.I)
-MENTOR_AFTER = re.compile(r"^\s*(?:[-~～至到]\s*\d+\s*)?(?:名|位|人)?\s*(?:的)?\s*(?:指導老師|指導教師|指導教授|老師|教師|顧問|mentors?|advisors?|coach(?:es)?)", re.I)
-
-
-CN_NUM = {"一": 1, "二": 2, "兩": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
-EN_NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
-
-
-def mentor_counts(quote: str) -> set[int]:
-    """The numbers in a quote that count mentors ("1 位指導老師", "指導老師1-2名", "one mentor")."""
-    found: set[int] = set()
-    for m in re.finditer(r"\d+|[一二兩三四五六七八九十]|\b(?:one|two|three|four|five)\b", quote, re.I):
-        before, after = quote[max(0, m.start() - 10): m.start()], quote[m.end(): m.end() + 10]
-        if MENTOR_BEFORE.search(before) or MENTOR_AFTER.match(after):
-            t = m.group(0).lower()
-            found.add(int(t) if t.isdigit() else CN_NUM.get(t) or EN_NUM.get(t) or 0)
-    return found
-
-
-NUM_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-             "一": 1, "二": 2, "兩": 2, "两": 2, "雙": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
-NUM_TOKEN = r"\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|[一二兩两雙三四五六七八九十]"
-PEOPLE = (r"(?:人|名|位|成員|隊員|組員|組長|隊長|學生|參賽者|members?|people|persons?|participants?|individuals?|students?"
-          r"|hackers?|builders?|teammates?|creators?)")
-# After a number: maybe the rest of a range or list ("–5", " and 4", ", 2, or 3"), then who is counted
-PEOPLE_AFTER = re.compile(rf"^\)?(?:\s*\(\s*\d+\s*\))?(?:\s*(?:-|–|—|~|～|至|到|to|and|or|,)\s*(?:or\s+)?(?:{NUM_TOKEN})){{0,3}}\s*(?:名|位|個)?\s*(?:的)?\s*{PEOPLE}", re.I)
-TEAM_NEAR = re.compile(r"隊|組|團|teams?\b|groups?\b|squads?\b|crews?\b", re.I)
-SOLO = re.compile(r"solo|individual|alone|on your own|by yourself|個人|單人|獨立參賽", re.I)
-# Roles that add up to a team: "1名組長及1~5名組員" is 2 to 6 people (mentors are not roles here)
-ROLE = re.compile(rf"({NUM_TOKEN})(?:\s*(?:-|–|~|～|至|到)\s*({NUM_TOKEN}))?\s*(?:名|位|個)?\s*(?:的)?\s*"
-                  r"(組長|隊長|組員|隊員|成員|學生|leaders?|captains?|members?|students?)", re.I)
-
-
-def _value(token: str) -> int:
-    t = token.lower()
-    return int(t) if t.isdigit() else NUM_WORDS.get(t, 0)
-
-
-def roles_add_up(quote: str, n: int) -> bool:
-    """n is what the roles in the quote add up to, at their lowest or at their highest."""
-    lows = highs = count = 0
-    for m in ROLE.finditer(quote):
-        low = _value(m.group(1))
-        lows, highs, count = lows + low, highs + (_value(m.group(2)) if m.group(2) else low), count + 1
-    return count >= 2 and n in (lows, highs)
-
-
-def number_is_about_people(quote: str, n: int) -> bool:
-    """Is n in the quote as a count of people ("每隊 3 人", "teams of 2–5 participants"),
-    not of something else ("每人限提交 1 件作品")? Also true when the quote says it another
-    way: a minimum of 1 for "solo or in a team", or roles that add up to n."""
-    words = [w for w, v in NUM_WORDS.items() if v == n]
-    pattern = rf"(?<!\d){n}(?!\d)" + ("|" + "|".join(rf"\b{w}\b" if w.isascii() else w for w in words) if words else "")
-    for m in re.finditer(pattern, quote, re.I):
-        after = quote[m.end(): m.end() + 30]
-        around = quote[max(0, m.start() - 30): m.end() + 20]
-        if PEOPLE_AFTER.match(after) or TEAM_NEAR.search(around):
-            return True
-    if n == 1 and SOLO.search(quote):
-        return True
-    return roles_add_up(quote, n)
-
-
-def only_about_mentors(quote: str) -> bool:
-    """True when every number in the quote is a count of mentors
-    ("指導老師1名", "1 名指導老師", "one mentor"), not of participants."""
-    nums = list(NUMBER.finditer(quote))
-    if not nums:
-        return False
-    is_mentor = lambda m: bool(MENTOR_BEFORE.search(quote[max(0, m.start() - 10): m.start()]) or MENTOR_AFTER.match(quote[m.end(): m.end() + 10]))
-    return all(is_mentor(m) for m in nums)
+from .schema import Decision, Extraction, Issue, RawCompetition, TeamRule, Track
 
 
 def norm(text: str) -> str:
@@ -128,8 +50,8 @@ def track_key(name: str | None) -> str:
     return norm(name or "") or "*"
 
 
-def decide(comp: RawCompetition, ex: Extraction | None, source_text: str, checks: Verification | None = None) -> Decision:
-    """Turn one LLM answer into what may be published. checks: the second reading, if there was one."""
+def decide(comp: RawCompetition, ex: Extraction | None, source_text: str) -> Decision:
+    """Turn one LLM answer into what may be published."""
     if ex is None:
         # Nothing to read (MLH lists no rules text): a hackathon is listed, size on the official page
         if comp.team_by_default and not (source_text or "").strip():
@@ -142,9 +64,8 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str, checks
     if ex.needs_review:
         issues.append(Issue(code="llm_unsure", detail=ex.review_reason or "The LLM marked this as unclear."))
 
-    second = {c.rule: c for c in checks.checks} if checks is not None else None
     good: list[TeamRule] = []
-    for idx, r in enumerate(ex.team_rules):
+    for r in ex.team_rules:
         where = f"{r.track or 'all'}: \"{r.evidence[:80]}\""
         if not quoted(r.evidence, source_text):
             issues.append(Issue(code="evidence_not_found", detail=f"Quote not in the page, sizes not published ({where})"))
@@ -152,27 +73,6 @@ def decide(comp: RawCompetition, ex: Extraction | None, source_text: str, checks
         if r.min_members is not None and r.max_members is not None and r.min_members > r.max_members:
             issues.append(Issue(code="min_greater_than_max", detail=f"min {r.min_members} > max {r.max_members} ({where})"))
             continue
-        sizes = [n for n in (r.min_members, r.max_members) if n is not None]
-        if second is not None:
-            # The second reading decides whether the quote really says this
-            c = second.get(idx)
-            if sizes and not (c and c.size_ok):
-                issues.append(Issue(code="size_not_confirmed", detail=f"A second reading did not confirm it: {c.reason if c else 'no answer'} ({where})"))
-                continue
-            if r.mentors_max is not None and not (c and c.mentors_ok):
-                r = r.model_copy(update={"mentors_max": None})
-            good.append(r)
-            continue
-        # No second reading: the simpler pattern check
-        if sizes and not all(number_is_about_people(r.evidence, n) for n in sizes):
-            issues.append(Issue(code="number_not_about_people", detail=f"The quote does not give that number of people ({where})"))
-            continue
-        if (r.min_members or r.max_members) and only_about_mentors(r.evidence):
-            issues.append(Issue(code="mentors_counted", detail=f"The number seems to be about mentors ({where})"))
-            continue
-        # A mentor count is only kept if the quote gives that number for mentors
-        if r.mentors_max is not None and r.mentors_max not in mentor_counts(r.evidence):
-            r = r.model_copy(update={"mentors_max": None})
         good.append(r)
 
     # The same track with different sizes on different pages is a conflict

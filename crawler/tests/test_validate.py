@@ -54,12 +54,6 @@ def test_mentors_are_kept_apart():
     assert d.tracks[0].max == 5 and d.tracks[0].mentors == 1
 
 
-def test_a_number_about_mentors_only_is_rejected():
-    src = "每隊須設有指導老師1名。"
-    d = decide(comp(), Extraction(team_rules=[rule("每隊須設有指導老師1名", max_members=1)]), src)
-    assert "mentors_counted" in [i.code for i in d.issues]
-
-
 def test_quote_not_on_the_page_is_not_published():
     src = "歡迎全國大專學生參加。"
     d = decide(comp(), Extraction(team_rules=[rule("每隊3至5人", min_members=3, max_members=5)]), src)
@@ -148,23 +142,6 @@ def test_long_eligibility_is_cut_not_rejected():
     assert len(ex.eligibility.summary) <= 300
 
 
-def test_mentor_count_needs_mentors_in_the_quote():
-    src = "僅接受團體參賽，每組以2至5人為限，每位學生可加入多個團體。"
-    d = decide(comp(), Extraction(team_rules=[rule("僅接受團體參賽，每組以2至5人為限", min_members=2, max_members=5, mentors_max=3)]), src)
-    assert d.tracks[0].mentors is None and (d.tracks[0].min, d.tracks[0].max) == (2, 5)
-
-
-def test_mentor_count_must_be_the_number_in_the_quote():
-    src = "每組 1~5 位成員，每隊皆需要 1 位指導老師。"
-    d = decide(comp(), Extraction(team_rules=[rule("每組 1~5 位成員，每隊皆需要 1 位指導老師。", min_members=1, max_members=5, mentors_max=2)]), src)
-    assert d.tracks[0].mentors is None
-    d = decide(comp(), Extraction(team_rules=[rule("每組 1~5 位成員，每隊皆需要 1 位指導老師。", min_members=1, max_members=5, mentors_max=1)]), src)
-    assert d.tracks[0].mentors == 1
-    src2 = "每隊組員學生人數2-6名，指導老師1-2名。"
-    d = decide(comp(), Extraction(team_rules=[rule(src2, min_members=2, max_members=6, mentors_max=2)]), src2)
-    assert d.tracks[0].mentors == 2
-
-
 def test_listing_category_region_and_languages_reach_the_website():
     from crawler.extract.schema import Listing, Texts
     from crawler.run import listing_record
@@ -179,17 +156,6 @@ def test_listing_category_region_and_languages_reach_the_website():
     assert rec["category"] == "design" and rec["kind"] == "Design"
     assert rec["i18n"]["en"]["name"] == "Tsinghua Mask Teaching Award"
     assert rec["tracks"][0]["evidence_en"] == "2 to 4 people per team"
-
-
-def test_the_number_must_count_people():
-    src = "每人限提交1件參賽作品。"
-    d = decide(comp(), Extraction(team_rules=[rule("每人限提交1件參賽作品", min_members=1)]), src)
-    assert "number_not_about_people" in [i.code for i in d.issues] and d.tracks == []
-    for quote, lo, hi in [("Teams of up to 4.", None, 4), ("每隊3~5人", 3, 5), ("每組 1~5 位成員", 1, 5), ("Team size: [1 to 4]", 1, 4),
-                          ("可以個人或最多8人的團隊形式參賽", None, 8), ("隊伍組成：每隊2名選手", 2, 2), ("每組以2至5人為限", 2, 5),
-                          ("Teams must have 3 to 4 members.", 3, 4), ("each team of four", None, 4)]:
-        d = decide(comp(), Extraction(team_rules=[rule(quote, min_members=lo, max_members=hi)]), quote)
-        assert d.tracks, quote
 
 
 def test_no_limit_on_team_size():
@@ -209,44 +175,11 @@ def test_not_listed_unless_the_text_says_teams_can_enter():
     assert d.listed and d.tracks == []
 
 
-def test_sizes_written_in_other_ways_are_understood():
-    from crawler.extract.validate import number_is_about_people as about
+def test_what_the_llm_understood_is_kept_when_its_quote_is_on_the_page():
+    # Understanding the wording is the LLM's job; the code only checks the quote is really there
     regtech = "每隊需由1名指導老師、1名組長及1~5名組員組成，即每隊伍之組成最少為2人。"
-    assert about(regtech, 2) and about(regtech, 6), "1 leader + 1–5 members: 2 to 6 people"
-    assert not about(regtech, 7), "the mentor is not added"
-    assert about("Teams for the Munich event consist of 2–5 participants.", 2)
-    assert about("Groups need to consist of between 1 and 4 people", 1)
-    assert about("Solo or in a team of up to 4.", 1), "solo means a minimum of 1"
-    assert about("Squads of 2 – 4 hackers", 2)
-    assert about("An association of at least two (2) individuals", 2)
-    assert about("學士/碩士/進修班在學學生個人或兩人以下團體參賽。", 2)
-    # Still refused: numbers that are not people, and numbers the text does not give
-    assert not about("每人限提交1件作品", 1)
-    assert not about("Prizes for the top 3 projects", 3)
-    assert not about("Solo participation is not allowed. Each team must have a minimum of 4 members .", 6)
-
-
-def test_second_reading_decides_what_the_quote_says():
-    from crawler.extract.schema import Check, Verification
-    regtech = "每隊需由1名指導老師、1名組長及1~5名組員組成，即每隊伍之組成最少為2人。"
-    page = comp(pages=[PageText(page="description", text=regtech)])
     ex = Extraction(team_rules=[rule(regtech, min_members=2, max_members=6, mentors_max=1)])
-    yes = Verification(checks=[Check(rule=0, size_ok=True, mentors_ok=True)])
-    d = decide(page, ex, regtech, yes)
+    d = decide(comp(), ex, regtech)
     assert d.status == "published" and (d.tracks[0].min, d.tracks[0].max, d.tracks[0].mentors) == (2, 6, 1)
-
-    # The second reading says no: the size is not published, and a person can see why
-    no = Verification(checks=[Check(rule=0, size_ok=False, reason="6 is not in the quote")])
-    d = decide(page, ex, regtech, no)
-    assert d.tracks == [] and d.issues[0].code == "size_not_confirmed" and "6 is not in the quote" in d.issues[0].detail
-
-    # A mentor count it does not confirm is dropped, the size stays
-    d = decide(page, ex, regtech, Verification(checks=[Check(rule=0, size_ok=True, mentors_ok=False)]))
-    assert (d.tracks[0].max, d.tracks[0].mentors) == (6, None)
-
-
-def test_second_reading_cannot_save_a_quote_that_is_not_on_the_page():
-    from crawler.extract.schema import Check, Verification
-    ex = Extraction(team_rules=[rule("每隊 2 至 5 人", min_members=2, max_members=5)])
-    d = decide(comp(), ex, "這頁沒有寫人數", Verification(checks=[Check(rule=0, size_ok=True)]))
+    d = decide(comp(), ex, "這頁沒有寫人數")
     assert d.tracks == [] and d.issues[0].code == "evidence_not_found"

@@ -10,12 +10,11 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import json
 from typing import Any, Protocol
 
-from .schema import Extraction, RawCompetition, TeamRule, Verification
+from .schema import Extraction, RawCompetition
 
-PROMPT_VERSION = "5"
+PROMPT_VERSION = "6"
 
 SYSTEM = """You read competition pages and extract the allowed number of participants per team.
 
@@ -31,6 +30,10 @@ Rules:
 6. If different tracks or categories (組別) have different rules, return one rule per track.
 7. Every rule needs evidence: an exact quote copied character for character from the source text.
    Prefer one sentence. Do not join sentences from different places and do not add punctuation.
+   min and max must come from that quote: stated there, or simple arithmetic of the people it counts
+   ("1名組長及1~5名組員" is min 2, max 6; the advisor is not counted). "Solo or in a team of up to 4"
+   and "個人或兩人以下團體" mean min 1. Never give a number the quote does not support, and never count
+   entries, works, prizes or places as people ("僅得繳交一件作品" says nothing about team size).
 8. individual_allowed: true if one person may enter alone (個人或團隊, individually or in teams);
    false if a team is required (僅接受團體參賽, team required).
    individual_only: true only if teams are NOT allowed at all (限個人參賽, individuals only, solo only).
@@ -88,37 +91,6 @@ TOOL = {
 }
 
 
-# The second reading: a separate, narrow question for each team size the first reading found.
-# Understanding the wording ("1名組長及1~5名組員", "solo or a team of up to 4") is the LLM's job;
-# the code only checks what needs no understanding (the quote is on the page, min <= max ...).
-VERIFY_VERSION = "1"
-VERIFY_SYSTEM = """You double-check team sizes that another reader took from a competition page.
-For each claim you get one quote from the page and the numbers read from it.
-
-size_ok is true only if the quote itself says that many PEOPLE may be on one team:
-- count team members (participants, students, hackers...). Not entries or works submitted, prizes,
-  places, ages, judges, or the number of teams accepted.
-- mentors, teachers and advisors (指導老師) are not members.
-- simple arithmetic is fine: "1名組長及1~5名組員" supports min 2, max 6.
-- "solo or in a team of up to 4" supports min 1, max 4; "個人或兩人以下團體" supports min 1, max 2.
-- a null bound claims nothing. If any given number is not supported by the quote, size_ok is false.
-mentors_ok (only when mentors_max is given): true if the quote gives that many mentors/teachers/advisors.
-Give a short reason, above all when something is false. Check every claim."""
-
-VERIFY_TOOL = {
-    "name": "record_checks",
-    "description": "Record, for each claim, whether its quote supports it.",
-    "input_schema": inline_refs(Verification.model_json_schema()),
-}
-
-
-def verify_message(comp: RawCompetition, rules: list[TeamRule]) -> str:
-    claims = [json.dumps({"rule": i, "track": r.track, "min_members": r.min_members, "max_members": r.max_members,
-                          "mentors_max": r.mentors_max, "quote": r.evidence}, ensure_ascii=False)
-              for i, r in enumerate(rules) if r.min_members is not None or r.max_members is not None or r.mentors_max is not None]
-    return f"Competition: {comp.name}\n\nClaims:\n" + "\n".join(claims) if claims else ""
-
-
 def cache_key(provider: str, model: str, text: str) -> str:
     return "llm:" + hashlib.sha256(f"{provider}|{model}|{PROMPT_VERSION}|{text}".encode()).hexdigest()[:32]
 
@@ -147,25 +119,8 @@ class Extractor:
         raise NotImplementedError
 
     def ask(self, comp: RawCompetition, text: str) -> Any:
-        # The first reading does many things at once (sizes per track, eligibility, two languages): more thought
+        # One reading does many things at once (sizes per track, eligibility, two languages): room to think
         return self.call(SYSTEM, TOOL, user_message(comp, text), "medium")
-
-    def verify(self, comp: RawCompetition, rules: list[TeamRule]) -> Verification:
-        """The second reading of every rule that gives a number."""
-        message = verify_message(comp, rules)
-        if not message:
-            return Verification()
-        key = "verify:" + hashlib.sha256(f"{self.provider}|{self.model}|{VERIFY_VERSION}|{message}".encode()).hexdigest()[:32]
-        if self.cache is not None:
-            saved = self.cache.get(key, max_age_days=180)
-            if saved is not None:
-                return Verification.model_validate(saved)
-        raw = self.call(VERIFY_SYSTEM, VERIFY_TOOL, message, "low")
-        self.calls += 1
-        result = Verification.model_validate_json(raw) if isinstance(raw, str) else Verification.model_validate(raw)
-        if self.cache is not None:
-            self.cache.set(key, result.model_dump())
-        return result
 
     def extract(self, comp: RawCompetition, text: str) -> Extraction:
         key = cache_key(self.provider, self.model, text)
