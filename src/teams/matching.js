@@ -1,11 +1,11 @@
 /* Matching, as pure functions (spec.md §7–§9; tested in tests/matching.test.js).
 
-   Every pairing is scored from both sides, each side 0–9 points, then
-   combined: MatchScore = 100 × √(A/9 × B/9), from 0 to 100. It only orders the
-   list; it is not a chance of teaming up. Missing data adds nothing.
+   Every pairing is scored from both sides, each side 0–11 points, then
+   combined: MatchScore = 100 × √(A/11 × B/11), from 0 to 100. It only orders
+   the list (the page does not show it); it is not a chance of teaming up.
+   Missing data adds nothing.
 
-   Points on each side (the spec's 2 topic points are 2 points for free time,
-   since cards no longer ask for topics):
+   Points on each side (the spec's 9, plus 2 for shared free time):
      role        two people: +4 the other has a role you want; +2 you did not
                  say what you want and their role is different from yours
                  a team's view: +4 a role it says it needs, +3 a role it has
@@ -15,11 +15,13 @@
      goal        +2 the same goal
      time        +1 hours a week within 3 of each other
      free time   +1 one or two shared free slots, +2 three or more
+     curious     +1 for each "Curious about" topic you share, up to +2
+                 (from the profile; the spec's topics)
 
    Each result also says why, as plain facts (kind + roles / slots); the page
    turns them into words. No reason is made up: only what added points. */
 
-export const MAX_FIT = 9;
+export const MAX_FIT = 11;
 export const overlap = (a = [], b = []) => a.filter((x) => b.includes(x));
 const clip = (n) => Math.max(0, Math.min(MAX_FIT, n));
 export const toHundred = (a, b) => Math.round(100 * Math.sqrt((clip(a) / MAX_FIT) * (clip(b) / MAX_FIT)));
@@ -35,6 +37,8 @@ function shared(a, b) {
   }
   const free = overlap(a.availability, b.availability);
   if (free.length) { points += free.length >= 3 ? 2 : 1; reasons.push({ kind: 'free', slots: free }); }
+  const curious = overlap(a.curious, b.curious);
+  if (curious.length) { points += Math.min(2, curious.length); reasons.push({ kind: 'curious', topics: curious }); }
   return { points, reasons, missing: !(a.availability || []).length || !(b.availability || []).length };
 }
 
@@ -57,7 +61,7 @@ export function soloMatch(me, them) {
   return { score: toHundred(mine.score, theirs.score), reasons: [...roleReasons, ...mine.reasons].filter(Boolean).slice(0, 3), missing: mine.missing };
 }
 
-// A team's view of someone (spec §8.2). team: { counts: role -> how many, needs, goal, hours, availability }
+// A team's view of someone (spec §8.2). team: { counts: role -> how many, needs, goal, hours, availability, curious }
 export function teamFit(team, person) {
   let best = { points: -Infinity, role: null };
   (person.canDo || []).forEach((r) => {

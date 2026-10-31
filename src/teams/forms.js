@@ -1,21 +1,21 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261101b';
-import { logError } from '../shared/log.js?v=20261101b';
-import { L } from '../shared/i18n.js?v=20261101b';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261101b';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261101c';
+import { logError } from '../shared/log.js?v=20261101c';
+import { L } from '../shared/i18n.js?v=20261101c';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261101c';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261101b';
-import { isCold } from '../shared/sugar.js?v=20261101b';
-import { S, U, save, saveMe } from './state.js?v=20261101b';
-import { toast } from './ui.js?v=20261101b';
-import { MAX_ROLES, SLOTS } from './options.js?v=20261101b';
-import { loadOthers, saveCard } from './server.js?v=20261101b';
-import { COMP } from './competitions.js?v=20261101b';
-import { go } from './router.js?v=20261101b';
-import { isFull, withinRules } from './rules.js?v=20261101b';
-import { chatById, push, reply, startChat } from './chats.js?v=20261101b';
-import { render } from './render.js?v=20261101b';
-import { savedNote } from './views/profile.js?v=20261101b';
+import { $, later, pick, uid } from '../shared/core.js?v=20261101c';
+import { isCold } from '../shared/sugar.js?v=20261101c';
+import { S, U, save, saveMe } from './state.js?v=20261101c';
+import { toast } from './ui.js?v=20261101c';
+import { MAX_ROLES, SLOTS } from './options.js?v=20261101c';
+import { loadOthers, saveCard } from './server.js?v=20261101c';
+import { COMP } from './competitions.js?v=20261101c';
+import { go } from './router.js?v=20261101c';
+import { isFull, withinRules } from './rules.js?v=20261101c';
+import { chatById, push, reply, startChat } from './chats.js?v=20261101c';
+import { render } from './render.js?v=20261101c';
+import { savedNote } from './views/profile.js?v=20261101c';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({

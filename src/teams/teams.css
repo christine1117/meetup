@@ -893,24 +893,3 @@
   outline: 2px solid var(--orange-deep);
   outline-offset: 2px;
 }
-
-/* Fit score on a recommended person (only orders the list) */
-.tcard__top .fit {
-  display: grid;
-  justify-items: center;
-  margin-left: auto;
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: var(--orange-soft);
-  color: var(--orange-deep);
-  line-height: 1.1;
-}
-
-.fit small {
-  font-size: 0.6875rem;
-}
-
-.fit b {
-  font-size: 1.125rem;
-  font-variant-numeric: tabular-nums;
-}

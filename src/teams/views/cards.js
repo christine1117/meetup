@@ -1,18 +1,18 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
-import { L } from '../../shared/i18n.js?v=20261101b';
+import { L } from '../../shared/i18n.js?v=20261101c';
 
-import { esc } from '../../shared/core.js?v=20261101b';
-import { flavorChip } from '../../shared/flavors.js?v=20261101b';
-import { cupFor } from '../../shared/cup.js?v=20261101b';
-import { S, U } from '../state.js?v=20261101b';
-import { roleChips } from '../ui.js?v=20261101b';
-import { ROLES, cardTopics, goalName, hoursName, slotsText } from '../options.js?v=20261101b';
-import { P } from '../sample-people.js?v=20261101b';
-import { freshRoles } from '../matching.js?v=20261101b';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261101b';
+import { esc } from '../../shared/core.js?v=20261101c';
+import { flavorChip } from '../../shared/flavors.js?v=20261101c';
+import { cupFor } from '../../shared/cup.js?v=20261101c';
+import { S, U } from '../state.js?v=20261101c';
+import { roleChips } from '../ui.js?v=20261101c';
+import { ROLES, cardTopics, goalName, hoursName, slotsText } from '../options.js?v=20261101c';
+import { P } from '../sample-people.js?v=20261101c';
+import { freshRoles } from '../matching.js?v=20261101c';
+import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261101c';
 
-// A recommended person (a real card), with the fit score (spec §16 Screen 4).
-// The score only orders the list; inviting to chat opens in the next step.
+// A recommended person (a real card) (spec §16 Screen 4). The list is in fit order;
+// the score itself is not shown. Inviting to chat opens in the next step.
 export function matchCard(r, cid) {
   const p = r.person;
   const team = myTeam(cid);
@@ -23,12 +23,12 @@ export function matchCard(r, cid) {
       <div class="tcard__top">
         <span class="avatar avatar--cup" aria-hidden="true">${cupFor(p)}</span>
         <div><strong>${esc(p.alias)}</strong> ${flavorChip(p)}<p class="meta">${[p.city, goalName(p.goal), hoursName(p.hours)].filter(Boolean).map(esc).join(' · ')}</p></div>
-        <span class="fit" title="${esc(L`Only orders the list. It is not a chance of teaming up.`)}"><small>${L`Fit`}</small><b>${r.score}</b></span>
       </div>
       <dl class="brief">
         <div><dt>${L`Role`}</dt><dd class="chips">${roleChips(p.canDo, fresh)}</dd></div>
         ${p.wants.length ? `<div><dt>${L`Looking for`}</dt><dd class="chips">${roleChips(p.wants, mine)}</dd></div>` : ''}
         ${p.availability.length ? `<div><dt>${L`Free`}</dt><dd>${esc(slotsText(p.availability))}</dd></div>` : ''}
+        ${(p.curious || []).length ? `<div><dt>${L`Curious about`}</dt><dd class="chips">${roleChips(p.curious, (S.me && S.me.curious) || [])}</dd></div>` : ''}
         ${p.idea ? `<div><dt>${L`Idea`}</dt><dd>${esc(p.idea)}</dd></div>` : ''}
         ${p.built ? `<div><dt>${L`Built`}</dt><dd>${esc(p.built)}</dd></div>` : ''}
       </dl>

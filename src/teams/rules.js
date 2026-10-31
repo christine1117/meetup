@@ -3,13 +3,13 @@
    recommendations (using matching.js).
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
-import { L } from '../shared/i18n.js?v=20261101b';
+import { L } from '../shared/i18n.js?v=20261101c';
 
-import { S } from './state.js?v=20261101b';
-import { compOf } from './competitions.js?v=20261101b';
-import { P, seedTeam } from './sample-people.js?v=20261101b';
-import { rank, soloMatch, teamMatch } from './matching.js?v=20261101b';
-import { OTHERS } from './server.js?v=20261101b';
+import { S } from './state.js?v=20261101c';
+import { compOf } from './competitions.js?v=20261101c';
+import { P, seedTeam } from './sample-people.js?v=20261101c';
+import { rank, soloMatch, teamMatch } from './matching.js?v=20261101c';
+import { OTHERS } from './server.js?v=20261101c';
 
 export const personOf = (id) => (id === 'me' ? { ...S.me, alias: L`You`, id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in
@@ -67,16 +67,18 @@ export function roleCounts(ids, cid) {
   return n;
 }
 export const sideOf = (cid) => { const t = myTeam(cid); return t ? t.members : ['me']; };
-// Your team as matching sees it: its roles, what it still needs, and your card's goal, hours and free time
-const teamView = (t, cid) => ({ counts: roleCounts(t.members, cid), needs: needsOf(t), ...S.cards[cid] });
+// You as matching sees you: your card here, plus "Curious about" from your profile
+const meIn = (cid) => ({ ...S.cards[cid], curious: (S.me && S.me.curious) || [] });
+// Your team as matching sees it: its roles, what it still needs, and your goal, hours, free time and interests
+const teamView = (t, cid) => ({ counts: roleCounts(t.members, cid), needs: needsOf(t), ...meIn(cid) });
 
 /* Recommendations (spec §6): everyone else with a card in this competition, scored
    from both sides (matching.js). Real people only; teams join in a later step.
    The database only lets you see cards once you have one here yourself. */
 export function recommendations(cid) {
   const team = myTeam(cid);
-  const me = S.cards[cid];
-  if (!me || (team && isFull(team))) return [];
+  if (!S.cards[cid] || (team && isFull(team))) return [];
+  const me = meIn(cid);
   return rank((OTHERS[cid] || []).map((p) => ({
     kind: 'person', id: p.id, ref: p.id, person: p,
     ...(team ? teamMatch(teamView(team, cid), p) : soloMatch(me, p)),

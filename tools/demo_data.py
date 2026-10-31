@@ -22,7 +22,7 @@ admin = {"apikey": key, "Content-Type": "application/json", **({"Authorization":
 http = httpx.Client(timeout=30)
 
 PEOPLE = [
-    # alias, field, city, profile extras, sealed details, card
+    # alias, field, city, fun fact, sealed details, card (curious-about topics are in CURIOUS below)
     ("Kite", "Engineering", "Taipei", "Has tried every bubble tea shop on one street", ("林凱文", "Frontend engineer", "NTU", "", "instagram", "@kite.dev"),
      dict(offered_roles=["Frontend"], desired_roles=["Design"], goal="win", weekly_hours=6, availability=["sat_am", "sat_pm", "sun_pm"],
           idea="做一個學校附近空氣品質的即時地圖", built="一個 2,000 人在用的公車 App")),
@@ -47,6 +47,19 @@ PEOPLE = [
      dict(offered_roles=["Marketing", "Pitch"], desired_roles=["Data"], goal="learn", weekly_hours=6, availability=["sun_pm", "sun_eve"],
           idea="把小農直送做成訂閱制", built="供貨給 9 家餐廳的小農平台")),
 ]
+
+
+# "Curious about" on each profile (the same choices as the sign-up form)
+CURIOUS = {
+    'Kite': ['AI products', 'Software development', 'Sustainability', 'Music'],
+    'Pim': ['Data analysis', 'Climate tech', 'Health tech'],
+    'Nori': ['Writing', 'Content creation', 'Education', 'Music'],
+    'Sol': ['Startups', 'Fintech', 'Small business', 'Marketing'],
+    'Juno': ['Software development', 'Game development', 'Music'],
+    'Rue': ['Product design', 'UI/UX design', 'Art & illustration', 'Travel'],
+    'Tavi': ['Hardware', 'Robotics', 'Climate tech'],
+    'Ode': ['Agriculture', 'Food', 'Small business', 'Social impact'],
+}
 
 
 def check(r, what):
@@ -80,7 +93,7 @@ def seed():
         email = f"demo-{alias.lower()}-{uuid.uuid4().hex[:6]}@example.com"
         u = check(http.post(f"{url}/auth/v1/admin/users", headers=admin, json={"email": email, "email_confirm": True, "user_metadata": {"demo": True}}), "make an account").json()
         check(http.post(f"{url}/rest/v1/profiles", headers={**admin, "Prefer": "return=minimal"},
-                        json={"id": u["id"], "alias": alias, "field": field, "city": city, "meet": "both", "curious": [], "fun": fun}), "save a profile")
+                        json={"id": u["id"], "alias": alias, "field": field, "city": city, "meet": "both", "curious": CURIOUS.get(alias, []), "fun": fun}), "save a profile")
         check(http.post(f"{url}/rest/v1/profile_sealed", headers={**admin, "Prefer": "return=minimal"},
                         json={"id": u["id"], "real_name": name, "job_title": title, "school": school, "company": company, "contact_type": ctype, "contact": contact}), "save sealed details")
         check(http.post(f"{url}/rest/v1/participations", headers={**admin, "Prefer": "return=minimal"},
