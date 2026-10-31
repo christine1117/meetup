@@ -1,17 +1,17 @@
 /* HTML: the competition list and one competition's page. */
 
-import { esc, safeUrl } from '../../shared/core.js?v=20261031z';
-import { L } from '../../shared/i18n.js?v=20261031z';
-import { cupFor } from '../../shared/cup.js?v=20261031z';
-import { field, select } from '../../shared/forms.js?v=20261031z';
-import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261031z';
-import { S, U } from '../state.js?v=20261031z';
-import { DAYS, PARTS, goalName, goalOptions, hourOptions, hoursName, slotsText } from '../options.js?v=20261031z';
-import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261031z';
-import { P } from '../sample-people.js?v=20261031z';
-import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots, teamsIn } from '../rules.js?v=20261031z';
-import { personCard, roleChecks, teamCard } from './cards.js?v=20261031z';
-import { signInPrompt } from './profile.js?v=20261031z';
+import { esc, safeUrl } from '../../shared/core.js?v=20261101b';
+import { L } from '../../shared/i18n.js?v=20261101b';
+import { cupFor } from '../../shared/cup.js?v=20261101b';
+import { field, select } from '../../shared/forms.js?v=20261101b';
+import { CATEGORIES, categoryName, categoryOf, teamSizeText, trackText } from '../../shared/contract.js?v=20261101b';
+import { S, U } from '../state.js?v=20261101b';
+import { DAYS, PARTS, goalName, goalOptions, hourOptions, hoursName, slotsText } from '../options.js?v=20261101b';
+import { COMP, DATA, compOf, dataState, dateText, regionName, searchText, textOf, trackNameOf, whenText } from '../competitions.js?v=20261101b';
+import { defaultMax, isFull, sizeChoices, myTeam, needsOf, personOf, recommendations, spots } from '../rules.js?v=20261101b';
+import { matchCard, roleChecks } from './cards.js?v=20261101b';
+import { OTHERS } from '../server.js?v=20261101b';
+import { signInPrompt } from './profile.js?v=20261101b';
 
 export const PAGE = 20;  // competitions per page
 
@@ -184,6 +184,9 @@ export function viewComp(cid) {
   ${myCard(cid, card)}`}
   ${team && isFull(team) ? `<p class="empty">${L`Your team is full (${spots(team)}). Good luck!`}</p>` : `
   <h2 class="sec-title">${team ? L`People for your team` : L`Recommended for you`}</h2>
-  <p class="meta sample-note">${L`Sample people for now. Real profiles show up here once more people sign up.`}</p>
-  ${recs.length ? recs.map((r) => (r.kind === 'person' ? personCard(P[r.ref], cid) : teamCard(teamsIn(cid).find((t) => t.id === r.ref), cid))).join('') : `<p class="empty">${L`No one else is looking right now.`}</p>`}`}`}`;
+  ${OTHERS[cid] === undefined ? `<p class="empty">${L`Loading…`}</p>` : recs.length ? recs.map((r) => matchCard(r, cid)).join('') : `
+  <div class="panel empty-recs">
+    <p>${L`No one else has a card here yet. Share this competition so friends can join you.`}</p>
+    <button class="btn btn--ghost btn--sm" data-act="copy" data-link="${esc(`${location.origin}${location.pathname}#/comp/${cid}`)}" type="button">${L`Copy link`}</button>
+  </div>`}`}`}`;
 }

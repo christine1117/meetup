@@ -1,9 +1,9 @@
 /* Sugar and cold chats: the rules every chat follows, in both apps.
    Pure functions of a chat's messages, so they are easy to test. */
 
-import { esc } from './core.js?v=20261031z';
-import { L } from './i18n.js?v=20261031z';
-import { cup } from './cup.js?v=20261031z';
+import { esc } from './core.js?v=20261101b';
+import { L } from './i18n.js?v=20261101b';
+import { cup } from './cup.js?v=20261101b';
 
 // Sugar = how long two people have talked. Every minute adds 5%, so 10 minutes is half sugar.
 // A long pause only counts as 3 minutes, so a chat left open in silence does not keep filling.

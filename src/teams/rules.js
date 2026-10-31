@@ -3,13 +3,13 @@
    recommendations (using matching.js).
    A chat with a team is a group chat: the whole team is in it. Everyone
    has to say yes to team up. Anyone can end it politely. */
-import { L } from '../shared/i18n.js?v=20261031z';
-import { cardTopics } from './options.js?v=20261031z';
+import { L } from '../shared/i18n.js?v=20261101b';
 
-import { S } from './state.js?v=20261031z';
-import { compOf } from './competitions.js?v=20261031z';
-import { P, demoPeople, seedTeam } from './sample-people.js?v=20261031z';
-import { roleFit, vibe } from './matching.js?v=20261031z';
+import { S } from './state.js?v=20261101b';
+import { compOf } from './competitions.js?v=20261101b';
+import { P, seedTeam } from './sample-people.js?v=20261101b';
+import { rank, soloMatch, teamMatch } from './matching.js?v=20261101b';
+import { OTHERS } from './server.js?v=20261101b';
 
 export const personOf = (id) => (id === 'me' ? { ...S.me, alias: L`You`, id: 'me' } : P[id]);
 // Every team in a competition: other people's, plus the ones you are in
@@ -67,26 +67,20 @@ export function roleCounts(ids, cid) {
   return n;
 }
 export const sideOf = (cid) => { const t = myTeam(cid); return t ? t.members : ['me']; };
-export function personScore(p, cid) {
-  const t = myTeam(cid);
-  const card = S.cards[cid];
-  return roleFit(p.canDo, roleCounts(sideOf(cid), cid), t ? needsOf(t) : []) + vibe(p, { ...card, topics: cardTopics(card) }) + p.reply;
-}
-export function teamScore(t, cid) {
-  const lead = P[t.members[0]];
-  const topics = [...new Set(t.members.flatMap((m) => P[m].topics))];
-  const card = S.cards[cid];
-  return roleFit(myRoles(cid), roleCounts(t.members, cid), needsOf(t)) + vibe({ ...lead, topics }, { ...card, topics: cardTopics(card) }) + lead.reply;
-}
+// Your team as matching sees it: its roles, what it still needs, and your card's goal, hours and free time
+const teamView = (t, cid) => ({ counts: roleCounts(t.members, cid), needs: needsOf(t), ...S.cards[cid] });
+
+/* Recommendations (spec §6): everyone else with a card in this competition, scored
+   from both sides (matching.js). Real people only; teams join in a later step.
+   The database only lets you see cards once you have one here yourself. */
 export function recommendations(cid) {
-  const mine = myTeam(cid);
-  if (mine && isFull(mine)) return [];
-  // Anyone you (or they) passed on is not shown again in this competition
-  const people = demoPeople(cid).filter((p) => !inATeam(p.id, cid) && !passed(cid, 'person', p.id))
-    .map((p) => ({ kind: 'person', ref: p.id, score: personScore(p, cid) }));
-  const teams = mine ? [] : teamsIn(cid).filter((t) => !t.members.includes('me') && !isFull(t) && !passed(cid, 'team', t.id))
-    .map((t) => ({ kind: 'team', ref: t.id, score: teamScore(t, cid) }));
-  return [...people, ...teams].sort((a, b) => b.score - a.score);
+  const team = myTeam(cid);
+  const me = S.cards[cid];
+  if (!me || (team && isFull(team))) return [];
+  return rank((OTHERS[cid] || []).map((p) => ({
+    kind: 'person', id: p.id, ref: p.id, person: p,
+    ...(team ? teamMatch(teamView(team, cid), p) : soloMatch(me, p)),
+  })));
 }
 
 // Names unlock once you are on the same team, or after teaming up in a chat

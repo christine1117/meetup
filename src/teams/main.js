@@ -18,25 +18,26 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031z';
-import { L } from '../shared/i18n.js?v=20261031z';
-import { logError } from '../shared/log.js?v=20261031z';
-import { whoAmI } from './forms.js?v=20261031z';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261101b';
+import { L } from '../shared/i18n.js?v=20261101b';
+import { logError } from '../shared/log.js?v=20261101b';
+import { whoAmI } from './forms.js?v=20261101b';
 
-import { $ } from '../shared/core.js?v=20261031z';
-import { at } from '../shared/cup.js?v=20261031z';
-import { closesText } from '../shared/sugar.js?v=20261031z';
-import { S, U, saveMe } from './state.js?v=20261031z';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031z';
-import { loadComps } from './competitions.js?v=20261031z';
-import { loadCards } from './server.js?v=20261031z';
-import { go, route } from './router.js?v=20261031z';
-import { chatById } from './chats.js?v=20261031z';
-import { closeModal } from './views/modal.js?v=20261031z';
-import { curiousChecks } from './views/profile.js?v=20261031z';
-import { render } from './render.js?v=20261031z';
-import { autosave, formData, forms } from './forms.js?v=20261031z';
-import { acts } from './actions.js?v=20261031z';
+import { $ } from '../shared/core.js?v=20261101b';
+import { at } from '../shared/cup.js?v=20261101b';
+import { closesText } from '../shared/sugar.js?v=20261101b';
+import { S, U, saveMe } from './state.js?v=20261101b';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261101b';
+import { loadComps } from './competitions.js?v=20261101b';
+import { OTHERS, loadCards, loadOthers } from './server.js?v=20261101b';
+import { toast } from './ui.js?v=20261101b';
+import { go, route } from './router.js?v=20261101b';
+import { chatById } from './chats.js?v=20261101b';
+import { closeModal } from './views/modal.js?v=20261101b';
+import { curiousChecks } from './views/profile.js?v=20261101b';
+import { render } from './render.js?v=20261101b';
+import { autosave, formData, forms } from './forms.js?v=20261101b';
+import { acts } from './actions.js?v=20261101b';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
@@ -96,6 +97,17 @@ document.addEventListener('submit', (e) => {
 document.addEventListener('toggle', (e) => {
   if (e.target.matches && e.target.matches('details[data-team]')) U.teamOpen = e.target.open ? e.target.dataset.team : null;
 }, true);
+// On a competition page where you have a card: load everyone else's cards there (recommendations)
+function loadRecommendations() {
+  const r = route();
+  if (r.name !== 'comp' || !U.user || !S.cards[r.id]) return;
+  loadOthers(r.id).catch((err) => {
+    logError('recommendations', err);
+    OTHERS[r.id] = [];
+    toast(L`Could not load the people in this competition. Refresh to try again.`);
+  }).then(() => render());
+}
+
 window.addEventListener('hashchange', () => {
   // A friend's invite link: join that team straight away (demo: only your own teams exist here)
   const r = route();
@@ -111,6 +123,7 @@ window.addEventListener('hashchange', () => {
   U.authMsg = null;
   U.saved = false;
   render();
+  loadRecommendations();
 });
 setInterval(() => {
   const r = route();
@@ -147,8 +160,9 @@ if (hasLogin || back) {
       markUnsynced(false);
     } else if (me) saveMe(me);
     else U.needProfile = true;               // new here: fill in the profile next
-    // Your participation cards (one per competition)
+    // Your participation cards (one per competition), then the people to recommend
     await loadCards().catch((err) => logError('cards', err));
+    loadRecommendations();
   }).catch((err) => {
     logError('account', err);
     if (back) U.authMsg = { text: L`Sign-in did not finish. Please try again.` };

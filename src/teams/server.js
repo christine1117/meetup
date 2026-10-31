@@ -2,8 +2,8 @@
    (spec.md §4). The database checks who may write what
    (supabase/migrations/0004_participations.sql). */
 
-import { db } from '../shared/supabase.js?v=20261031z';
-import { S, U } from './state.js?v=20261031z';
+import { db } from '../shared/supabase.js?v=20261101b';
+import { S, U } from './state.js?v=20261101b';
 
 // A row of the participations table <-> the card the pages use
 export const cardFromRow = (r) => ({
@@ -33,4 +33,15 @@ export async function saveCard(cid, card) {
   const { data, error } = await c.from('participations').upsert(rowFromCard(cid, U.user.id, card)).select().single();
   if (error) throw error;
   S.cards[cid] = cardFromRow(data);
+}
+
+// Everyone else's cards in one competition, with their public profile (for recommendations).
+// The database only shows them once you have a card there yourself.
+export const OTHERS = {}; // competition -> [{ id, alias, field, city, ...card }]
+export async function loadOthers(cid) {
+  const c = await client();
+  const { data, error } = await c.from('participations').select('*, profiles(alias, field, city)')
+    .eq('competition_id', cid).neq('user_id', U.user.id);
+  if (error) throw error;
+  OTHERS[cid] = (data || []).map((r) => ({ id: r.user_id, ...(r.profiles || { alias: '…', field: 'Other', city: '' }), ...cardFromRow(r) }));
 }

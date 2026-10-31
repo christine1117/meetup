@@ -1,36 +1,72 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { roleFit, freshRoles, vibe } from '../src/teams/matching.js';
+import { fitFor, rank, soloMatch, teamFit, teamMatch, toHundred } from '../src/teams/matching.js';
 
-test('a role the team does not have scores highest', () => {
-  const counts = { Backend: 1, Design: 1 };
-  assert.equal(roleFit(['Frontend'], counts), 3);
-  assert.equal(roleFit(['Backend'], counts), 0.5, 'a second backend is fine but lower');
-  assert.equal(roleFit(['Backend'], { Backend: 2 }), -2, 'a third one is pushed down');
+// spec.md §21 "Recommendation" acceptance criteria, one test each where it applies here
+const person = (o) => ({ canDo: [], wants: [], goal: 'win', hours: 6, availability: [], ...o });
+
+test('role: +4 for a role you want, +2 for a different role when you did not say, 0 otherwise', () => {
+  const me = person({ canDo: ['Design'], wants: ['Frontend'] });
+  assert.equal(fitFor(me, person({ canDo: ['Frontend'], goal: 'learn', hours: 20 })).score, 4);
+  assert.equal(fitFor(me, person({ canDo: ['Backend'], goal: 'learn', hours: 20 })).score, 0, 'you said what you want; this is not it');
+  const open = person({ canDo: ['Design'] });
+  assert.equal(fitFor(open, person({ canDo: ['Backend'], goal: 'learn', hours: 20 })).score, 2, 'different skills, nothing asked');
+  assert.equal(fitFor(open, person({ canDo: ['Design'], goal: 'learn', hours: 20 })).score, 0, 'the same skill');
 });
 
-test('a role the team asked for wins, even if they already have one', () => {
-  assert.equal(roleFit(['Backend'], { Backend: 1 }, ['Backend']), 4);
+test('two roles: the one that fits best counts', () => {
+  const me = person({ canDo: ['Design'], wants: ['Pitch'] });
+  const them = fitFor(me, person({ canDo: ['Backend', 'Pitch'], goal: 'learn', hours: 20 }));
+  assert.equal(them.score, 4);
+  assert.deepEqual(them.role, { kind: 'wanted', roles: ['Pitch'] });
 });
 
-test('people with two roles are scored by their best one', () => {
-  assert.equal(roleFit(['Backend', 'Pitch'], { Backend: 1 }), 3);
+test('two people: both sides count (geometric mean out of 100)', () => {
+  const a = person({ canDo: ['Design'], wants: ['Frontend'], availability: ['sat_am', 'sat_pm', 'sun_pm'] });
+  const b = person({ canDo: ['Frontend'], wants: ['Design'], availability: ['sat_am', 'sat_pm', 'sun_pm'] });
+  // each side: role 4 + goal 2 + hours 1 + free time 2 = 9
+  assert.equal(soloMatch(a, b).score, 100);
+  const c = person({ canDo: ['Frontend'], wants: ['Data'], availability: ['sat_am', 'sat_pm', 'sun_pm'] });
+  // a likes c (9), c does not want a's role (0 + 2 + 1 + 2 = 5): √(9/9 × 5/9) = 74.5
+  assert.equal(soloMatch(a, c).score, 75);
+  assert.equal(soloMatch(a, c).score, soloMatch(c, a).score, 'the same from either side');
+  assert.equal(toHundred(9, 0), 0, 'nothing from one side is nothing overall');
 });
 
-test('roles worth pointing out', () => {
-  assert.deepEqual(freshRoles(['Data', 'Research'], { Data: 1 }), ['Research']);
-  assert.deepEqual(freshRoles(['Data'], { Data: 1 }, ['Data']), ['Data']);
+test('missing data adds nothing and is flagged; no reason is made up', () => {
+  const a = person({ canDo: ['Design'], goal: 'win', hours: 6 });
+  const b = person({ canDo: ['Design'], goal: 'learn', hours: 20 });
+  const m = soloMatch(a, b);
+  assert.equal(m.score, 0);
+  assert.deepEqual(m.reasons, [], 'no matches, no reasons');
+  assert.equal(m.missing, true, 'free time not filled in');
 });
 
-test('same goal, similar hours and shared topics add up', () => {
-  const a = { goal: 'win', hours: 6, topics: ['AI', 'Health'] };
-  assert.equal(vibe(a, { goal: 'win', hours: 6, topics: ['AI', 'Health', 'Food'] }), 5);
-  assert.equal(vibe(a, { goal: 'fun', hours: 10, topics: [] }), 0);
+test('reasons: at most three, from what actually matched', () => {
+  const a = person({ canDo: ['Design'], wants: ['Frontend'], availability: ['mon_eve'] });
+  const b = person({ canDo: ['Frontend'], wants: ['Design'], availability: ['mon_eve'] });
+  assert.deepEqual(soloMatch(a, b).reasons.map((r) => r.kind), ['wanted', 'theyWant', 'goal']);
 });
 
-test('a shared time to work adds one', () => {
-  const a = { goal: 'win', hours: 6, topics: [], availability: ['sat_am', 'mon_eve'] };
-  assert.equal(vibe(a, { goal: 'learn', hours: 20, topics: [], availability: ['sat_am', 'sun_pm'] }), 1);
-  assert.equal(vibe(a, { goal: 'learn', hours: 20, topics: [], availability: ['mon_am'] }), 0);
-  assert.equal(vibe(a, { goal: 'learn', hours: 20, topics: [] }), 0, 'not said: nothing added');
+test('a team: +4 needed, +3 a role it lacks, +0.5 one already, −2 two already', () => {
+  const team = { counts: { Backend: 1, Design: 2 }, needs: ['Pitch'], goal: 'learn', hours: 30, availability: [] };
+  assert.equal(teamFit(team, person({ canDo: ['Pitch'] })).score, 4);
+  assert.equal(teamFit(team, person({ canDo: ['Frontend'] })).score, 3);
+  assert.equal(teamFit(team, person({ canDo: ['Backend'] })).score, 0.5);
+  assert.equal(teamFit(team, person({ canDo: ['Design'] })).score, 0, '−2 is floored at 0');
+  assert.equal(teamFit(team, person({ canDo: ['Design', 'Pitch'] })).score, 4, 'the best of two roles');
+});
+
+test('a team and a person: both sides count', () => {
+  const team = { counts: { Design: 1 }, needs: ['Frontend'], goal: 'win', hours: 6, availability: ['sat_am'] };
+  const fe = person({ canDo: ['Frontend'], availability: ['sat_am'] });
+  // team side 4 + 2 + 1 + 1 = 8; person side 4 + 2 + 1 + 1 = 8: √(8/9 × 8/9) = 88.9
+  assert.equal(teamMatch(team, fe).score, 89);
+  assert.deepEqual(teamMatch(team, fe).reasons[0], { kind: 'needed', roles: ['Frontend'] });
+});
+
+test('the same input always gives the same order', () => {
+  const list = [{ id: 'b', score: 50 }, { id: 'a', score: 50 }, { id: 'c', score: 80 }];
+  assert.deepEqual(rank(list).map((x) => x.id), ['c', 'a', 'b']);
+  assert.deepEqual(rank([...list].reverse()).map((x) => x.id), ['c', 'a', 'b']);
 });
