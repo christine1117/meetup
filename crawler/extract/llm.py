@@ -14,7 +14,10 @@ from typing import Any, Protocol
 
 from .schema import Extraction, RawCompetition
 
-PROMPT_VERSION = "6"
+# Answers are remembered by the page text alone. A new model, or new wording of the instructions,
+# applies to pages read from now on: nothing is read again just because of it. To read every page
+# again, run the workflow with "Read every competition again" (or change ANSWERS).
+ANSWERS = "openai|gpt-5-mini|5"
 
 SYSTEM = """You read competition pages and extract the allowed number of participants per team.
 
@@ -91,8 +94,8 @@ TOOL = {
 }
 
 
-def cache_key(provider: str, model: str, text: str) -> str:
-    return "llm:" + hashlib.sha256(f"{provider}|{model}|{PROMPT_VERSION}|{text}".encode()).hexdigest()[:32]
+def cache_key(text: str) -> str:
+    return "llm:" + hashlib.sha256(f"{ANSWERS}|{text}".encode()).hexdigest()[:32]
 
 
 def user_message(comp: RawCompetition, text: str) -> str:
@@ -111,8 +114,9 @@ class Extractor:
 
     provider = "base"
 
-    def __init__(self, model: str, cache=None, effort: str = "low"):
+    def __init__(self, model: str, cache=None, effort: str = "low", reread: bool = False):
         self.model, self.cache, self.calls, self.effort = model, cache, 0, effort
+        self.reread = reread  # True: ask again even when the answer is remembered
 
     def call(self, system: str, tool: dict, user: str, effort: str) -> Any:
         """One forced tool call; the provider's raw answer (dict or JSON text)."""
@@ -122,8 +126,8 @@ class Extractor:
         return self.call(SYSTEM, TOOL, user_message(comp, text), self.effort)
 
     def extract(self, comp: RawCompetition, text: str) -> Extraction:
-        key = cache_key(self.provider, self.model, text)
-        if self.cache is not None:
+        key = cache_key(text)
+        if self.cache is not None and not self.reread:
             saved = self.cache.get(key, max_age_days=180)
             if saved is not None:
                 return Extraction.model_validate(saved)
@@ -140,8 +144,8 @@ class ClaudeExtractor(Extractor):
 
     provider = "anthropic"
 
-    def __init__(self, api_key: str, model: str, cache=None, effort: str = "low"):
-        super().__init__(model, cache, effort)
+    def __init__(self, api_key: str, model: str, cache=None, effort: str = "low", reread: bool = False):
+        super().__init__(model, cache, effort, reread)
         import anthropic  # only needed when this provider is used
 
         self.client = anthropic.Anthropic(api_key=api_key, timeout=90, max_retries=2)
@@ -163,8 +167,8 @@ class OpenAIExtractor(Extractor):
 
     provider = "openai"
 
-    def __init__(self, api_key: str, model: str, cache=None, effort: str = "low"):
-        super().__init__(model, cache, effort)
+    def __init__(self, api_key: str, model: str, cache=None, effort: str = "low", reread: bool = False):
+        super().__init__(model, cache, effort, reread)
         import openai  # only needed when this provider is used
 
         # The flex tier can take minutes to answer: a long timeout
@@ -206,7 +210,7 @@ DEFAULT_MODEL = {"anthropic": "claude-sonnet-5-5", "openai": "gpt-5-mini"}
 def make_extractor(cfg, cache=None) -> Extractor | None:
     """Claude if ANTHROPIC_API_KEY is set, otherwise OpenAI if OPENAI_API_KEY is set, otherwise none."""
     if cfg.anthropic_api_key:
-        return ClaudeExtractor(cfg.anthropic_api_key, cfg.llm_model or DEFAULT_MODEL["anthropic"], cache, cfg.llm_effort)
+        return ClaudeExtractor(cfg.anthropic_api_key, cfg.llm_model or DEFAULT_MODEL["anthropic"], cache, cfg.llm_effort, cfg.llm_reread)
     if cfg.openai_api_key:
-        return OpenAIExtractor(cfg.openai_api_key, cfg.llm_model or DEFAULT_MODEL["openai"], cache, cfg.llm_effort)
+        return OpenAIExtractor(cfg.openai_api_key, cfg.llm_model or DEFAULT_MODEL["openai"], cache, cfg.llm_effort, cfg.llm_reread)
     return None

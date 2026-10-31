@@ -15,6 +15,11 @@ on:
   schedule:
     - cron: '0 22 * * *'
   workflow_dispatch:
+    inputs:
+      reread:
+        description: "Read every competition again with the LLM (costs tokens; normally only new or changed pages are read)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -53,6 +58,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           LLM_EFFORT: ${{ vars.LLM_EFFORT }}
+          LLM_REREAD: ${{ inputs.reread && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run crawl

@@ -229,3 +229,23 @@ def test_devpost_daily_counts_do_not_make_a_page_new():
     day1 = "Who can participate\n Ages 14 to 18 only\n 80 participants\n Teams of up to 4."
     day2 = "Who can participate\n Ages 14 to 18 only\n 1,204 participants\n Teams of up to 4."
     assert strip_chrome(day1) == strip_chrome(day2) and "participants" not in strip_chrome(day1)
+
+
+def test_a_new_model_only_reads_new_pages():
+    cache = FakeCache()
+    calls = []
+
+    class Fake(llm_mod.Extractor):
+        provider = "openai"
+
+        def call(self, system, tool, user, effort):
+            calls.append(self.model)
+            return {"team_rules": []}
+
+    c = RawCompetition(id="bh-m", source="bhuntr", region="tw", kind="Tech", name="M", url="https://example.com")
+    Fake("gpt-5-mini", cache).extract(c, "the same page")
+    Fake("gpt-5", cache).extract(c, "the same page")
+    assert calls == ["gpt-5-mini"], "an unchanged page keeps its answer when the model changes"
+    Fake("gpt-5", cache).extract(c, "a new page")
+    Fake("gpt-5", cache, reread=True).extract(c, "the same page")
+    assert calls == ["gpt-5-mini", "gpt-5", "gpt-5"], "new pages, or asking to read everything again, use the new model"
