@@ -17,7 +17,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
 
 concurrency: competitions
 
@@ -55,11 +54,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run crawl
-      # Runs even if saving to the database failed, so what the LLM read is not lost
-      - name: Commit and publish if the list changed
+      # Runs even if saving to the database failed, so what the LLM read is not lost.
+      # Cloudflare picks up the push and updates the website.
+      - name: Commit if the list changed
         if: ${{ !cancelled() && steps.crawl.outcome != 'skipped' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$(git status --porcelain -- data crawler/cache.json src/shared/locales)" ]; then echo "No changes"; exit 0; fi
           git config user.name "github-actions[bot]"
@@ -67,5 +65,3 @@ jobs:
           git add data crawler/cache.json src/shared/locales
           git commit -m "Refresh competitions and translations"
           git push
-          # Pushes from this token do not always start a Pages build, so ask for one
-          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true

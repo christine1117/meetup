@@ -8,7 +8,7 @@ import time
 
 import httpx
 
-USER_AGENT = "HalfSugarBot/1.0 (+https://christine1117.com/meetup/teams/)"
+USER_AGENT = "HalfSugarBot/1.0 (+https://meetup.christine921117.workers.dev/privacy)"
 PAUSE = 0.7  # seconds between pages on the same site
 
 _client = httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=20, follow_redirects=True)
