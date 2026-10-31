@@ -1,15 +1,15 @@
 /* HTML: person and team cards in the recommendations, and the say-hi box. */
-import { L } from '../../shared/i18n.js?v=20261031y';
+import { L } from '../../shared/i18n.js?v=20261031z';
 
-import { esc } from '../../shared/core.js?v=20261031y';
-import { flavorChip } from '../../shared/flavors.js?v=20261031y';
-import { cupFor } from '../../shared/cup.js?v=20261031y';
-import { S, U } from '../state.js?v=20261031y';
-import { roleChips } from '../ui.js?v=20261031y';
-import { ROLES, cardTopics, goalName, hoursName } from '../options.js?v=20261031y';
-import { P } from '../sample-people.js?v=20261031y';
-import { freshRoles } from '../matching.js?v=20261031y';
-import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031y';
+import { esc } from '../../shared/core.js?v=20261031z';
+import { flavorChip } from '../../shared/flavors.js?v=20261031z';
+import { cupFor } from '../../shared/cup.js?v=20261031z';
+import { S, U } from '../state.js?v=20261031z';
+import { roleChips } from '../ui.js?v=20261031z';
+import { ROLES, cardTopics, goalName, hoursName } from '../options.js?v=20261031z';
+import { P } from '../sample-people.js?v=20261031z';
+import { freshRoles } from '../matching.js?v=20261031z';
+import { chatWith, myTeam, needsOf, roleCounts, sideOf, spots, teamRoles } from '../rules.js?v=20261031z';
 
 export function personCard(p, cid) {
   const card = S.cards[cid];
@@ -72,12 +72,11 @@ export function hiBox(cid, kind, ref, existing, label) {
   return `<button class="btn btn--dark btn--sm" data-act="hi" data-key="${key}" type="button">${esc(label)}</button>`;
 }
 
-// Tick boxes for roles. withOther adds "Other" with a box to write your own.
+// Tick boxes for roles. withOther adds a box to type your own (no tick needed).
 export function roleChecks(name, picked, list = ROLES, withOther = false) {
   const custom = picked.filter((r) => !list.includes(r));
   const boxes = list.map((r) => `<label class="check"><input type="checkbox" name="${name}" value="${esc(r)}" ${picked.includes(r) ? 'checked' : ''}><span>${esc(L(r))}</span></label>`).join('');
   const other = withOther ? `
-    <label class="check"><input type="checkbox" name="${name}" value="__other" ${custom.length ? 'checked' : ''}><span>${L`Other`}</span></label>
-    <input class="other-input" name="${name}Other" value="${esc(custom.join(', '))}" maxlength="40" placeholder="${esc(L`Write your own`)}" aria-label="${esc(L`Other role`)}">` : '';
+    <input class="other-input" name="${name}Other" value="${esc(custom.join(', '))}" maxlength="40" placeholder="${esc(L`Another role? Type it here`)}" aria-label="${esc(L`Other role`)}">` : '';
   return `<div class="checks">${boxes}${other}</div>`;
 }

@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031y';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031z';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031y';
-import { field, select } from '../../shared/forms.js?v=20261031y';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031y';
-import { S, U } from '../state.js?v=20261031y';
-import { PROVIDERS } from '../../shared/account.js?v=20261031y';
-import { esc } from '../../shared/core.js?v=20261031y';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031z';
+import { field, select } from '../../shared/forms.js?v=20261031z';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031z';
+import { S, U } from '../state.js?v=20261031z';
+import { PROVIDERS } from '../../shared/account.js?v=20261031z';
+import { esc } from '../../shared/core.js?v=20261031z';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.

@@ -51,6 +51,7 @@ export default {
   "All thoughts": "所有想法",
   "Almost there: we sent you an email. Confirm it, then log in here.": "快好了：我們寄了一封信給你，確認後回來這裡登入。",
   "Already have an account?": "已經有帳號？",
+  "Another role? Type it here": "其他職位？直接輸入",
   "Any format": "不限方式",
   "Any size": "不限人數",
   "Applied as {0}": "申請 {0}",

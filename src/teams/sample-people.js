@@ -2,7 +2,7 @@
    is a server. Each competition gets a steady handful of sample people,
    and most get one sample team. Remove this file once sign-ups are real. */
 
-import { defaultMax } from './rules.js?v=20261031y';
+import { defaultMax } from './rules.js?v=20261031z';
 
 export const PEOPLE = [
   { id: 'p1', alias: 'Mochi', field: 'Design', city: 'Taipei', canDo: ['Design', 'Research'], topics: ['Environment', 'Transport'], goal: 'win', hours: 10, work: 'Redesigned a bus app used by 2,000 riders', reply: 0.9, real: { name: 'Yen Shu-Wei', school: 'NCKU, Industrial Design', contact: 'shuwei@example.com' } },

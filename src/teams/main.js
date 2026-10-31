@@ -18,25 +18,25 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031y';
-import { L } from '../shared/i18n.js?v=20261031y';
-import { logError } from '../shared/log.js?v=20261031y';
-import { whoAmI } from './forms.js?v=20261031y';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031z';
+import { L } from '../shared/i18n.js?v=20261031z';
+import { logError } from '../shared/log.js?v=20261031z';
+import { whoAmI } from './forms.js?v=20261031z';
 
-import { $ } from '../shared/core.js?v=20261031y';
-import { at } from '../shared/cup.js?v=20261031y';
-import { closesText } from '../shared/sugar.js?v=20261031y';
-import { S, U, saveMe } from './state.js?v=20261031y';
-import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031y';
-import { loadComps } from './competitions.js?v=20261031y';
-import { loadCards } from './server.js?v=20261031y';
-import { go, route } from './router.js?v=20261031y';
-import { chatById } from './chats.js?v=20261031y';
-import { closeModal } from './views/modal.js?v=20261031y';
-import { curiousChecks } from './views/profile.js?v=20261031y';
-import { render } from './render.js?v=20261031y';
-import { autosave, formData, forms } from './forms.js?v=20261031y';
-import { acts } from './actions.js?v=20261031y';
+import { $ } from '../shared/core.js?v=20261031z';
+import { at } from '../shared/cup.js?v=20261031z';
+import { closesText } from '../shared/sugar.js?v=20261031z';
+import { S, U, saveMe } from './state.js?v=20261031z';
+import { MAX_CURIOUS, isUnsynced, markUnsynced } from '../shared/profile.js?v=20261031z';
+import { loadComps } from './competitions.js?v=20261031z';
+import { loadCards } from './server.js?v=20261031z';
+import { go, route } from './router.js?v=20261031z';
+import { chatById } from './chats.js?v=20261031z';
+import { closeModal } from './views/modal.js?v=20261031z';
+import { curiousChecks } from './views/profile.js?v=20261031z';
+import { render } from './render.js?v=20261031z';
+import { autosave, formData, forms } from './forms.js?v=20261031z';
+import { acts } from './actions.js?v=20261031z';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');

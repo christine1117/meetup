@@ -1,21 +1,21 @@
 /* What happens when a form is sent. */
-import { currentUser, saveProfile } from '../shared/account.js?v=20261031y';
-import { logError } from '../shared/log.js?v=20261031y';
-import { L } from '../shared/i18n.js?v=20261031y';
-import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031y';
+import { currentUser, saveProfile } from '../shared/account.js?v=20261031z';
+import { logError } from '../shared/log.js?v=20261031z';
+import { L } from '../shared/i18n.js?v=20261031z';
+import { MAX_CURIOUS, markUnsynced } from '../shared/profile.js?v=20261031z';
 
-import { $, later, pick, uid } from '../shared/core.js?v=20261031y';
-import { isCold } from '../shared/sugar.js?v=20261031y';
-import { S, U, save, saveMe } from './state.js?v=20261031y';
-import { toast } from './ui.js?v=20261031y';
-import { MAX_ROLES, SLOTS } from './options.js?v=20261031y';
-import { saveCard } from './server.js?v=20261031y';
-import { COMP } from './competitions.js?v=20261031y';
-import { go } from './router.js?v=20261031y';
-import { isFull, withinRules } from './rules.js?v=20261031y';
-import { chatById, push, reply, startChat } from './chats.js?v=20261031y';
-import { render } from './render.js?v=20261031y';
-import { savedNote } from './views/profile.js?v=20261031y';
+import { $, later, pick, uid } from '../shared/core.js?v=20261031z';
+import { isCold } from '../shared/sugar.js?v=20261031z';
+import { S, U, save, saveMe } from './state.js?v=20261031z';
+import { toast } from './ui.js?v=20261031z';
+import { MAX_ROLES, SLOTS } from './options.js?v=20261031z';
+import { saveCard } from './server.js?v=20261031z';
+import { COMP } from './competitions.js?v=20261031z';
+import { go } from './router.js?v=20261031z';
+import { isFull, withinRules } from './rules.js?v=20261031z';
+import { chatById, push, reply, startChat } from './chats.js?v=20261031z';
+import { render } from './render.js?v=20261031z';
+import { savedNote } from './views/profile.js?v=20261031z';
 
 // The profile as the form gives it ("curious" is several ticked boxes)
 const meFrom = (d, form) => ({
@@ -32,10 +32,10 @@ export async function whoAmI() {
   return u ? { id: u.id, email: u.email, name: meta.full_name || meta.name || '' } : null;
 }
 
-// Ticked roles; "Other" is replaced by what was written next to it
+// Ticked roles, plus any typed in the box next to them (commas between several)
 export function pickRoles(fd, name) {
   const own = String(fd.get(`${name}Other`) || '').split(/[,，、]/).map((x) => x.trim().slice(0, 40)).filter(Boolean);
-  return [...new Set(fd.getAll(name).flatMap((r) => (r === '__other' ? own : [r])))];
+  return [...new Set([...fd.getAll(name), ...own])];
 }
 
 // The card as the form gives it; what the form does not ask (the roles you want, on the team form) stays as it was
@@ -102,7 +102,12 @@ export const forms = {
     const card = cardFrom(fd, d, S.cards[cid]);
     const missing = cardProblems(card, !!form.dataset.team, d.team);
     const error = $('#card-error', form);
-    if (missing.length) { error.textContent = missing.join(' '); error.hidden = false; return; }
+    if (missing.length) {
+      error.textContent = missing.join(' ');
+      error.hidden = false;
+      error.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     if (!U.user) { go('account'); return; }
     U.busy = true;
     render();
