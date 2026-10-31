@@ -397,6 +397,7 @@ export default {
   "Post": "發佈",
   "Pour me one": "來一杯",
   "Pricing": "定價",
+  "Privacy": "隱私權說明",
   "Product": "產品",
   "Product design": "產品設計",
   "Proof of work": "作品與成果",

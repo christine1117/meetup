@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031e';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031f';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031e';
-import { field, select } from '../../shared/forms.js?v=20261031e';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031e';
-import { S, U } from '../state.js?v=20261031e';
-import { PROVIDERS } from '../../shared/account.js?v=20261031e';
-import { esc } from '../../shared/core.js?v=20261031e';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031f';
+import { field, select } from '../../shared/forms.js?v=20261031f';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031f';
+import { S, U } from '../state.js?v=20261031f';
+import { PROVIDERS } from '../../shared/account.js?v=20261031f';
+import { esc } from '../../shared/core.js?v=20261031f';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -75,7 +75,7 @@ export function authForms() {
   return `
     ${signInButtons()}
     ${note()}
-    <p class="hint">${L`No password needed. Your name, school and contact stay hidden until you team up.`}</p>`;
+    <p class="hint">${L`No password needed. Your name, school and contact stay hidden until you team up.`} <a href="privacy.html">${L`Privacy`}</a></p>`;
 }
 
 export function viewOnboard() {
@@ -116,7 +116,7 @@ export function viewMe() {
   </section>
   <section class="panel note">
     <h2>${L`About this version`}</h2>
-    <p>${L`Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.`}</p>
+    <p>${L`Competitions are real and refreshed daily. People and chats are still samples, and your teams and chats stay in this browser.`} <a href="privacy.html">${L`Privacy`}</a></p>
     ${U.confirmReset
       ? `<div class="btnrow"><button class="btn btn--danger" data-act="reset-yes" type="button">${L`Yes, clear it`}</button><button class="btn btn--ghost" data-act="reset-no" type="button">${L`Cancel`}</button></div>`
       : `<button class="btn btn--ghost" data-act="reset" type="button">${L`Clear team data`}</button>`}

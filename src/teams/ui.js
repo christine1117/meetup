@@ -1,8 +1,8 @@
 /* Small page pieces: the root element, toasts, role chips, avatars. */
-import { L } from '../shared/i18n.js?v=20261031e';
+import { L } from '../shared/i18n.js?v=20261031f';
 
-import { esc } from '../shared/core.js?v=20261031e';
-import { cupFor } from '../shared/cup.js?v=20261031e';
+import { esc } from '../shared/core.js?v=20261031f';
+import { cupFor } from '../shared/cup.js?v=20261031f';
 
 export const app = document.getElementById('app');
 export const toastEl = document.getElementById('toast');

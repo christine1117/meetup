@@ -18,25 +18,25 @@
    competitions (data), rules + matching (logic), chats, views/* (HTML),
    render, forms, actions. Shared pieces are in ../shared.
    ========================================================= */
-import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031e';
-import { L } from '../shared/i18n.js?v=20261031e';
-import { logError } from '../shared/log.js?v=20261031e';
-import { whoAmI } from './forms.js?v=20261031e';
+import { enabledProviders, loadProfile, returningFromSignIn, saveProfile, signInFailed } from '../shared/account.js?v=20261031f';
+import { L } from '../shared/i18n.js?v=20261031f';
+import { logError } from '../shared/log.js?v=20261031f';
+import { whoAmI } from './forms.js?v=20261031f';
 
-import { $ } from '../shared/core.js?v=20261031e';
-import { at } from '../shared/cup.js?v=20261031e';
-import { closesText } from '../shared/sugar.js?v=20261031e';
-import { S, U, saveMe } from './state.js?v=20261031e';
-import { MAX_CURIOUS } from '../shared/profile.js?v=20261031e';
-import { loadComps } from './competitions.js?v=20261031e';
-import { go, route } from './router.js?v=20261031e';
-import { chatById } from './chats.js?v=20261031e';
-import { closeModal } from './views/modal.js?v=20261031e';
-import { curiousChecks } from './views/profile.js?v=20261031e';
-import { PAGE } from './views/competitions.js?v=20261031e';
-import { render } from './render.js?v=20261031e';
-import { formData, forms } from './forms.js?v=20261031e';
-import { acts } from './actions.js?v=20261031e';
+import { $ } from '../shared/core.js?v=20261031f';
+import { at } from '../shared/cup.js?v=20261031f';
+import { closesText } from '../shared/sugar.js?v=20261031f';
+import { S, U, saveMe } from './state.js?v=20261031f';
+import { MAX_CURIOUS } from '../shared/profile.js?v=20261031f';
+import { loadComps } from './competitions.js?v=20261031f';
+import { go, route } from './router.js?v=20261031f';
+import { chatById } from './chats.js?v=20261031f';
+import { closeModal } from './views/modal.js?v=20261031f';
+import { curiousChecks } from './views/profile.js?v=20261031f';
+import { PAGE } from './views/competitions.js?v=20261031f';
+import { render } from './render.js?v=20261031f';
+import { formData, forms } from './forms.js?v=20261031f';
+import { acts } from './actions.js?v=20261031f';
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
