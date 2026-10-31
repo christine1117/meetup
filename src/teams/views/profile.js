@@ -1,12 +1,12 @@
 /* HTML: sign in (Google or LinkedIn), the first profile, and the Me page. */
-import { L, langSwitch } from '../../shared/i18n.js?v=20261031q';
+import { L, langSwitch } from '../../shared/i18n.js?v=20261031r';
 
-import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031q';
-import { field, select } from '../../shared/forms.js?v=20261031q';
-import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031q';
-import { S, U } from '../state.js?v=20261031q';
-import { PROVIDERS } from '../../shared/account.js?v=20261031q';
-import { esc } from '../../shared/core.js?v=20261031q';
+import { FIELDS, LOGO, fieldName, flavorName } from '../../shared/flavors.js?v=20261031r';
+import { field, select } from '../../shared/forms.js?v=20261031r';
+import { CONTACTS, CURIOUS_GROUPS, MAX_CURIOUS, MEETS } from '../../shared/profile.js?v=20261031r';
+import { S, U } from '../state.js?v=20261031r';
+import { PROVIDERS } from '../../shared/account.js?v=20261031r';
+import { esc } from '../../shared/core.js?v=20261031r';
 
 // "Curious about": the picked ones sit on top; "Show more topics" opens the rest, by group.
 // main.js draws this part again on every tick, so a ticked topic moves up at once.
@@ -30,8 +30,8 @@ export function curiousChecks(picked, open = false) {
 export const savedNote = () => (U.saved ? `<i class="ph ph-check" aria-hidden="true"></i>${L`Saved`}` : '');
 
 // One part of a settings card: its title and a short note on the left, its fields on the right
-const section = (icon, title, note, body) => `
-    <section class="set">
+const section = (icon, title, note, body, cls = '') => `
+    <section class="set ${cls}">
       <div class="set__info"><h2><i class="ph ${icon}" aria-hidden="true"></i>${title}</h2>${note ? `<p>${note}</p>` : ''}</div>
       <div class="set__body">${body}</div>
     </section>`;
@@ -55,7 +55,7 @@ export function profileFields(me) {
         <div class="row2">
           ${select('contactType', L`Contact`, CONTACTS.map(([v, l]) => [v, L(l)]), me.contactType || 'instagram')}
           ${field('contact', L`Handle or link`, me.contact, { ph: L`e.g. @yourname` })}
-        </div>`);
+        </div>`, 'set--sealed');
 }
 
 // Sign in with Google or LinkedIn (no passwords)
